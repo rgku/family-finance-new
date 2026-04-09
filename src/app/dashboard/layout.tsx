@@ -21,7 +21,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard", icon: "home", label: "Home" },
     { href: "/dashboard/transactions", icon: "receipt_long", label: "Transações" },
     { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
-    { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
     { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
     { href: "/dashboard/profile", icon: "person", label: "Perfil" },
     { href: "/dashboard/settings", icon: "settings", label: "Definições" },

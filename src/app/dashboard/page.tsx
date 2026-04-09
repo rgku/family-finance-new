@@ -209,9 +209,9 @@ export default function Dashboard() {
               <span className="material-symbols-outlined">track_changes</span>
               <span className="font-inter font-medium text-[9px] mt-1">Metas</span>
             </Link>
-            <Link href="/dashboard/profile" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
-              <span className="material-symbols-outlined">person</span>
-              <span className="font-inter font-medium text-[9px] mt-1">Perfil</span>
+            <Link href="/dashboard/analytics" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
+              <span className="material-symbols-outlined">trending_up</span>
+              <span className="font-inter font-medium text-[9px] mt-1">Análise</span>
             </Link>
           </nav>
         </>
