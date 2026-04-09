@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -11,7 +11,15 @@ export default function AuthPage() {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isConfigured, setIsConfigured] = useState(true);
   const router = useRouter();
+
+  useEffect(() => {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      setIsConfigured(false);
+      setError("Aplicação não configurada. Verifique as variáveis de ambiente.");
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,10 +144,10 @@ export default function AuthPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !isConfigured}
               className="w-full py-4 bg-primary text-on-primary font-bold rounded-full hover:brightness-110 shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50"
             >
-              {loading ? "A processar..." : isLogin ? "Entrar" : "Criar Conta"}
+              {loading ? "A processar..." : !isConfigured ? "Configuração em falta" : isLogin ? "Entrar" : "Criar Conta"}
             </button>
           </form>
 

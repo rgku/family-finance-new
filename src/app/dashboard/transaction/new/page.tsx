@@ -53,7 +53,7 @@ export default function NewTransaction() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !amount || !description) return;
+    if (!user || !amount || !description || !supabase) return;
 
     setLoading(true);
 

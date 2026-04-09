@@ -24,7 +24,7 @@ export default function GoalsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !name || !targetAmount) return;
+    if (!user || !name || !targetAmount || !supabase) return;
 
     setLoading(true);
 

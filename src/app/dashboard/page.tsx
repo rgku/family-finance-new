@@ -28,12 +28,14 @@ export default function Dashboard() {
   const [balance, setBalance] = useState({ total: 0, income: 0, expenses: 0 });
 
   useEffect(() => {
-    if (user && !loading) {
+    if (user && !loading && supabase) {
       loadDashboardData();
     }
-  }, [user, loading]);
+  }, [user, loading, supabase]);
 
   const loadDashboardData = async () => {
+    if (!supabase) return;
+    
     // Load transactions
     const { data: transData } = await supabase
       .from("transactions")
