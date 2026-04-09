@@ -2,7 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { createBrowserClient } from "@supabase/ssr";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ziyriwdkgankrbmsjvhk.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppeXJpd2RrZ2Fua3JibXNqdmhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3Mjg2MTUsImV4cCI6MjA5MTMwNDYxNX0.ukeAK91Nf13jL6LDhw8mrPrUlb98743BqyRn7Ns1UIA';
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -13,36 +16,58 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
+  const supabase = createBrowserClient(supabaseUrl, supabaseKey);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    const endpoint = isLogin ? "/api/auth/signin" : "/api/auth/signup";
-    
     try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          email, 
+      if (isLogin) {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
           password,
-          ...(fullName && { fullName })
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Erro ao processar pedido");
-        setLoading(false);
-        return;
+        });
+        
+        if (error) {
+          setError(error.message);
+        } else {
+          router.push("/dashboard");
+        }
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName || "",
+            },
+          },
+        });
+        
+        if (error) {
+          setError(error.message);
+        } else {
+          router.push("/dashboard");
+        }
       }
-
-      router.push("/dashboard");
     } catch (err) {
       setError("Erro de conexão. Tente novamente.");
+    } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) {
+      setError(error.message);
     }
   };
 
