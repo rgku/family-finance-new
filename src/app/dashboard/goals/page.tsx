@@ -1,13 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/components/AuthProvider";
-import { CURRENCY, formatCurrencyWithSymbol } from "@/lib/currency";
+import { useData } from "@/hooks/DataProvider";
+import { formatCurrencyWithSymbol } from "@/lib/currency";
+
+const defaultIcons = [
+  "directions_car", "flight", "home", "school", "shopping_bag", 
+  "diamond", "celebration", "savings", "sports_esports"
+];
 
 export default function GoalsPage() {
-  const { supabase, user } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const { goals, addGoal, updateGoal, deleteGoal } = useData();
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   
   const [name, setName] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
@@ -15,23 +20,55 @@ export default function GoalsPage() {
   const [deadline, setDeadline] = useState("");
   const [icon, setIcon] = useState("savings");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    alert("Meta criada com sucesso! (Modo demonstração)");
+    
+    if (editingId) {
+      updateGoal(editingId, {
+        name,
+        target_amount: parseFloat(targetAmount),
+        current_amount: parseFloat(currentAmount) || 0,
+        deadline: deadline || undefined,
+        icon,
+      });
+    } else {
+      addGoal({
+        name,
+        target_amount: parseFloat(targetAmount),
+        current_amount: parseFloat(currentAmount) || 0,
+        deadline: deadline || undefined,
+        icon,
+      });
+    }
+    
+    resetForm();
+  };
+
+  const handleEdit = (goal: any) => {
+    setName(goal.name);
+    setTargetAmount(goal.target_amount.toString());
+    setCurrentAmount(goal.current_amount.toString());
+    setDeadline(goal.deadline || "");
+    setIcon(goal.icon);
+    setEditingId(goal.id);
+    setShowForm(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm("Tem a certeza que deseja excluir esta meta?")) {
+      deleteGoal(id);
+    }
+  };
+
+  const resetForm = () => {
     setName("");
     setTargetAmount("");
     setCurrentAmount("0");
     setDeadline("");
+    setIcon("savings");
+    setEditingId(null);
     setShowForm(false);
-    setLoading(false);
   };
-
-  const demoGoals = [
-    { id: "1", name: "Novo Carro", target_amount: 80000, current_amount: 45000, icon: "directions_car" },
-    { id: "2", name: "Viagem Japão", target_amount: 15000, current_amount: 12000, icon: "flight" },
-    { id: "3", name: "Férias", target_amount: 3000, current_amount: 1800, icon: "beach_access" },
-  ];
 
   return (
     <div className="p-8 space-y-6">
@@ -41,7 +78,7 @@ export default function GoalsPage() {
           <p className="text-on-surface-variant">Acompanhe os seus objetivos financeiros</p>
         </div>
         <button 
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => { resetForm(); setShowForm(!showForm); }}
           className="px-6 py-3 bg-primary text-on-primary rounded-full font-bold hover:brightness-110"
         >
           {showForm ? "Cancelar" : "+ Nova Meta"}
@@ -50,7 +87,9 @@ export default function GoalsPage() {
 
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-surface-container rounded-lg p-6 space-y-4">
-          <h2 className="font-headline font-bold text-lg mb-4">Nova Meta</h2>
+          <h2 className="font-headline font-bold text-lg mb-4">
+            {editingId ? "Editar Meta" : "Nova Meta"}
+          </h2>
           
           <div>
             <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Nome</label>
@@ -66,7 +105,7 @@ export default function GoalsPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Meta ({CURRENCY.symbol})</label>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Meta (€)</label>
               <input
                 type="number"
                 value={targetAmount}
@@ -77,7 +116,7 @@ export default function GoalsPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Atual ({CURRENCY.symbol})</label>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Atual (€)</label>
               <input
                 type="number"
                 value={currentAmount}
@@ -88,18 +127,56 @@ export default function GoalsPage() {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-4 bg-primary text-on-primary font-bold rounded-full hover:brightness-110 transition-all"
-          >
-            {loading ? "A guardar..." : "Criar Meta"}
-          </button>
+          <div>
+            <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Prazo</label>
+            <input
+              type="date"
+              value={deadline}
+              onChange={(e) => setDeadline(e.target.value)}
+              className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface [color-scheme:dark]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Ícone</label>
+            <div className="grid grid-cols-5 gap-2">
+              {defaultIcons.map((ic) => (
+                <button
+                  key={ic}
+                  type="button"
+                  onClick={() => setIcon(ic)}
+                  className={`p-3 rounded-xl transition-all ${
+                    icon === ic ? "bg-primary text-on-primary" : "bg-surface-container-low text-on-surface-variant"
+                  }`}
+                >
+                  <span className="material-symbols-outlined">{ic}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-4">
+            <button
+              type="submit"
+              className="flex-1 py-4 bg-primary text-on-primary font-bold rounded-full hover:brightness-110 transition-all"
+            >
+              {editingId ? "Guardar Alterações" : "Criar Meta"}
+            </button>
+            {editingId && (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="px-6 py-4 bg-surface-container-high text-on-surface font-bold rounded-full"
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
         </form>
       )}
 
       <div className="grid gap-4">
-        {demoGoals.map((goal) => {
+        {goals.map((goal) => {
           const progress = Math.min((goal.current_amount / goal.target_amount) * 100, 100);
           return (
             <div key={goal.id} className="bg-surface-container rounded-lg p-6 space-y-4">
@@ -115,7 +192,16 @@ export default function GoalsPage() {
                     </p>
                   </div>
                 </div>
-                <span className="font-headline font-bold text-secondary text-xl">{Math.round(progress)}%</span>
+                <div className="flex gap-2">
+                  <button onClick={() => handleEdit(goal)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary/20 hover:text-primary transition-colors text-xs font-medium">
+                    <span className="material-symbols-outlined text-base">edit</span>
+                    Editar
+                  </button>
+                  <button onClick={() => handleDelete(goal.id)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-error/20 hover:text-error transition-colors text-xs font-medium">
+                    <span className="material-symbols-outlined text-base">delete</span>
+                    Apagar
+                  </button>
+                </div>
               </div>
               <div className="w-full bg-surface-container-highest h-3 rounded-full overflow-hidden">
                 <div 
@@ -123,6 +209,7 @@ export default function GoalsPage() {
                   style={{ width: `${progress}%` }}
                 ></div>
               </div>
+              <p className="text-right text-sm text-on-surface-variant">{Math.round(progress)}%</p>
             </div>
           );
         })}

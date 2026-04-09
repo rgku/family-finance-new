@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { useData } from "@/hooks/DataProvider";
 import { CURRENCY } from "@/lib/currency";
-import Link from "next/link";
 
 const defaultCategories = [
   { value: "Moradia", icon: "home" },
@@ -18,7 +18,8 @@ const defaultCategories = [
 ];
 
 export default function NewTransaction() {
-  const { supabase, user } = useAuth();
+  const { user } = useAuth();
+  const { addTransaction } = useData();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -58,19 +59,14 @@ export default function NewTransaction() {
 
     setLoading(true);
 
-    // Use demo mode - just show success and redirect
-    // In production, this would create the transaction in Supabase
-    const demoTransaction = {
+    addTransaction({
       description,
       amount: parseFloat(amount),
       type,
       category: category || "Outros",
       date,
-    };
+    });
     
-    console.log("Transaction created (demo):", demoTransaction);
-    
-    // Show success and redirect
     alert("Transação criada com sucesso!");
     router.push("/dashboard");
     

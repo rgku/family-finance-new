@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
+import { DataProvider } from "@/hooks/DataProvider";
 
 export const metadata: Metadata = {
   title: "Family Finance",
@@ -22,7 +23,9 @@ export default function RootLayout({
       </head>
       <body className="bg-surface text-on-surface min-h-screen antialiased">
         <AuthProvider>
-          {children}
+          <DataProvider>
+            {children}
+          </DataProvider>
         </AuthProvider>
       </body>
     </html>

@@ -1,36 +1,65 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/components/AuthProvider";
-import { CURRENCY, formatCurrencyWithSymbol } from "@/lib/currency";
+import { useData } from "@/hooks/DataProvider";
+import { formatCurrencyWithSymbol } from "@/lib/currency";
+
+const categories = [
+  { value: "Moradia", icon: "home" },
+  { value: "Alimentação", icon: "restaurant" },
+  { value: "Transporte", icon: "directions_car" },
+  { value: "Lazer", icon: "movie" },
+  { value: "Saúde", icon: "local_hospital" },
+  { value: "Educação", icon: "school" },
+];
 
 export default function BudgetsPage() {
+  const { budgets, addBudget, updateBudget, deleteBudget } = useData();
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  
   const [selectedCategory, setSelectedCategory] = useState("");
   const [limitAmount, setLimitAmount] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Orçamento criado com sucesso! (Modo demonstração)");
+    
+    if (editingId) {
+      updateBudget(editingId, {
+        limit: parseFloat(limitAmount),
+      });
+    } else {
+      addBudget({
+        category: selectedCategory,
+        limit: parseFloat(limitAmount),
+      });
+    }
+    
+    resetForm();
+  };
+
+  const handleEdit = (budget: any) => {
+    setSelectedCategory(budget.category);
+    setLimitAmount(budget.limit.toString());
+    setEditingId(budget.id);
+    setShowForm(true);
+  };
+
+  const handleDelete = (id: string) => {
+    if (confirm("Tem a certeza que deseja excluir este orçamento?")) {
+      deleteBudget(id);
+    }
+  };
+
+  const resetForm = () => {
     setSelectedCategory("");
     setLimitAmount("");
+    setEditingId(null);
     setShowForm(false);
   };
 
-  const categories = [
-    { value: "Moradia", icon: "home" },
-    { value: "Alimentação", icon: "restaurant" },
-    { value: "Transporte", icon: "directions_car" },
-    { value: "Lazer", icon: "movie" },
-    { value: "Saúde", icon: "local_hospital" },
-  ];
-
-  const demoBudgets = [
-    { category: "Alimentação", limit: 800, spent: 650, icon: "restaurant" },
-    { category: "Moradia", limit: 1200, spent: 1200, icon: "home" },
-    { category: "Transporte", limit: 300, spent: 180, icon: "directions_car" },
-    { category: "Lazer", limit: 200, spent: 95, icon: "movie" },
-  ];
+  const totalBudget = budgets.reduce((sum, b) => sum + b.limit, 0);
+  const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
 
   return (
     <div className="p-8 space-y-6">
@@ -40,7 +69,7 @@ export default function BudgetsPage() {
           <p className="text-on-surface-variant">Controle os seus gastos por categoria</p>
         </div>
         <button 
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => { resetForm(); setShowForm(!showForm); }}
           className="px-6 py-3 bg-primary text-on-primary rounded-full font-bold hover:brightness-110"
         >
           {showForm ? "Cancelar" : "+ Novo Orçamento"}
@@ -49,11 +78,13 @@ export default function BudgetsPage() {
 
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-surface-container rounded-lg p-6 space-y-4">
-          <h2 className="font-headline font-bold text-lg mb-4">Novo Orçamento</h2>
+          <h2 className="font-headline font-bold text-lg mb-4">
+            {editingId ? "Editar Orçamento" : "Novo Orçamento"}
+          </h2>
           
           <div>
             <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Categoria</label>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-6 gap-2">
               {categories.map((cat) => (
                 <button
                   key={cat.value}
@@ -73,7 +104,7 @@ export default function BudgetsPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Limite Mensal ({CURRENCY.symbol})</label>
+            <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Limite Mensal (€)</label>
             <input
               type="number"
               value={limitAmount}
@@ -84,12 +115,23 @@ export default function BudgetsPage() {
             />
           </div>
 
-          <button
-            type="submit"
-            className="w-full py-4 bg-primary text-on-primary font-bold rounded-full hover:brightness-110 transition-all"
-          >
-            Criar Orçamento
-          </button>
+          <div className="flex gap-4">
+            <button
+              type="submit"
+              className="flex-1 py-4 bg-primary text-on-primary font-bold rounded-full hover:brightness-110 transition-all"
+            >
+              {editingId ? "Guardar Alterações" : "Criar Orçamento"}
+            </button>
+            {editingId && (
+              <button
+                type="button"
+                onClick={resetForm}
+                className="px-6 py-4 bg-surface-container-high text-on-surface font-bold rounded-full"
+              >
+                Cancelar
+              </button>
+            )}
+          </div>
         </form>
       )}
 
@@ -98,33 +140,35 @@ export default function BudgetsPage() {
         <div className="bg-surface-container rounded-lg p-5 text-center">
           <p className="text-xs text-on-surface-variant">Total Orçamento</p>
           <p className="font-headline text-3xl font-bold text-on-surface mt-1">
-            {formatCurrencyWithSymbol(demoBudgets.reduce((sum, b) => sum + b.limit, 0))}
+            {formatCurrencyWithSymbol(totalBudget)}
           </p>
         </div>
         <div className="bg-surface-container rounded-lg p-5 text-center">
           <p className="text-xs text-on-surface-variant">Total Gasto</p>
           <p className="font-headline text-3xl font-bold text-tertiary mt-1">
-            {formatCurrencyWithSymbol(demoBudgets.reduce((sum, b) => sum + b.spent, 0))}
+            {formatCurrencyWithSymbol(totalSpent)}
           </p>
         </div>
       </div>
 
       {/* Budget List */}
       <div className="space-y-3">
-        {demoBudgets.map((budget) => {
-          const percentage = (budget.spent / budget.limit) * 100;
+        {budgets.map((budget) => {
+          const percentage = budget.limit > 0 ? (budget.spent / budget.limit) * 100 : 0;
           const isOver = percentage >= 100;
           const isWarning = percentage >= 80 && percentage < 100;
           
+          const categoryIcon = categories.find(c => c.value === budget.category)?.icon || "help";
+          
           return (
             <div 
-              key={budget.category}
+              key={budget.id}
               className={`bg-surface-container rounded-lg p-5 ${isOver ? "border border-error/50" : ""}`}
             >
               <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-3">
                   <span className={`material-symbols-outlined ${isOver ? "text-error" : isWarning ? "text-tertiary" : "text-primary"}`}>
-                    {budget.icon}
+                    {categoryIcon}
                   </span>
                   <div>
                     <p className="font-semibold">{budget.category}</p>
@@ -133,16 +177,16 @@ export default function BudgetsPage() {
                     </p>
                   </div>
                 </div>
-                {isOver && (
-                  <span className="px-3 py-1 bg-error/20 text-error text-xs font-bold rounded-full">
-                    Excedido
-                  </span>
-                )}
-                {isWarning && !isOver && (
-                  <span className="px-3 py-1 bg-tertiary/20 text-tertiary text-xs font-bold rounded-full">
-                    Quase limite
-                  </span>
-                )}
+                <div className="flex gap-2">
+                  <button onClick={() => handleEdit(budget)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary/20 hover:text-primary transition-colors text-xs font-medium">
+                    <span className="material-symbols-outlined text-base">edit</span>
+                    Editar
+                  </button>
+                  <button onClick={() => handleDelete(budget.id)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-error/20 hover:text-error transition-colors text-xs font-medium">
+                    <span className="material-symbols-outlined text-base">delete</span>
+                    Apagar
+                  </button>
+                </div>
               </div>
               
               <div className="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
