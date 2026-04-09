@@ -5,8 +5,10 @@ import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function Dashboard() {
+  const pathname = usePathname();
   const { user, signOut, supabase, loading } = useAuth();
   const { transactions, goals: dataGoals } = useData();
   const [isMobile, setIsMobile] = useState(true);
