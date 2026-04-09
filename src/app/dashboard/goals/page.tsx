@@ -17,9 +17,13 @@ export default function GoalsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !name || !targetAmount || !supabase) return;
     setLoading(true);
-    alert("Meta criada! (Demo mode)");
+    alert("Meta criada com sucesso! (Modo demonstração)");
+    setName("");
+    setTargetAmount("");
+    setCurrentAmount("0");
+    setDeadline("");
+    setShowForm(false);
     setLoading(false);
   };
 

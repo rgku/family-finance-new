@@ -11,7 +11,9 @@ export default function BudgetsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Orçamento criado!");
+    alert("Orçamento criado com sucesso! (Modo demonstração)");
+    setSelectedCategory("");
+    setLimitAmount("");
     setShowForm(false);
   };
 
