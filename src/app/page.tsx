@@ -39,8 +39,7 @@ export default function AuthPage() {
         return;
       }
 
-      // Force full page navigation to ensure session cookies are set
-      window.location.href = "/dashboard";
+      router.push("/dashboard");
     } catch (err) {
       setError("Erro de conexão. Tente novamente.");
       setLoading(false);

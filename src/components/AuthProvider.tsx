@@ -18,47 +18,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ziyriwdkgankrbmsjvhk.supabase.co';
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppeXJpd2RrZ2Fua3JibXNqdmhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3Mjg2MTUsImV4cCI6MjA5MTMwNDYxNX0.ukeAK91Nf13jL6LDhw8mrPrUlb98743BqyRn7Ns1UIA';
   
-  const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
+  const [supabase] = useState(() => createBrowserClient(supabaseUrl, supabaseKey));
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Use createBrowserClient which handles cookies automatically
-    const client = createBrowserClient(supabaseUrl, supabaseKey);
-    setSupabase(client);
+    let mounted = true;
 
-    const getUser = async () => {
+    const initializeAuth = async () => {
       try {
-        const { data: { user }, error } = await client.auth.getUser();
-        if (error) {
-          console.error("Error getting user:", error.message);
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (mounted) {
+          if (session?.user) {
+            setUser(session.user);
+          } else {
+            // Check if there's a user on the server side
+            const { data: { user: serverUser } } = await supabase.auth.getUser();
+            if (mounted) {
+              setUser(serverUser);
+            }
+          }
         }
-        setUser(user);
-      } catch (err: any) {
-        console.error("Auth error:", err.message);
+      } catch (error) {
+        console.error('Auth initialization error:', error);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
-    getUser();
+    initializeAuth();
 
-    const { data: { subscription } } = client.auth.onAuthStateChange(
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
+        if (mounted) {
+          setUser(session?.user ?? null);
+          setLoading(false);
+        }
       }
     );
 
-    return () => subscription.unsubscribe();
-  }, [supabaseUrl, supabaseKey]);
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
 
   const signOut = async () => {
-    if (supabase) {
+    try {
       await supabase.auth.signOut();
+      setUser(null);
+      router.push('/');
+    } catch (error) {
+      console.error('Sign out error:', error);
+      router.push('/');
     }
-    router.push("/");
   };
 
   return (
