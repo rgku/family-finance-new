@@ -35,13 +35,14 @@ export default function AuthPage() {
 
       if (!res.ok) {
         setError(data.error || "Erro ao processar pedido");
+        setLoading(false);
         return;
       }
 
-      router.push("/dashboard");
+      // Force full page navigation to ensure session cookies are set
+      window.location.href = "/dashboard";
     } catch (err) {
       setError("Erro de conexão. Tente novamente.");
-    } finally {
       setLoading(false);
     }
   };
