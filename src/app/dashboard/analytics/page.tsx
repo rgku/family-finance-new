@@ -6,13 +6,25 @@ import { formatCurrencyWithSymbol } from "@/lib/currency";
 
 export default function AnalyticsPage() {
   const { transactions } = useData();
-  const [period, setPeriod] = useState<"month" | "year">("month");
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
 
-  const income = transactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
-  const expenses = transactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
+  const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  const [year, month] = selectedMonth.split("-").map(Number);
+  const monthName = monthNames[month - 1];
+
+  const filteredTransactions = transactions.filter(t => {
+    const transDate = new Date(t.date);
+    return transDate.getFullYear() === year && transDate.getMonth() === month - 1;
+  });
+
+  const income = filteredTransactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
+  const expenses = filteredTransactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
 
   const categoryMap = new Map<string, number>();
-  transactions.filter(t => t.type === "expense").forEach(t => {
+  filteredTransactions.filter(t => t.type === "expense").forEach(t => {
     categoryMap.set(t.category, (categoryMap.get(t.category) || 0) + t.amount);
   });
 
@@ -24,8 +36,10 @@ export default function AnalyticsPage() {
     color: categoryColors[idx % categoryColors.length],
   }));
 
-  const previousMonth = expenses * 0.9;
-  const trendChange = previousMonth > 0 ? ((expenses - previousMonth) / previousMonth * 100).toFixed(1) : "0";
+  const prevMonth = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
+  const nextMonth = month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 };
+  const now = new Date();
+  const canGoNext = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);
 
   return (
     <div className="p-8 space-y-6">
@@ -36,23 +50,23 @@ export default function AnalyticsPage() {
         </div>
       </header>
 
-      {/* Period Toggle */}
-      <div className="flex gap-2 bg-surface-container rounded-full p-1 w-fit">
+      {/* Month Navigation */}
+      <div className="flex items-center justify-center gap-4">
         <button
-          onClick={() => setPeriod("month")}
-          className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${
-            period === "month" ? "bg-surface-container-highest text-on-surface" : "text-on-surface-variant"
-          }`}
+          onClick={() => setSelectedMonth(`${prevMonth.year}-${String(prevMonth.month).padStart(2, "0")}`)}
+          className="p-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
         >
-          Este Mês
+          <span className="material-symbols-outlined">chevron_left</span>
         </button>
+        <span className="text-xl font-bold text-on-surface min-w-[160px] text-center">
+          {monthName} {year}
+        </span>
         <button
-          onClick={() => setPeriod("year")}
-          className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${
-            period === "year" ? "bg-surface-container-highest text-on-surface" : "text-on-surface-variant"
-          }`}
+          onClick={() => setSelectedMonth(`${nextMonth.year}-${String(nextMonth.month).padStart(2, "0")}`)}
+          disabled={!canGoNext}
+          className={`p-2 rounded-full bg-surface-container text-on-surface-variant ${canGoNext ? "hover:bg-surface-container-high cursor-pointer" : "opacity-50 cursor-not-allowed"}`}
         >
-          Este Ano
+          <span className="material-symbols-outlined">chevron_right</span>
         </button>
       </div>
 
@@ -73,18 +87,16 @@ export default function AnalyticsPage() {
         <h3 className="font-bold text-lg mb-4">Comparativo Mensal</h3>
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-on-surface-variant">Este mês</span>
+            <span className="text-on-surface-variant">{monthName}</span>
             <span className="font-bold">{formatCurrencyWithSymbol(expenses)}</span>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-on-surface-variant">Mês anterior</span>
-            <span className="font-bold">{formatCurrencyWithSymbol(previousMonth)}</span>
+            <span className="text-on-surface-variant">{monthNames[prevMonth.month - 1]}</span>
+            <span className="font-bold">{formatCurrencyWithSymbol(0)}</span>
           </div>
           <div className="flex justify-between items-center pt-3 border-t border-surface-container-high">
             <span className="text-on-surface-variant">Variação</span>
-            <span className={`font-bold ${Number(trendChange) > 0 ? "text-tertiary" : "text-primary"}`}>
-              {Number(trendChange) > 0 ? "+" : ""}{trendChange}%
-            </span>
+            <span className="font-bold text-on-surface-variant">--</span>
           </div>
         </div>
       </div>
