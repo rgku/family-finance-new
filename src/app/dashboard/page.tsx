@@ -128,6 +128,14 @@ export default function Dashboard() {
           </div>
 
           <main className="pt-28 px-6 max-w-2xl mx-auto space-y-8 pb-32">
+            {/* Floating Add Button */}
+            <Link 
+              href="/dashboard/transaction/new"
+              className="fixed bottom-24 right-6 z-40 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg shadow-primary/30 flex items-center justify-center hover:scale-110 transition-transform"
+            >
+              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
+            </Link>
+
             <section className={`relative overflow-hidden rounded-lg p-8 shadow-2xl ${isPositive ? "bg-gradient-to-br from-primary to-primary-container text-on-primary" : "bg-gradient-to-br from-tertiary to-tertiary-container text-on-tertiary"}`}>
               <p className="font-label text-sm font-medium opacity-80 mb-1">Saldo Atual</p>
               <h2 className="font-headline text-4xl font-extrabold tracking-tight">{formatCurrencyWithSymbol(balance.total)}</h2>
@@ -191,22 +199,23 @@ export default function Dashboard() {
             </section>
           </main>
 
-          <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-8 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]">
-            <Link href="/dashboard" className="flex flex-col items-center justify-center bg-surface-container text-primary rounded-full p-3">
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>home</span>
-              <span className="font-inter font-medium text-[10px] mt-1">Home</span>
+          <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]">
+            <Link href="/dashboard" className="flex flex-col items-center justify-center text-slate-500 p-2">
+              <span className="material-symbols-outlined" style={pathname === "/dashboard" ? { fontVariationSettings: "'FILL' 1" } : {}}>home</span>
+              <span className="font-inter font-medium text-[9px] mt-1">Home</span>
             </Link>
-            <Link href="/dashboard/transactions" className="flex flex-col items-center justify-center text-slate-500 p-3">
+            <Link href="/dashboard/transactions" className="flex flex-col items-center justify-center text-slate-500 p-2">
               <span className="material-symbols-outlined">receipt_long</span>
-              <span className="font-inter font-medium text-[10px] mt-1">Trans</span>
+              <span className="font-inter font-medium text-[9px] mt-1">Trans</span>
             </Link>
-            <Link href="/dashboard/transaction/new" className="flex flex-col items-center justify-center text-slate-500 p-3">
-              <span className="material-symbols-outlined">add_circle</span>
-              <span className="font-inter font-medium text-[10px] mt-1">Add</span>
-            </Link>
-            <Link href="/dashboard/goals" className="flex flex-col items-center justify-center text-slate-500 p-3">
+            <div className="w-12"></div>
+            <Link href="/dashboard/goals" className="flex flex-col items-center justify-center text-slate-500 p-2">
               <span className="material-symbols-outlined">track_changes</span>
-              <span className="font-inter font-medium text-[10px] mt-1">Metas</span>
+              <span className="font-inter font-medium text-[9px] mt-1">Metas</span>
+            </Link>
+            <Link href="/dashboard/settings" className="flex flex-col items-center justify-center text-slate-500 p-2">
+              <span className="material-symbols-outlined">settings</span>
+              <span className="font-inter font-medium text-[9px] mt-1">Def</span>
             </Link>
           </nav>
         </>
