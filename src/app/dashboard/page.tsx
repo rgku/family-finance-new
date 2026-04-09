@@ -202,19 +202,18 @@ export default function Dashboard() {
               <span className="material-symbols-outlined">receipt_long</span>
               <span className="font-inter font-medium text-[9px] mt-1">Trans</span>
             </Link>
-            <Link href="/dashboard/transaction/new" className="flex flex-col items-center justify-center p-2 flex-1 text-primary -mt-6">
-              <div className="w-12 h-12 bg-primary rounded-full shadow-lg shadow-primary/30 flex items-center justify-center -mb-2">
+            <Link href="/dashboard/transaction/new" className="flex flex-col items-center justify-center p-2 flex-1 -mt-6">
+              <div className="w-12 h-12 bg-primary rounded-full shadow-lg shadow-primary/30 flex items-center justify-center">
                 <span className="material-symbols-outlined text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
               </div>
-              <span className="font-inter font-medium text-[9px] mt-1">Add</span>
             </Link>
             <Link href="/dashboard/goals" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
               <span className="material-symbols-outlined">track_changes</span>
               <span className="font-inter font-medium text-[9px] mt-1">Metas</span>
             </Link>
-            <Link href="/dashboard/analytics" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
-              <span className="material-symbols-outlined">trending_up</span>
-              <span className="font-inter font-medium text-[9px] mt-1">Análise</span>
+            <Link href="/dashboard/budgets" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
+              <span className="material-symbols-outlined">pie_chart</span>
+              <span className="font-inter font-medium text-[9px] mt-1">Orç</span>
             </Link>
           </nav>
         </>
