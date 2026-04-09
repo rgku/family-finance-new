@@ -16,10 +16,12 @@ export default function AnalyticsPage() {
     categoryMap.set(t.category, (categoryMap.get(t.category) || 0) + t.amount);
   });
 
-  const categoryBreakdown = Array.from(categoryMap.entries()).map(([name, value]) => ({
+  const categoryColors = ["#4edea3", "#d0bcff", "#ffb3ad", "#fde68a", "#67e8f9", "#fb7185"];
+  
+  const categoryBreakdown = Array.from(categoryMap.entries()).map(([name, value], idx) => ({
     name,
     value,
-    color: "#4edea3",
+    color: categoryColors[idx % categoryColors.length],
   }));
 
   const previousMonth = expenses * 0.9;
