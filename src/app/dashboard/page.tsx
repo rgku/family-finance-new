@@ -201,23 +201,23 @@ export default function Dashboard() {
             </section>
           </main>
 
-          <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]">
-            <Link href="/dashboard" className="flex flex-col items-center justify-center text-slate-500 p-2">
+          <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-8 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]">
+            <Link href="/dashboard" className="flex flex-col items-center justify-center p-2 text-slate-500">
               <span className="material-symbols-outlined" style={pathname === "/dashboard" ? { fontVariationSettings: "'FILL' 1" } : {}}>home</span>
-              <span className="font-inter font-medium text-[9px] mt-1">Home</span>
+              <span className="font-inter font-medium text-[10px] mt-1">Home</span>
             </Link>
-            <Link href="/dashboard/transactions" className="flex flex-col items-center justify-center text-slate-500 p-2">
+            <Link href="/dashboard/transactions" className="flex flex-col items-center justify-center p-2 text-slate-500">
               <span className="material-symbols-outlined">receipt_long</span>
-              <span className="font-inter font-medium text-[9px] mt-1">Trans</span>
+              <span className="font-inter font-medium text-[10px] mt-1">Trans</span>
             </Link>
             <div className="w-12"></div>
-            <Link href="/dashboard/goals" className="flex flex-col items-center justify-center text-slate-500 p-2">
+            <Link href="/dashboard/goals" className="flex flex-col items-center justify-center p-2 text-slate-500">
               <span className="material-symbols-outlined">track_changes</span>
-              <span className="font-inter font-medium text-[9px] mt-1">Metas</span>
+              <span className="font-inter font-medium text-[10px] mt-1">Metas</span>
             </Link>
-            <Link href="/dashboard/settings" className="flex flex-col items-center justify-center text-slate-500 p-2">
+            <Link href="/dashboard/settings" className="flex flex-col items-center justify-center p-2 text-slate-500">
               <span className="material-symbols-outlined">settings</span>
-              <span className="font-inter font-medium text-[9px] mt-1">Def</span>
+              <span className="font-inter font-medium text-[10px] mt-1">Def</span>
             </Link>
           </nav>
         </>
