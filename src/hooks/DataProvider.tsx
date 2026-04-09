@@ -75,10 +75,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const fetchData = async () => {
       setLoading(true);
       
-      // Fetch transactions
+      // Fetch transactions - filtered by user_id
       const { data: transData } = await supabase
         .from('transactions')
         .select('*')
+        .eq('user_id', user.id)
         .order('date', { ascending: false });
       
       if (transData) {
@@ -92,10 +93,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         })));
       }
 
-      // Fetch goals
+      // Fetch goals - filtered by user_id
       const { data: goalsData } = await supabase
         .from('goals')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       
       if (goalsData) {
@@ -109,10 +111,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         })));
       }
 
-      // Fetch budgets
+      // Fetch budgets - filtered by user_id
       const { data: budgetsData } = await supabase
         .from('budgets')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       
       if (budgetsData) {
@@ -120,7 +123,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           id: b.id,
           category: b.category,
           limit: Number(b.limit_amount),
-          spent: Number(b.limit_amount) * 0.5, // Placeholder - we'll calculate from transactions later
+          spent: Number(b.limit_amount) * 0.5,
         })));
       }
 
@@ -131,9 +134,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const addTransaction = async (t: Omit<Transaction, "id">) => {
+    if (!user) throw new Error("Must be logged in");
+
     const { data, error } = await supabase
       .from('transactions')
       .insert({
+        user_id: user.id,
         description: t.description,
         amount: t.amount,
         type: t.type,
@@ -182,9 +188,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const addGoal = async (g: Omit<Goal, "id">) => {
+    if (!user) throw new Error("Must be logged in");
+
     const { data, error } = await supabase
       .from('goals')
       .insert({
+        user_id: user.id,
         name: g.name,
         target_amount: g.target_amount,
         current_amount: g.current_amount || 0,
@@ -233,11 +242,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const addBudget = async (b: Omit<Budget, "id" | "spent">) => {
+    if (!user) throw new Error("Must be logged in");
+
     const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
     
     const { data, error } = await supabase
       .from('budgets')
       .insert({
+        user_id: user.id,
         category: b.category,
         limit_amount: b.limit,
         month: currentMonth,

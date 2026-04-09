@@ -6,7 +6,7 @@
 -- 1. Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 2. Families table
+-- 2. Families table (optional - not used in single user mode)
 CREATE TABLE IF NOT EXISTS families (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
@@ -34,11 +34,10 @@ CREATE TABLE IF NOT EXISTS categories (
   family_id UUID REFERENCES families(id) ON DELETE CASCADE
 );
 
--- 5. Transactions table
+-- 5. Transactions table - ADD user_id
 CREATE TABLE IF NOT EXISTS transactions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  family_id UUID REFERENCES families(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   description TEXT NOT NULL,
   amount DECIMAL(12, 2) NOT NULL,
   type TEXT CHECK (type IN ('income', 'expense')) NOT NULL,
@@ -47,10 +46,10 @@ CREATE TABLE IF NOT EXISTS transactions (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 6. Goals table
+-- 6. Goals table - ADD user_id
 CREATE TABLE IF NOT EXISTS goals (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  family_id UUID REFERENCES families(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   name TEXT NOT NULL,
   target_amount DECIMAL(12, 2) NOT NULL,
   current_amount DECIMAL(12, 2) DEFAULT 0,
@@ -59,15 +58,15 @@ CREATE TABLE IF NOT EXISTS goals (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 7. Budgets table
+-- 7. Budgets table - ADD user_id
 CREATE TABLE IF NOT EXISTS budgets (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  family_id UUID REFERENCES families(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   category TEXT NOT NULL,
   month DATE NOT NULL,
   limit_amount DECIMAL(12, 2) NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(family_id, category, month)
+  UNIQUE(user_id, category, month)
 );
 
 -- ============================================
@@ -82,42 +81,42 @@ ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE goals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE budgets ENABLE ROW LEVEL SECURITY;
 
--- Families: Members can view their family
-CREATE POLICY "Family members can view families" ON families
-  FOR SELECT USING (
-    id IN (SELECT family_id FROM profiles WHERE id = auth.uid())
-  );
-
--- Profiles: Users can view their own profile
+-- Profiles: Users can view/update their own profile
+DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
 CREATE POLICY "Users can view own profile" ON profiles
   FOR SELECT USING (id = auth.uid());
 
--- Profiles: Users can update their own profile
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
 CREATE POLICY "Users can update own profile" ON profiles
   FOR UPDATE USING (id = auth.uid());
 
--- Categories: Family members can access family categories
-CREATE POLICY "Family can access categories" ON categories
+-- Transactions: Users can only access their own transactions
+DROP POLICY IF EXISTS "Family can access transactions" ON transactions;
+CREATE POLICY "Users can access own transactions" ON transactions
+  FOR ALL USING (user_id = auth.uid());
+
+-- Goals: Users can only access their own goals
+DROP POLICY IF EXISTS "Family can access goals" ON goals;
+CREATE POLICY "Users can access own goals" ON goals
+  FOR ALL USING (user_id = auth.uid());
+
+-- Budgets: Users can only access their own budgets
+DROP POLICY IF EXISTS "Family can access budgets" ON budgets;
+CREATE POLICY "Users can access own budgets" ON budgets
+  FOR ALL USING (user_id = auth.uid());
+
+-- Categories: Users can access their family's categories
+DROP POLICY IF EXISTS "Family can access categories" ON categories;
+CREATE POLICY "Users can access categories" ON categories
   FOR ALL USING (
     family_id IN (SELECT family_id FROM profiles WHERE id = auth.uid())
   );
 
--- Transactions: Family members can access family transactions
-CREATE POLICY "Family can access transactions" ON transactions
-  FOR ALL USING (
-    family_id IN (SELECT family_id FROM profiles WHERE id = auth.uid())
-  );
-
--- Goals: Family members can access family goals
-CREATE POLICY "Family can access goals" ON goals
-  FOR ALL USING (
-    family_id IN (SELECT family_id FROM profiles WHERE id = auth.uid())
-  );
-
--- Budgets: Family members can access family budgets
-CREATE POLICY "Family can access budgets" ON budgets
-  FOR ALL USING (
-    family_id IN (SELECT family_id FROM profiles WHERE id = auth.uid())
+-- Families: Members can view their family
+DROP POLICY IF EXISTS "Family members can view families" ON families;
+CREATE POLICY "Family members can view families" ON families
+  FOR SELECT USING (
+    id IN (SELECT family_id FROM profiles WHERE id = auth.uid())
   );
 
 -- ============================================
