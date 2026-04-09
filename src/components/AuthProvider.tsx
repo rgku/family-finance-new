@@ -30,15 +30,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        if (mounted) {
-          if (session?.user) {
+        if (mounted && session?.user) {
+          // Check if email is confirmed
+          if (session.user.email_confirmed_at) {
             setUser(session.user);
           } else {
-            // Check if there's a user on the server side
-            const { data: { user: serverUser } } = await supabase.auth.getUser();
-            if (mounted) {
-              setUser(serverUser);
-            }
+            // Email not confirmed - sign out and redirect to login
+            await supabase.auth.signOut();
+            setUser(null);
+          }
+        } else {
+          // No session, check server user
+          const { data: { user: serverUser } } = await supabase.auth.getUser();
+          if (mounted && serverUser?.email_confirmed_at) {
+            setUser(serverUser);
+          } else if (mounted && serverUser && !serverUser.email_confirmed_at) {
+            // Email not confirmed
+            await supabase.auth.signOut();
+            setUser(null);
           }
         }
       } catch (error) {
@@ -55,7 +64,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         if (mounted) {
-          setUser(session?.user ?? null);
+          if (session?.user?.email_confirmed_at) {
+            setUser(session.user);
+          } else {
+            // User logged in but email not confirmed - sign out
+            setUser(null);
+          }
           setLoading(false);
         }
       }

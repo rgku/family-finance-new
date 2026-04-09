@@ -31,16 +31,18 @@ export default function AuthPage() {
         });
         
         if (error) {
-          // Check if email needs confirmation
-          if (error.message.includes("Email not confirmed")) {
+          setError(error.message);
+        } else if (data.user) {
+          // Verify email is confirmed by fetching user data
+          const { data: userData } = await supabase.auth.getUser();
+          
+          if (!userData.user?.email_confirmed_at) {
+            // Sign out since email is not confirmed
+            await supabase.auth.signOut();
             setError("Confirma o teu email antes de entrar. Verifica a tua caixa de correio.");
           } else {
-            setError(error.message);
+            router.push("/dashboard");
           }
-        } else if (data.user && !data.user.email_confirmed_at) {
-          setError("Confirma o teu email antes de entrar. Verifica a tua caixa de correio.");
-        } else {
-          router.push("/dashboard");
         }
       } else {
         const { error, data } = await supabase.auth.signUp({
