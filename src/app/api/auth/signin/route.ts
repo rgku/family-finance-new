@@ -23,6 +23,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 401 });
     }
 
+    // Get the session and set cookies
+    if (data.session) {
+      const { access_token, refresh_token } = data.session;
+
+      // Set cookies for the client
+      const response = NextResponse.json({ 
+        user: data.user, 
+        session: data.session 
+      });
+
+      response.cookies.set('sb-access-token', access_token, {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24 * 7 // 1 week
+      });
+
+      response.cookies.set('sb-refresh-token', refresh_token, {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24 * 30 // 30 days
+      });
+
+      return response;
+    }
+
     return NextResponse.json({ user: data.user, session: data.session });
   } catch (error: any) {
     console.error("Signin error:", error);

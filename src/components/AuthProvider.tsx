@@ -20,6 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -27,9 +28,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSupabase(client);
 
     const getUser = async () => {
-      const { data: { user } } = await client.auth.getUser();
-      setUser(user);
-      setLoading(false);
+      try {
+        const { data: { user }, error } = await client.auth.getUser();
+        if (error) {
+          console.error("Error getting user:", error);
+        }
+        setUser(user);
+      } catch (err) {
+        console.error("Auth error:", err);
+      } finally {
+        setLoading(false);
+        setInitialLoadDone(true);
+      }
     };
 
     getUser();
@@ -37,7 +47,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = client.auth.onAuthStateChange(
       (_event, session) => {
         setUser(session?.user ?? null);
-        setLoading(false);
+        if (initialLoadDone) {
+          setLoading(false);
+        }
       }
     );
 
@@ -51,8 +63,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push("/");
   };
 
+  // Only show loading state during initial load, not during auth state changes
+  const isLoading = loading && !initialLoadDone;
+
   return (
-    <AuthContext.Provider value={{ supabase, user, loading, signOut }}>
+    <AuthContext.Provider value={{ supabase, user, loading: isLoading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

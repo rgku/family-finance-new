@@ -29,6 +29,34 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 
+    // Set cookies if session exists
+    if (data.session) {
+      const { access_token, refresh_token } = data.session;
+
+      const response = NextResponse.json({ 
+        user: data.user, 
+        session: data.session 
+      });
+
+      response.cookies.set('sb-access-token', access_token, {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24 * 7
+      });
+
+      response.cookies.set('sb-refresh-token', refresh_token, {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24 * 30
+      });
+
+      return response;
+    }
+
     return NextResponse.json({ user: data.user, session: data.session });
   } catch (error: any) {
     console.error("Signup error:", error);
