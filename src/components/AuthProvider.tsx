@@ -1,8 +1,9 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { createClient, SupabaseClient, User } from "@supabase/supabase-js";
+import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
+import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 interface AuthContextType {
   supabase: SupabaseClient | null;
@@ -20,25 +21,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
-    const client = createClient(supabaseUrl, supabaseKey);
+    // Use createBrowserClient which handles cookies automatically
+    const client = createBrowserClient(supabaseUrl, supabaseKey);
     setSupabase(client);
 
     const getUser = async () => {
       try {
         const { data: { user }, error } = await client.auth.getUser();
         if (error) {
-          console.error("Error getting user:", error);
+          console.error("Error getting user:", error.message);
         }
         setUser(user);
-      } catch (err) {
-        console.error("Auth error:", err);
+      } catch (err: any) {
+        console.error("Auth error:", err.message);
       } finally {
         setLoading(false);
-        setInitialLoadDone(true);
       }
     };
 
@@ -47,9 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = client.auth.onAuthStateChange(
       (_event, session) => {
         setUser(session?.user ?? null);
-        if (initialLoadDone) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     );
 
@@ -63,11 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push("/");
   };
 
-  // Only show loading state during initial load, not during auth state changes
-  const isLoading = loading && !initialLoadDone;
-
   return (
-    <AuthContext.Provider value={{ supabase, user, loading: isLoading, signOut }}>
+    <AuthContext.Provider value={{ supabase, user, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );
