@@ -51,7 +51,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-surface">
-      {/* Desktop Sidebar */}
+      {/* Desktop Sidebar - only show on desktop */}
       {!isMobile && (
         <aside className="fixed left-0 top-0 bottom-0 z-50 flex flex-col h-screen w-64 border-r border-slate-800/50 bg-slate-950/80 backdrop-blur-xl">
           <div className="p-8">
@@ -78,6 +78,10 @@ export default function Dashboard() {
             <Link href="/dashboard/analytics" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800/50">
               <span className="material-symbols-outlined">trending_up</span>
               <span>Análise</span>
+            </Link>
+            <Link href="/dashboard/settings" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800/50">
+              <span className="material-symbols-outlined">settings</span>
+              <span>Definições</span>
             </Link>
           </nav>
           <div className="p-4">

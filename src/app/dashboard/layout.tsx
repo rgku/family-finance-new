@@ -24,8 +24,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard/settings", icon: "settings", label: "Definições" },
   ];
 
-  // Don't wrap root dashboard - it has its own layout
-  if (pathname === "/dashboard") {
+  // Don't wrap root dashboard on mobile - it has its own layout
+  // But on desktop, we want to show sidebar
+  if (isMobile && pathname === "/dashboard") {
     return <>{children}</>;
   }
 
@@ -49,7 +50,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  // Desktop layout with sidebar
+  // Desktop layout with sidebar - includes dashboard root
   return (
     <div className="min-h-screen bg-surface">
       <aside className="fixed left-0 top-0 bottom-0 z-50 flex flex-col h-screen w-64 border-r border-slate-800/50 bg-slate-950/80 backdrop-blur-xl">
