@@ -27,7 +27,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   // Don't wrap root dashboard - it has its own layout with sidebar
-  if (pathname === "/dashboard") {
+  if (pathname === "/dashboard" || pathname === "/dashboard/settings/reset-password") {
     return <>{children}</>;
   }
 
