@@ -226,6 +226,8 @@ export default function ExportPage() {
       </div>
 
       {/* GDPR Notice */}
+      <div className="bg-surface-container-low border border-surface-container-high rounded-lg p-4">
+        <div className="flex items-start gap-3">
           <span className="material-symbols-outlined text-on-surface-variant">info</span>
           <div className="text-sm text-on-surface-variant">
             <p className="font-medium text-on-surface mb-1">Direito à Portabilidade (GDPR)</p>
