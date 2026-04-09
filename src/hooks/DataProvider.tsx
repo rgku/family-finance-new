@@ -47,13 +47,15 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  // Initialize with demo data from localStorage or defaults
+  const currentYear = new Date().getFullYear();
+  const currentMonth = String(new Date().getMonth() + 1).padStart(2, "0");
+  
   const [transactions, setTransactions] = useState<Transaction[]>([
-    { id: "1", description: "Salário", amount: 5200, type: "income", category: "Renda", date: "2024-04-01" },
-    { id: "2", description: "Supermercado", amount: 150, type: "expense", category: "Alimentação", date: "2024-04-03" },
-    { id: "3", description: "Restaurante", amount: 85, type: "expense", category: "Lazer", date: "2024-04-05" },
-    { id: "4", description: "Farmácia", amount: 45, type: "expense", category: "Saúde", date: "2024-04-07" },
-    { id: "5", description: "Uber", amount: 32, type: "expense", category: "Transporte", date: "2024-04-08" },
+    { id: "1", description: "Salário", amount: 5200, type: "income", category: "Renda", date: `${currentYear}-${currentMonth}-01` },
+    { id: "2", description: "Supermercado", amount: 150, type: "expense", category: "Alimentação", date: `${currentYear}-${currentMonth}-03` },
+    { id: "3", description: "Restaurante", amount: 85, type: "expense", category: "Lazer", date: `${currentYear}-${currentMonth}-05` },
+    { id: "4", description: "Farmácia", amount: 45, type: "expense", category: "Saúde", date: `${currentYear}-${currentMonth}-07` },
+    { id: "5", description: "Uber", amount: 32, type: "expense", category: "Transporte", date: `${currentYear}-${currentMonth}-08` },
   ]);
 
   const [goals, setGoals] = useState<Goal[]>([
