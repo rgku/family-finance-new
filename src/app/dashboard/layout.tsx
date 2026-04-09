@@ -19,9 +19,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navItems = [
     { href: "/dashboard", icon: "home", label: "Home" },
-    { href: "/dashboard/transactions", icon: "receipt_long", label: "Trans" },
+    { href: "/dashboard/transactions", icon: "receipt_long", label: "Transações" },
     { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
-    { href: "/dashboard/budgets", icon: "pie_chart", label: "Orç" },
+    { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
+    { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
+    { href: "/dashboard/profile", icon: "person", label: "Perfil" },
+    { href: "/dashboard/settings", icon: "settings", label: "Definições" },
   ];
 
   // Don't wrap root dashboard - it has its own layout with sidebar
@@ -44,23 +47,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className="font-inter font-medium text-[9px] mt-1">{item.label}</span>
             </Link>
           ))}
-          {user ? (
-            <button 
-              onClick={() => signOut()}
-              className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500 hover:text-error"
-            >
-              <span className="material-symbols-outlined">logout</span>
-              <span className="font-inter font-medium text-[9px] mt-1">Sair</span>
-            </button>
-          ) : (
-            <Link 
-              href="/"
-              className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500"
-            >
-              <span className="material-symbols-outlined">login</span>
-              <span className="font-inter font-medium text-[9px] mt-1">Entrar</span>
-            </Link>
-          )}
         </nav>
       </>
     );

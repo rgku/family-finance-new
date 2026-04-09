@@ -97,11 +97,9 @@ export default function Dashboard() {
       {isMobile ? (
         <>
           <header className="fixed top-0 w-full z-50 bg-surface flex justify-between items-center px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
-                <span className="material-symbols-outlined text-primary">person</span>
-              </div>
-            </div>
+            <Link href="/dashboard/profile" className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
+              <span className="material-symbols-outlined text-primary">person</span>
+            </Link>
             <Link href="/dashboard/settings" className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
               <span className="material-symbols-outlined text-primary">settings</span>
             </Link>
@@ -211,9 +209,9 @@ export default function Dashboard() {
               <span className="material-symbols-outlined">track_changes</span>
               <span className="font-inter font-medium text-[9px] mt-1">Metas</span>
             </Link>
-            <Link href="/dashboard/budgets" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
-              <span className="material-symbols-outlined">pie_chart</span>
-              <span className="font-inter font-medium text-[9px] mt-1">Orç</span>
+            <Link href="/dashboard/profile" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
+              <span className="material-symbols-outlined">person</span>
+              <span className="font-inter font-medium text-[9px] mt-1">Perfil</span>
             </Link>
           </nav>
         </>
