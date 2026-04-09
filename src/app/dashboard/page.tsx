@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
@@ -10,6 +10,27 @@ export default function Dashboard() {
   const { user, signOut, supabase, loading } = useAuth();
   const { transactions, goals: dataGoals } = useData();
   const [isMobile, setIsMobile] = useState(true);
+  
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+
+  const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  const [year, month] = selectedMonth.split("-").map(Number);
+  const monthName = monthNames[month - 1];
+
+  const prevMonth = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
+  const nextMonth = month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 };
+  const now = new Date();
+  const canGoNext = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);
+
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      const transDate = new Date(t.date);
+      return transDate.getFullYear() === year && transDate.getMonth() === month - 1;
+    });
+  }, [transactions, year, month]);
 
   useEffect(() => {
     const checkDevice = () => {
@@ -20,8 +41,8 @@ export default function Dashboard() {
     return () => window.removeEventListener('resize', checkDevice);
   }, []);
 
-  const totalIncome = transactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
-  const totalExpenses = transactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
+  const totalIncome = filteredTransactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = filteredTransactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
   const balance = { total: totalIncome - totalExpenses, income: totalIncome, expenses: totalExpenses };
   const goals = dataGoals;
 
@@ -74,16 +95,35 @@ export default function Dashboard() {
               <div className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
                 <span className="material-symbols-outlined text-primary">person</span>
               </div>
-              <span className="font-headline font-bold text-lg tracking-tight text-primary">
-                {new Date().toLocaleDateString("pt-PT", { month: "long" })}
-              </span>
             </div>
             <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container text-primary">
               <span className="material-symbols-outlined">notifications</span>
             </button>
           </header>
 
-          <main className="pt-24 px-6 max-w-2xl mx-auto space-y-8 pb-32">
+          {/* Month Navigation */}
+          <div className="fixed top-16 left-0 right-0 z-40 bg-surface border-b border-surface-container py-2">
+            <div className="flex items-center justify-center gap-4">
+              <button
+                onClick={() => setSelectedMonth(`${prevMonth.year}-${String(prevMonth.month).padStart(2, "0")}`)}
+                className="p-1 rounded-full hover:bg-surface-container text-on-surface-variant"
+              >
+                <span className="material-symbols-outlined">chevron_left</span>
+              </button>
+              <span className="text-sm font-bold text-on-surface min-w-[120px] text-center">
+                {monthName} {year}
+              </span>
+              <button
+                onClick={() => setSelectedMonth(`${nextMonth.year}-${String(nextMonth.month).padStart(2, "0")}`)}
+                disabled={!canGoNext}
+                className={`p-1 rounded-full text-on-surface-variant ${canGoNext ? "hover:bg-surface-container" : "opacity-50"}`}
+              >
+                <span className="material-symbols-outlined">chevron_right</span>
+              </button>
+            </div>
+          </div>
+
+          <main className="pt-28 px-6 max-w-2xl mx-auto space-y-8 pb-32">
             <section className={`relative overflow-hidden rounded-lg p-8 shadow-2xl ${isPositive ? "bg-gradient-to-br from-primary to-primary-container text-on-primary" : "bg-gradient-to-br from-tertiary to-tertiary-container text-on-tertiary"}`}>
               <p className="font-label text-sm font-medium opacity-80 mb-1">Saldo Atual</p>
               <h2 className="font-headline text-4xl font-extrabold tracking-tight">{formatCurrencyWithSymbol(balance.total)}</h2>
@@ -124,22 +164,26 @@ export default function Dashboard() {
 
             <section className="space-y-4">
               <h3 className="font-headline text-xl font-bold text-on-surface">Transações</h3>
-              {transactions.map(trans => (
-                <div key={trans.id} className="flex items-center justify-between p-4 bg-surface-container rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center">
-                      <span className="material-symbols-outlined">{trans.type === "income" ? "payments" : "shopping_bag"}</span>
+              {filteredTransactions.length === 0 ? (
+                <p className="text-on-surface-variant text-center py-4">Sem transações neste mês</p>
+              ) : (
+                filteredTransactions.map(trans => (
+                  <div key={trans.id} className="flex items-center justify-between p-4 bg-surface-container rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center">
+                        <span className="material-symbols-outlined">{trans.type === "income" ? "payments" : "shopping_bag"}</span>
+                      </div>
+                      <div>
+                        <p className="font-semibold">{trans.description}</p>
+                        <p className="text-xs text-on-surface-variant">{trans.category}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-semibold">{trans.description}</p>
-                      <p className="text-xs text-on-surface-variant">{trans.category}</p>
-                    </div>
+                    <p className={`font-bold ${trans.type === "income" ? "text-primary" : "text-tertiary"}`}>
+                      {trans.type === "income" ? "+" : "-"}{formatCurrencyWithSymbol(trans.amount)}
+                    </p>
                   </div>
-                  <p className={`font-bold ${trans.type === "income" ? "text-primary" : "text-tertiary"}`}>
-                    {trans.type === "income" ? "+" : "-"}{formatCurrencyWithSymbol(trans.amount)}
-                  </p>
-                </div>
-              ))}
+                ))
+              )}
             </section>
           </main>
 
@@ -164,7 +208,7 @@ export default function Dashboard() {
         </>
       ) : (
         <main className="ml-64 p-8 space-y-8">
-          <header className="flex justify-between items-center mb-8">
+          <header className="flex justify-between items-center mb-4">
             <div>
               <h1 className="text-3xl font-bold text-on-surface">Dashboard</h1>
               <p className="text-on-surface-variant">Bem-vindo de volta</p>
@@ -173,6 +217,26 @@ export default function Dashboard() {
               + Nova Transação
             </Link>
           </header>
+
+          {/* Month Navigation */}
+          <div className="flex items-center justify-center gap-4 py-2 bg-surface-container rounded-lg">
+            <button
+              onClick={() => setSelectedMonth(`${prevMonth.year}-${String(prevMonth.month).padStart(2, "0")}`)}
+              className="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant"
+            >
+              <span className="material-symbols-outlined">chevron_left</span>
+            </button>
+            <span className="text-lg font-bold text-on-surface min-w-[160px] text-center">
+              {monthName} {year}
+            </span>
+            <button
+              onClick={() => setSelectedMonth(`${nextMonth.year}-${String(nextMonth.month).padStart(2, "0")}`)}
+              disabled={!canGoNext}
+              className={`p-2 rounded-full text-on-surface-variant ${canGoNext ? "hover:bg-surface-container-high" : "opacity-50"}`}
+            >
+              <span className="material-symbols-outlined">chevron_right</span>
+            </button>
+          </div>
 
           <div className="grid grid-cols-3 gap-6">
             <div className={`col-span-2 p-8 rounded-lg ${isPositive ? "bg-gradient-to-br from-primary to-primary-container text-on-primary" : "bg-gradient-to-br from-tertiary to-tertiary-container text-on-tertiary"}`}>
@@ -211,20 +275,24 @@ export default function Dashboard() {
             </div>
             <div className="bg-surface-container p-6 rounded-lg">
               <h3 className="font-bold text-lg mb-4">Transações Recentes</h3>
-              {transactions.map(trans => (
-                <div key={trans.id} className="flex justify-between py-3 border-b border-surface-container-highest">
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-slate-400">{trans.type === "income" ? "payments" : "shopping_bag"}</span>
-                    <div>
-                      <p className="font-medium">{trans.description}</p>
-                      <p className="text-xs text-on-surface-variant">{trans.category}</p>
+              {filteredTransactions.length === 0 ? (
+                <p className="text-on-surface-variant text-center py-4">Sem transações neste mês</p>
+              ) : (
+                filteredTransactions.slice(0, 5).map(trans => (
+                  <div key={trans.id} className="flex justify-between py-3 border-b border-surface-container-highest">
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-slate-400">{trans.type === "income" ? "payments" : "shopping_bag"}</span>
+                      <div>
+                        <p className="font-medium">{trans.description}</p>
+                        <p className="text-xs text-on-surface-variant">{trans.category}</p>
+                      </div>
                     </div>
+                    <span className={`font-bold ${trans.type === "income" ? "text-primary" : "text-tertiary"}`}>
+                      {trans.type === "income" ? "+" : "-"}{formatCurrencyWithSymbol(trans.amount)}
+                    </span>
                   </div>
-                  <span className={`font-bold ${trans.type === "income" ? "text-primary" : "text-tertiary"}`}>
-                    {trans.type === "income" ? "+" : "-"}{formatCurrencyWithSymbol(trans.amount)}
-                  </span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </main>
