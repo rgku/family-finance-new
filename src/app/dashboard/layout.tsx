@@ -21,6 +21,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
     { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
     { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
+    { href: "/dashboard/settings", icon: "settings", label: "Definições" },
   ];
 
   // Don't wrap root dashboard - it has its own layout
