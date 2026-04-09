@@ -102,9 +102,9 @@ export default function Dashboard() {
                 <span className="material-symbols-outlined text-primary">person</span>
               </div>
             </div>
-            <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container text-primary">
-              <span className="material-symbols-outlined">notifications</span>
-            </button>
+            <Link href="/dashboard/settings" className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
+              <span className="material-symbols-outlined text-primary">settings</span>
+            </Link>
           </header>
 
           {/* Month Navigation */}
@@ -130,14 +130,6 @@ export default function Dashboard() {
           </div>
 
           <main className="pt-28 px-6 max-w-2xl mx-auto space-y-8 pb-32">
-            {/* Floating Add Button */}
-            <Link 
-              href="/dashboard/transaction/new"
-              className="fixed bottom-24 right-6 z-40 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg shadow-primary/30 flex items-center justify-center hover:scale-110 transition-transform"
-            >
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
-            </Link>
-
             <section className={`relative overflow-hidden rounded-lg p-8 shadow-2xl ${isPositive ? "bg-gradient-to-br from-primary to-primary-container text-on-primary" : "bg-gradient-to-br from-tertiary to-tertiary-container text-on-tertiary"}`}>
               <p className="font-label text-sm font-medium opacity-80 mb-1">Saldo Atual</p>
               <h2 className="font-headline text-4xl font-extrabold tracking-tight">{formatCurrencyWithSymbol(balance.total)}</h2>
@@ -210,17 +202,19 @@ export default function Dashboard() {
               <span className="material-symbols-outlined">receipt_long</span>
               <span className="font-inter font-medium text-[9px] mt-1">Trans</span>
             </Link>
+            <Link href="/dashboard/transaction/new" className="flex flex-col items-center justify-center p-2 flex-1 text-primary -mt-6">
+              <div className="w-12 h-12 bg-primary rounded-full shadow-lg shadow-primary/30 flex items-center justify-center -mb-2">
+                <span className="material-symbols-outlined text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
+              </div>
+              <span className="font-inter font-medium text-[9px] mt-1">Add</span>
+            </Link>
             <Link href="/dashboard/goals" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
               <span className="material-symbols-outlined">track_changes</span>
               <span className="font-inter font-medium text-[9px] mt-1">Metas</span>
             </Link>
-            <Link href="/dashboard/budgets" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
-              <span className="material-symbols-outlined">pie_chart</span>
-              <span className="font-inter font-medium text-[9px] mt-1">Orç</span>
-            </Link>
-            <Link href="/dashboard/settings" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
-              <span className="material-symbols-outlined">settings</span>
-              <span className="font-inter font-medium text-[9px] mt-1">Def</span>
+            <Link href="/dashboard/analytics" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
+              <span className="material-symbols-outlined">trending_up</span>
+              <span className="font-inter font-medium text-[9px] mt-1">Análise</span>
             </Link>
           </nav>
         </>

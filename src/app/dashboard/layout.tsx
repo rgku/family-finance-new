@@ -19,11 +19,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const navItems = [
     { href: "/dashboard", icon: "home", label: "Home" },
-    { href: "/dashboard/transactions", icon: "receipt_long", label: "Transações" },
+    { href: "/dashboard/transactions", icon: "receipt_long", label: "Trans" },
     { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
-    { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
     { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
-    { href: "/dashboard/settings", icon: "settings", label: "Definições" },
   ];
 
   // Don't wrap root dashboard - it has its own layout with sidebar
@@ -36,7 +34,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <>
         {children}
         <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-2 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]">
-          {navItems.slice(0, 5).map((item) => (
+          {navItems.map((item) => (
             <Link 
               key={item.href} 
               href={item.href}
