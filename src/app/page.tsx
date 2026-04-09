@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
+import Link from "next/link";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
@@ -184,6 +185,14 @@ export default function AuthPage() {
               {loading ? "A processar..." : isLogin ? "Entrar" : "Criar Conta"}
             </button>
           </form>
+
+          {isLogin && (
+            <p className="text-center">
+              <Link href="/forgot-password" className="text-primary font-semibold hover:underline">
+                Esqueceu a password?
+              </Link>
+            </p>
+          )}
 
           <p className="text-center text-on-surface-variant text-sm">
             {isLogin ? "Ainda não tem conta? " : "Já tem conta? "}
