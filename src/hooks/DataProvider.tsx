@@ -1,6 +1,11 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createBrowserClient } from "@supabase/ssr";
+import { useAuth } from "@/components/AuthProvider";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ziyriwdkgankrbmsjvhk.supabase.co';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppeXJpd2RrZ2Fua3JibXNqdmhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3Mjg2MTUsImV4cCI6MjA5MTMwNDYxNX0.ukeAK91Nf13jL6LDhw8mrPrUlb98743BqyRn7Ns1UIA';
 
 export interface Transaction {
   id: string;
@@ -29,82 +34,250 @@ export interface Budget {
 
 interface DataContextType {
   transactions: Transaction[];
-  addTransaction: (t: Omit<Transaction, "id">) => void;
-  updateTransaction: (id: string, t: Partial<Transaction>) => void;
-  deleteTransaction: (id: string) => void;
+  addTransaction: (t: Omit<Transaction, "id">) => Promise<void>;
+  updateTransaction: (id: string, t: Partial<Transaction>) => Promise<void>;
+  deleteTransaction: (id: string) => Promise<void>;
   
   goals: Goal[];
-  addGoal: (g: Omit<Goal, "id">) => void;
-  updateGoal: (id: string, g: Partial<Goal>) => void;
-  deleteGoal: (id: string) => void;
+  addGoal: (g: Omit<Goal, "id">) => Promise<void>;
+  updateGoal: (id: string, g: Partial<Goal>) => Promise<void>;
+  deleteGoal: (id: string) => Promise<void>;
   
   budgets: Budget[];
-  addBudget: (b: Omit<Budget, "id" | "spent">) => void;
-  updateBudget: (id: string, b: Partial<Budget>) => void;
-  deleteBudget: (id: string) => void;
+  addBudget: (b: Omit<Budget, "id" | "spent">) => Promise<void>;
+  updateBudget: (id: string, b: Partial<Budget>) => Promise<void>;
+  deleteBudget: (id: string) => Promise<void>;
+  
+  loading: boolean;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
+const supabase = createBrowserClient(supabaseUrl, supabaseKey);
+
 export function DataProvider({ children }: { children: ReactNode }) {
-  const currentYear = new Date().getFullYear();
-  const currentMonth = String(new Date().getMonth() + 1).padStart(2, "0");
+  const { user } = useAuth();
   
-  const [transactions, setTransactions] = useState<Transaction[]>([
-    { id: "1", description: "Salário", amount: 5200, type: "income", category: "Renda", date: `${currentYear}-${currentMonth}-01` },
-    { id: "2", description: "Supermercado", amount: 150, type: "expense", category: "Alimentação", date: `${currentYear}-${currentMonth}-03` },
-    { id: "3", description: "Restaurante", amount: 85, type: "expense", category: "Lazer", date: `${currentYear}-${currentMonth}-05` },
-    { id: "4", description: "Farmácia", amount: 45, type: "expense", category: "Saúde", date: `${currentYear}-${currentMonth}-07` },
-    { id: "5", description: "Uber", amount: 32, type: "expense", category: "Transporte", date: `${currentYear}-${currentMonth}-08` },
-  ]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [goals, setGoals] = useState<Goal[]>([
-    { id: "1", name: "Novo Carro", target_amount: 80000, current_amount: 45000, icon: "directions_car" },
-    { id: "2", name: "Viagem Japão", target_amount: 15000, current_amount: 12000, icon: "flight" },
-  ]);
+  useEffect(() => {
+    if (!user) {
+      setTransactions([]);
+      setGoals([]);
+      setBudgets([]);
+      setLoading(false);
+      return;
+    }
 
-  const [budgets, setBudgets] = useState<Budget[]>([
-    { id: "1", category: "Alimentação", limit: 800, spent: 650 },
-    { id: "2", category: "Moradia", limit: 1200, spent: 1200 },
-    { id: "3", category: "Transporte", limit: 300, spent: 180 },
-  ]);
+    const fetchData = async () => {
+      setLoading(true);
+      
+      // Fetch transactions
+      const { data: transData } = await supabase
+        .from('transactions')
+        .select('*')
+        .order('date', { ascending: false });
+      
+      if (transData) {
+        setTransactions(transData.map(t => ({
+          id: t.id,
+          description: t.description,
+          amount: Number(t.amount),
+          type: t.type,
+          category: t.category,
+          date: t.date,
+        })));
+      }
 
-  const addTransaction = (t: Omit<Transaction, "id">) => {
-    const newTransaction = { ...t, id: Date.now().toString() };
-    setTransactions(prev => [newTransaction, ...prev]);
+      // Fetch goals
+      const { data: goalsData } = await supabase
+        .from('goals')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (goalsData) {
+        setGoals(goalsData.map(g => ({
+          id: g.id,
+          name: g.name,
+          target_amount: Number(g.target_amount),
+          current_amount: Number(g.current_amount),
+          deadline: g.deadline,
+          icon: g.icon || 'savings',
+        })));
+      }
+
+      // Fetch budgets
+      const { data: budgetsData } = await supabase
+        .from('budgets')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (budgetsData) {
+        setBudgets(budgetsData.map(b => ({
+          id: b.id,
+          category: b.category,
+          limit: Number(b.limit_amount),
+          spent: Number(b.limit_amount) * 0.5, // Placeholder - we'll calculate from transactions later
+        })));
+      }
+
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [user]);
+
+  const addTransaction = async (t: Omit<Transaction, "id">) => {
+    const { data, error } = await supabase
+      .from('transactions')
+      .insert({
+        description: t.description,
+        amount: t.amount,
+        type: t.type,
+        category: t.category,
+        date: t.date,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    if (data) {
+      setTransactions(prev => [{
+        id: data.id,
+        description: data.description,
+        amount: Number(data.amount),
+        type: data.type,
+        category: data.category,
+        date: data.date,
+      }, ...prev]);
+    }
   };
 
-  const updateTransaction = (id: string, t: Partial<Transaction>) => {
-    setTransactions(prev => prev.map(trans => trans.id === id ? { ...trans, ...t } : trans));
+  const updateTransaction = async (id: string, t: Partial<Transaction>) => {
+    const { error } = await supabase
+      .from('transactions')
+      .update(t)
+      .eq('id', id);
+
+    if (error) throw error;
+    
+    setTransactions(prev => prev.map(trans => 
+      trans.id === id ? { ...trans, ...t } : trans
+    ));
   };
 
-  const deleteTransaction = (id: string) => {
+  const deleteTransaction = async (id: string) => {
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    
     setTransactions(prev => prev.filter(trans => trans.id !== id));
   };
 
-  const addGoal = (g: Omit<Goal, "id">) => {
-    const newGoal = { ...g, id: Date.now().toString() };
-    setGoals(prev => [...prev, newGoal]);
+  const addGoal = async (g: Omit<Goal, "id">) => {
+    const { data, error } = await supabase
+      .from('goals')
+      .insert({
+        name: g.name,
+        target_amount: g.target_amount,
+        current_amount: g.current_amount || 0,
+        deadline: g.deadline,
+        icon: g.icon,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    if (data) {
+      setGoals(prev => [...prev, {
+        id: data.id,
+        name: data.name,
+        target_amount: Number(data.target_amount),
+        current_amount: Number(data.current_amount),
+        deadline: data.deadline,
+        icon: data.icon || 'savings',
+      }]);
+    }
   };
 
-  const updateGoal = (id: string, g: Partial<Goal>) => {
-    setGoals(prev => prev.map(goal => goal.id === id ? { ...goal, ...g } : goal));
+  const updateGoal = async (id: string, g: Partial<Goal>) => {
+    const { error } = await supabase
+      .from('goals')
+      .update(g)
+      .eq('id', id);
+
+    if (error) throw error;
+    
+    setGoals(prev => prev.map(goal => 
+      goal.id === id ? { ...goal, ...g } : goal
+    ));
   };
 
-  const deleteGoal = (id: string) => {
+  const deleteGoal = async (id: string) => {
+    const { error } = await supabase
+      .from('goals')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    
     setGoals(prev => prev.filter(goal => goal.id !== id));
   };
 
-  const addBudget = (b: Omit<Budget, "id" | "spent">) => {
-    const newBudget = { ...b, id: Date.now().toString(), spent: 0 };
-    setBudgets(prev => [...prev, newBudget]);
+  const addBudget = async (b: Omit<Budget, "id" | "spent">) => {
+    const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
+    
+    const { data, error } = await supabase
+      .from('budgets')
+      .insert({
+        category: b.category,
+        limit_amount: b.limit,
+        month: currentMonth,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    if (data) {
+      setBudgets(prev => [...prev, {
+        id: data.id,
+        category: data.category,
+        limit: Number(data.limit_amount),
+        spent: 0,
+      }]);
+    }
   };
 
-  const updateBudget = (id: string, b: Partial<Budget>) => {
-    setBudgets(prev => prev.map(budget => budget.id === id ? { ...budget, ...b } : budget));
+  const updateBudget = async (id: string, b: Partial<Budget>) => {
+    const { error } = await supabase
+      .from('budgets')
+      .update({ limit_amount: b.limit })
+      .eq('id', id);
+
+    if (error) throw error;
+    
+    setBudgets(prev => prev.map(budget => 
+      budget.id === id ? { ...budget, ...b } : budget
+    ));
   };
 
-  const deleteBudget = (id: string) => {
+  const deleteBudget = async (id: string) => {
+    const { error } = await supabase
+      .from('budgets')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    
     setBudgets(prev => prev.filter(budget => budget.id !== id));
   };
 
@@ -113,6 +286,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       transactions, addTransaction, updateTransaction, deleteTransaction,
       goals, addGoal, updateGoal, deleteGoal,
       budgets, addBudget, updateBudget, deleteBudget,
+      loading,
     }}>
       {children}
     </DataContext.Provider>

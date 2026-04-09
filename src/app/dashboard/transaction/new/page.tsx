@@ -59,18 +59,23 @@ export default function NewTransaction() {
 
     setLoading(true);
 
-    addTransaction({
-      description,
-      amount: parseFloat(amount),
-      type,
-      category: category || "Outros",
-      date,
-    });
-    
-    alert("Transação criada com sucesso!");
-    router.push("/dashboard");
-    
-    setLoading(false);
+    try {
+      await addTransaction({
+        description,
+        amount: parseFloat(amount),
+        type,
+        category: category || "Outros",
+        date,
+      });
+      
+      alert("Transação criada com sucesso!");
+      router.push("/dashboard");
+    } catch (error) {
+      alert("Erro ao criar transação");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
