@@ -25,6 +25,9 @@ export default function Dashboard() {
   const balance = { total: totalIncome - totalExpenses, income: totalIncome, expenses: totalExpenses };
   const goals = dataGoals;
 
+  const monthChange = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome * 100).toFixed(0) : "0";
+  const isPositive = balance.total >= 0;
+
   return (
     <div className="min-h-screen bg-surface">
       {/* Desktop Sidebar */}
@@ -81,12 +84,12 @@ export default function Dashboard() {
           </header>
 
           <main className="pt-24 px-6 max-w-2xl mx-auto space-y-8 pb-32">
-            <section className={`relative overflow-hidden rounded-lg p-8 shadow-2xl ${balance.total >= 0 ? "bg-gradient-to-br from-primary to-primary-container text-on-primary" : "bg-gradient-to-br from-tertiary to-tertiary-container text-on-tertiary"}`}>
+            <section className={`relative overflow-hidden rounded-lg p-8 shadow-2xl ${isPositive ? "bg-gradient-to-br from-primary to-primary-container text-on-primary" : "bg-gradient-to-br from-tertiary to-tertiary-container text-on-tertiary"}`}>
               <p className="font-label text-sm font-medium opacity-80 mb-1">Saldo Atual</p>
               <h2 className="font-headline text-4xl font-extrabold tracking-tight">{formatCurrencyWithSymbol(balance.total)}</h2>
               <div className="mt-6 flex items-center gap-2 text-sm font-semibold bg-white/10 backdrop-blur-md w-fit px-3 py-1 rounded-full">
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>{balance.total >= 0 ? "trending_up" : "trending_down"}</span>
-                <span>{balance.total >= 0 ? "+12% este mês" : "Despesas superiores"}</span>
+                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>{isPositive ? "trending_up" : "trending_down"}</span>
+                <span>{isPositive ? `+${monthChange}% este mês` : "Despesas superiores"}</span>
               </div>
             </section>
 
@@ -172,11 +175,11 @@ export default function Dashboard() {
           </header>
 
           <div className="grid grid-cols-3 gap-6">
-            <div className={`col-span-2 p-8 rounded-lg ${balance.total >= 0 ? "bg-gradient-to-br from-primary to-primary-container text-on-primary" : "bg-gradient-to-br from-tertiary to-tertiary-container text-on-tertiary"}`}>
+            <div className={`col-span-2 p-8 rounded-lg ${isPositive ? "bg-gradient-to-br from-primary to-primary-container text-on-primary" : "bg-gradient-to-br from-tertiary to-tertiary-container text-on-tertiary"}`}>
               <p className="text-sm opacity-80">Saldo Total</p>
               <h2 className="text-5xl font-bold mt-2">{formatCurrencyWithSymbol(balance.total)}</h2>
               <div className="mt-6 flex gap-4">
-                <span className="bg-white/10 px-4 py-2 rounded-full text-sm">{balance.total >= 0 ? "+12% este mês" : "Despesas superiores"}</span>
+                <span className="bg-white/10 px-4 py-2 rounded-full text-sm">{isPositive ? `+${monthChange}% este mês` : "Despesas superiores"}</span>
               </div>
             </div>
             <div className="space-y-4">
