@@ -56,18 +56,26 @@ export default function Dashboard() {
             <p className="text-[10px] uppercase tracking-widest text-slate-500 mt-1">Family Wealth</p>
           </div>
           <nav className="flex-1 px-4 space-y-2">
-            <a className="flex items-center gap-3 px-4 py-3 text-emerald-400 font-bold border-r-2 border-emerald-400 bg-emerald-400/5" href="#">
+            <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 text-emerald-400 font-bold border-r-2 border-emerald-400 bg-emerald-400/5">
               <span className="material-symbols-outlined">home</span>
               <span>Home</span>
-            </a>
-            <a className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800/50" href="#">
+            </Link>
+            <Link href="/dashboard/transactions" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800/50">
               <span className="material-symbols-outlined">account_balance_wallet</span>
               <span>Transações</span>
-            </a>
-            <a className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800/50" href="#">
+            </Link>
+            <Link href="/dashboard/goals" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800/50">
               <span className="material-symbols-outlined">track_changes</span>
               <span>Metas</span>
-            </a>
+            </Link>
+            <Link href="/dashboard/budgets" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800/50">
+              <span className="material-symbols-outlined">pie_chart</span>
+              <span>Orçamentos</span>
+            </Link>
+            <Link href="/dashboard/analytics" className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-100 hover:bg-slate-800/50">
+              <span className="material-symbols-outlined">trending_up</span>
+              <span>Análise</span>
+            </Link>
           </nav>
           <div className="p-4">
             <button onClick={signOut} className="w-full py-3 bg-surface-container text-on-surface rounded-lg text-sm font-medium hover:bg-surface-variant">
@@ -157,6 +165,10 @@ export default function Dashboard() {
             <Link href="/dashboard" className="flex flex-col items-center justify-center bg-surface-container text-primary rounded-full p-3">
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>home</span>
               <span className="font-inter font-medium text-[10px] mt-1">Home</span>
+            </Link>
+            <Link href="/dashboard/transactions" className="flex flex-col items-center justify-center text-slate-500 p-3">
+              <span className="material-symbols-outlined">receipt_long</span>
+              <span className="font-inter font-medium text-[10px] mt-1">Trans</span>
             </Link>
             <Link href="/dashboard/transaction/new" className="flex flex-col items-center justify-center text-slate-500 p-3">
               <span className="material-symbols-outlined">add_circle</span>
