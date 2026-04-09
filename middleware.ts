@@ -32,7 +32,9 @@ export async function middleware(request: NextRequest) {
   const isPublicRoute = 
     request.nextUrl.pathname === '/' || 
     request.nextUrl.pathname.startsWith('/auth') ||
-    request.nextUrl.pathname.startsWith('/api/auth')
+    request.nextUrl.pathname.startsWith('/api/auth') ||
+    request.nextUrl.pathname === '/forgot-password' ||
+    request.nextUrl.pathname === '/dashboard/settings/reset-password'
 
   // If user is not authenticated and trying to access protected route, redirect to login
   if (!user && !isPublicRoute && request.nextUrl.pathname.startsWith('/dashboard')) {
