@@ -57,12 +57,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push("/");
   };
 
-  if (!supabaseUrl || !supabaseKey) {
-    return <>{children}</>;
-  }
+  const defaultValue = {
+    supabase,
+    user,
+    loading: !supabaseUrl || !supabaseKey ? false : loading,
+    signOut: async () => {},
+  };
 
   return (
-    <AuthContext.Provider value={{ supabase, user, loading, signOut }}>
+    <AuthContext.Provider value={supabase ? { supabase, user, loading, signOut } : defaultValue}>
       {children}
     </AuthContext.Provider>
   );
