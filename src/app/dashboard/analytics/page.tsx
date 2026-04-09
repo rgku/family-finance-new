@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
+import { formatCurrencyWithSymbol } from "@/lib/currency";
 import Link from "next/link";
 
 interface Transaction {
@@ -106,9 +107,15 @@ export default function AnalyticsPage() {
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-surface-container rounded-lg p-5">
             <p className="text-xs text-on-surface-variant font-medium">Receitas</p>
-            <p className="font-headline text-2xl font-bold text-primary mt-1">
-              R$ {income.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-            </p>
+                <p className="font-headline text-2xl font-bold text-primary mt-1">
+                {formatCurrencyWithSymbol(income)}
+              </p>
+            </div>
+            <div className="bg-surface-container rounded-lg p-5">
+              <p className="font-label text-xs text-on-surface-variant font-medium">Despesas</p>
+              <p className="font-headline text-2xl font-bold text-tertiary mt-1">
+                {formatCurrencyWithSymbol(expenses)}
+              </p>
           </div>
           <div className="bg-surface-container rounded-lg p-5">
             <p className="text-xs text-on-surface-variant font-medium">Despesas</p>
@@ -124,11 +131,11 @@ export default function AnalyticsPage() {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-on-surface-variant text-sm">Este mês</span>
-              <span className="font-bold">R$ {expenses.toLocaleString("pt-BR")}</span>
+              <span className="font-bold">{formatCurrencyWithSymbol(expenses)}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-on-surface-variant text-sm">Mês anterior</span>
-              <span className="font-bold">R$ {previousMonthExpenses.toLocaleString("pt-BR")}</span>
+              <span className="font-bold">{formatCurrencyWithSymbol(previousMonthExpenses)}</span>
             </div>
             <div className="flex justify-between items-center pt-3 border-t border-surface-container-highest">
               <span className="text-on-surface-variant text-sm">Variação</span>
@@ -168,7 +175,7 @@ export default function AnalyticsPage() {
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-[10px] text-on-surface-variant uppercase">Total</span>
-                <span className="text-xs font-bold">R$ {expenses}</span>
+                  <span className="text-xs font-bold">{formatCurrencyWithSymbol(expenses)}</span>
               </div>
             </div>
             
@@ -193,7 +200,7 @@ export default function AnalyticsPage() {
             {categories.map((cat) => (
               <div key={cat.name} className="flex items-center justify-between p-3 bg-surface-container-low rounded-lg">
                 <span className="text-sm font-medium">{cat.name}</span>
-                <span className="font-bold text-tertiary">R$ {cat.value.toLocaleString("pt-BR")}</span>
+                <span className="font-bold text-tertiary">{formatCurrencyWithSymbol(cat.value)}</span>
               </div>
             ))}
           </div>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
+import { CURRENCY, formatCurrencyWithSymbol } from "@/lib/currency";
 import Link from "next/link";
 
 const categories = [
@@ -80,7 +81,7 @@ export default function BudgetsPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Limite Mensal (R$)</label>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Limite Mensal ({CURRENCY.symbol})</label>
               <input
                 type="number"
                 value={limitAmount}
@@ -107,13 +108,13 @@ export default function BudgetsPage() {
             <div className="text-center p-4 bg-surface-container-low rounded-lg">
               <p className="text-xs text-on-surface-variant">Total Orçamento</p>
               <p className="font-headline text-2xl font-bold text-on-surface mt-1">
-                R$ {sampleBudgets.reduce((sum, b) => sum + b.limit, 0).toLocaleString()}
+                {formatCurrencyWithSymbol(sampleBudgets.reduce((sum, b) => sum + b.limit, 0))}
               </p>
             </div>
             <div className="text-center p-4 bg-surface-container-low rounded-lg">
               <p className="text-xs text-on-surface-variant">Total Gasto</p>
               <p className="font-headline text-2xl font-bold text-tertiary mt-1">
-                R$ {sampleBudgets.reduce((sum, b) => sum + b.spent, 0).toLocaleString()}
+                {formatCurrencyWithSymbol(sampleBudgets.reduce((sum, b) => sum + b.spent, 0))}
               </p>
             </div>
           </div>
@@ -151,7 +152,7 @@ export default function BudgetsPage() {
                     <div>
                       <p className="font-semibold">{budget.category}</p>
                       <p className="text-xs text-on-surface-variant">
-                        R$ {budget.spent.toLocaleString()} de R$ {budget.limit.toLocaleString()}
+                        {formatCurrencyWithSymbol(budget.spent)} de {formatCurrencyWithSymbol(budget.limit)}
                       </p>
                     </div>
                   </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { CURRENCY, formatCurrencyWithSymbol } from "@/lib/currency";
 import Link from "next/link";
 
 const defaultIcons = [
@@ -12,7 +13,6 @@ const defaultIcons = [
 
 export default function GoalsPage() {
   const { supabase, user } = useAuth();
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   
@@ -98,7 +98,7 @@ export default function GoalsPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Meta (R$)</label>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Meta ({CURRENCY.symbol})</label>
                 <input
                   type="number"
                   value={targetAmount}
@@ -109,7 +109,7 @@ export default function GoalsPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Atual (R$)</label>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Atual ({CURRENCY.symbol})</label>
                 <input
                   type="number"
                   value={currentAmount}
@@ -168,7 +168,7 @@ export default function GoalsPage() {
                 </div>
                 <div>
                   <p className="font-headline font-semibold">Novo Carro</p>
-                  <p className="font-label text-xs text-on-surface-variant">R$ 45.000 de R$ 80.000</p>
+                  <p className="font-label text-xs text-on-surface-variant">{formatCurrencyWithSymbol(45000)} de {formatCurrencyWithSymbol(80000)}</p>
                 </div>
               </div>
               <span className="font-headline font-bold text-secondary">56%</span>
@@ -186,7 +186,7 @@ export default function GoalsPage() {
                 </div>
                 <div>
                   <p className="font-headline font-semibold">Viagem Japão</p>
-                  <p className="font-label text-xs text-on-surface-variant">R$ 12.000 de R$ 15.000</p>
+                  <p className="font-label text-xs text-on-surface-variant">{formatCurrencyWithSymbol(12000)} de {formatCurrencyWithSymbol(15000)}</p>
                 </div>
               </div>
               <span className="font-headline font-bold text-secondary">80%</span>

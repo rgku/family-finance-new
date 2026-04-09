@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { CURRENCY } from "@/lib/currency";
 import Link from "next/link";
 
 const defaultCategories = [
@@ -149,11 +150,11 @@ export default function NewTransaction() {
 
           <div>
             <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
-              Valor
+              Valor ({CURRENCY.symbol})
             </label>
             <div className="relative">
               <span className="absolute left-5 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">
-                R$
+                {CURRENCY.symbol}
               </span>
               <input
                 type="number"
