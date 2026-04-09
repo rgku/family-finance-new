@@ -12,9 +12,9 @@ export async function middleware(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              request.cookies.set(name, value, options)
-            })
+            for (const { name, value, options } of cookiesToSet) {
+              request.cookies.set(name, value)
+            }
           } catch {
             // Called from Server Component
           }
@@ -32,13 +32,11 @@ export async function middleware(request: NextRequest) {
   const isStaticFile = request.nextUrl.pathname.match(/\.(js|css|png|jpg|jpeg|gif|webp|svg|ico)$/)
 
   if (!user && !isAuthRoute && !isApiRoute && !isStaticFile) {
-    // No logged in user, redirect to login
     const url = request.nextUrl.clone()
     url.pathname = '/'
     return NextResponse.redirect(url)
   }
 
-  // If user is logged in and trying to access the login page, redirect to dashboard
   if (user && request.nextUrl.pathname === '/') {
     const url = request.nextUrl.clone()
     url.pathname = '/dashboard'

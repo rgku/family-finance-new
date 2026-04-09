@@ -16,9 +16,13 @@ export async function GET(request: NextRequest) {
             return request.cookies.getAll()
           },
           setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              request.cookies.set(name, value, options)
-            })
+            try {
+              for (const { name, value } of cookiesToSet) {
+                request.cookies.set(name, value)
+              }
+            } catch {
+              // Called from Server Component
+            }
           },
         },
       }
@@ -31,6 +35,5 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // No code or error, redirect to home
   return NextResponse.redirect(new URL('/', requestUrl.origin))
 }
