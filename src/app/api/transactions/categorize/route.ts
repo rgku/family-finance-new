@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const COHERE_API_KEY = process.env.COHERE_API_KEY || 'K8HcYygz2mqBN9M7LVUrqTVw2M6e2Rpxfp0OMcSv';
+const COHERE_API_KEY = process.env.COHERE_API_KEY;
 const COHERE_URL = "https://api.cohere.com/v1/classify";
 
 const CATEGORIES = [

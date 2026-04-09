@@ -4,8 +4,12 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import { createBrowserClient } from "@supabase/ssr";
 import { useAuth } from "@/components/AuthProvider";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ziyriwdkgankrbmsjvhk.supabase.co';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppeXJpd2RrZ2Fua3JibXNqdmhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3Mjg2MTUsImV4cCI6MjA5MTMwNDYxNX0.ukeAK91Nf13jL6LDhw8mrPrUlb98743BqyRn7Ns1UIA';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error('Missing Supabase environment variables');
+}
 
 export interface Transaction {
   id: string;
@@ -164,10 +168,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const updateTransaction = async (id: string, t: Partial<Transaction>) => {
+    if (!user) throw new Error("Must be logged in");
+    
     const { error } = await supabase
       .from('transactions')
       .update(t)
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', user.id);
 
     if (error) throw error;
     
@@ -177,10 +184,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteTransaction = async (id: string) => {
+    if (!user) throw new Error("Must be logged in");
+    
     const { error } = await supabase
       .from('transactions')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', user.id);
 
     if (error) throw error;
     
@@ -218,10 +228,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const updateGoal = async (id: string, g: Partial<Goal>) => {
+    if (!user) throw new Error("Must be logged in");
+    
     const { error } = await supabase
       .from('goals')
       .update(g)
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', user.id);
 
     if (error) throw error;
     
@@ -231,10 +244,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteGoal = async (id: string) => {
+    if (!user) throw new Error("Must be logged in");
+    
     const { error } = await supabase
       .from('goals')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', user.id);
 
     if (error) throw error;
     
@@ -270,10 +286,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const updateBudget = async (id: string, b: Partial<Budget>) => {
+    if (!user) throw new Error("Must be logged in");
+    
     const { error } = await supabase
       .from('budgets')
       .update({ limit_amount: b.limit })
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', user.id);
 
     if (error) throw error;
     
@@ -283,10 +302,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const deleteBudget = async (id: string) => {
+    if (!user) throw new Error("Must be logged in");
+    
     const { error } = await supabase
       .from('budgets')
       .delete()
-      .eq('id', id);
+      .eq('id', id)
+      .eq('user_id', user.id);
 
     if (error) throw error;
     
