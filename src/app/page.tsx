@@ -5,8 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function AuthPage() {
-  const isConfigured = !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-  
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -138,10 +136,10 @@ export default function AuthPage() {
 
             <button
               type="submit"
-              disabled={loading || !isConfigured}
+              disabled={loading}
               className="w-full py-4 bg-primary text-on-primary font-bold rounded-full hover:brightness-110 shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50"
             >
-              {loading ? "A processar..." : !isConfigured ? "Configuração em falta" : isLogin ? "Entrar" : "Criar Conta"}
+              {loading ? "A processar..." : isLogin ? "Entrar" : "Criar Conta"}
             </button>
           </form>
 
