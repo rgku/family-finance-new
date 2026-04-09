@@ -25,18 +25,25 @@ export default function AuthPage() {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { error, data } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         
         if (error) {
-          setError(error.message);
+          // Check if email needs confirmation
+          if (error.message.includes("Email not confirmed")) {
+            setError("Confirma o teu email antes de entrar. Verifica a tua caixa de correio.");
+          } else {
+            setError(error.message);
+          }
+        } else if (data.user && !data.user.email_confirmed_at) {
+          setError("Confirma o teu email antes de entrar. Verifica a tua caixa de correio.");
         } else {
           router.push("/dashboard");
         }
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { error, data } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -48,8 +55,12 @@ export default function AuthPage() {
         
         if (error) {
           setError(error.message);
-        } else {
+        } else if (data.session) {
+          // Email confirmed, user created - go to dashboard
           router.push("/dashboard");
+        } else {
+          // Email confirmation required
+          setError("Confirma o teu email antes de entrar. Verifica a tua caixa de correio.");
         }
       }
     } catch (err) {
