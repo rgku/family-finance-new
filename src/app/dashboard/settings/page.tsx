@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useData } from "@/hooks/DataProvider";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 
@@ -207,9 +208,24 @@ export default function ExportPage() {
         </button>
       </div>
 
+      {/* Account Actions */}
+      <div className="bg-surface-container rounded-lg p-6 space-y-4">
+        <h2 className="font-bold text-lg">Conta</h2>
+        <div className="space-y-2">
+          <Link
+            href="/dashboard/settings/change-password"
+            className="flex items-center justify-between p-4 bg-surface-container-low rounded-lg hover:bg-surface-container-high transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <span className="material-symbols-outlined text-on-surface">lock</span>
+              <span className="font-medium">Alterar Password</span>
+            </div>
+            <span className="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+          </Link>
+        </div>
+      </div>
+
       {/* GDPR Notice */}
-      <div className="bg-surface-container-low border border-surface-container-high rounded-lg p-4">
-        <div className="flex items-start gap-3">
           <span className="material-symbols-outlined text-on-surface-variant">info</span>
           <div className="text-sm text-on-surface-variant">
             <p className="font-medium text-on-surface mb-1">Direito à Portabilidade (GDPR)</p>

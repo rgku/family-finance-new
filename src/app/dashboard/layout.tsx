@@ -34,7 +34,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   if (isMobile) {
     return (
       <>
-        {children}
+        <div className="pb-24">
+          {children}
+        </div>
         <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-2 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]">
           {navItems.map((item) => (
             <Link 
