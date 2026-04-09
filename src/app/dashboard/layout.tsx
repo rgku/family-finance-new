@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isMobile, setIsMobile] = useState(true);
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     const checkDevice = () => setIsMobile(window.innerWidth < 768);
@@ -33,17 +35,34 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return (
       <>
         {children}
-        <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-8 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]">
-          {navItems.map((item) => (
+        <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]">
+          {navItems.slice(0, 5).map((item) => (
             <Link 
               key={item.href} 
               href={item.href}
-              className={`flex flex-col items-center justify-center p-2 ${pathname === item.href ? "text-primary" : "text-slate-500"}`}
+              className={`flex flex-col items-center justify-center p-2 min-w-[60px] ${pathname === item.href ? "text-primary" : "text-slate-500"}`}
             >
               <span className="material-symbols-outlined" style={pathname === item.href ? { fontVariationSettings: "'FILL' 1" } : {}}>{item.icon}</span>
-              <span className="font-inter font-medium text-[10px] mt-1">{item.label}</span>
+              <span className="font-inter font-medium text-[9px] mt-1">{item.label}</span>
             </Link>
           ))}
+          {user ? (
+            <button 
+              onClick={() => signOut()}
+              className="flex flex-col items-center justify-center p-2 min-w-[60px] text-slate-500 hover:text-error"
+            >
+              <span className="material-symbols-outlined">logout</span>
+              <span className="font-inter font-medium text-[9px] mt-1">Sair</span>
+            </button>
+          ) : (
+            <Link 
+              href="/"
+              className="flex flex-col items-center justify-center p-2 min-w-[60px] text-slate-500"
+            >
+              <span className="material-symbols-outlined">login</span>
+              <span className="font-inter font-medium text-[9px] mt-1">Entrar</span>
+            </Link>
+          )}
         </nav>
       </>
     );
