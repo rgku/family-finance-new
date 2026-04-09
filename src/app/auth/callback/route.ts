@@ -1,4 +1,4 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function GET(request: NextRequest) {
@@ -15,20 +15,10 @@ export async function GET(request: NextRequest) {
           getAll() {
             return request.cookies.getAll()
           },
-          setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-            request.cookies.getAll().forEach((cookie) => {
-              if (!cookiesToSet.find((c) => c.name === cookie.name)) {
-                request.cookies.delete(cookie.name)
-              }
-            })
+          setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value, options }) => {
               request.cookies.set(name, value, options)
             })
-            const response = NextResponse.redirect(new URL(next, requestUrl.origin))
-            cookiesToSet.forEach(({ name, value, options }) => {
-              response.cookies.set(name, value, options)
-            })
-            return response
           },
         },
       }
@@ -41,5 +31,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
+  // No code or error, redirect to home
   return NextResponse.redirect(new URL('/', requestUrl.origin))
 }
