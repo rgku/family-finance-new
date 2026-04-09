@@ -26,12 +26,41 @@ export default function Dashboard() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
   const [balance, setBalance] = useState({ total: 0, income: 0, expenses: 0 });
+  const [isDemo, setIsDemo] = useState(false);
 
   useEffect(() => {
-    if (user && !loading && supabase) {
+    // Allow demo mode if not logged in after a delay
+    const timer = setTimeout(() => {
+      if (!user) {
+        setIsDemo(true);
+        loadDemoData();
+      }
+    }, 2000);
+
+    if (user && supabase && !loading) {
       loadDashboardData();
     }
+
+    return () => clearTimeout(timer);
   }, [user, loading, supabase]);
+
+  const loadDemoData = () => {
+    // Demo data when not logged in
+    const demoTransactions: Transaction[] = [
+      { id: "1", description: "Salário", amount: 8400, type: "income", category: "Renda", date: "2024-09-01" },
+      { id: "2", description: "Supermercado", amount: 450, type: "expense", category: "Alimentação", date: "2024-09-05" },
+      { id: "3", description: "Aluguel", amount: 1500, type: "expense", category: "Moradia", date: "2024-09-10" },
+      { id: "4", description: "Netflix", amount: 55, type: "expense", category: "Lazer", date: "2024-09-12" },
+    ];
+    setTransactions(demoTransactions);
+    setBalance({ total: 6395, income: 8400, expenses: 2005 });
+    
+    const demoGoals: Goal[] = [
+      { id: "1", name: "Novo Carro", target_amount: 80000, current_amount: 45000, icon: "directions_car" },
+      { id: "2", name: "Viagem Japão", target_amount: 15000, current_amount: 12000, icon: "flight" },
+    ];
+    setGoals(demoGoals);
+  };
 
   const loadDashboardData = async () => {
     if (!supabase) return;
@@ -75,15 +104,24 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center">
-        <p className="text-on-surface-variant">A carregar...</p>
+        <div className="text-center">
+          <p className="text-on-surface-variant">A carregar...</p>
+        </div>
       </div>
     );
   }
 
+  // If not logged in, show login prompt instead of infinite redirect
   if (!user) {
     return (
-      <div className="min-h-screen bg-surface flex items-center justify-center p-4">
-        <p className="text-on-surface-variant">A redirecionar...</p>
+      <div className="min-h-screen bg-surface flex flex-col items-center justify-center p-4">
+        <p className="text-on-surface-variant mb-4">Precisa de fazer login</p>
+        <button 
+          onClick={() => window.location.href = '/'}
+          className="px-6 py-3 bg-primary text-on-primary rounded-full font-bold"
+        >
+          Ir para Login
+        </button>
       </div>
     );
   }
