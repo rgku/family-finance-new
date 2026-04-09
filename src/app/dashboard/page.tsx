@@ -166,29 +166,13 @@ export default function Dashboard() {
               ))}
             </section>
 
-            <section className="space-y-4">
-              <h3 className="font-headline text-xl font-bold text-on-surface">Transações</h3>
-              {filteredTransactions.length === 0 ? (
-                <p className="text-on-surface-variant text-center py-4">Sem transações neste mês</p>
-              ) : (
-                filteredTransactions.map(trans => (
-                  <div key={trans.id} className="flex items-center justify-between p-4 bg-surface-container rounded-lg">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center">
-                        <span className="material-symbols-outlined">{trans.type === "income" ? "payments" : "shopping_bag"}</span>
-                      </div>
-                      <div>
-                        <p className="font-semibold">{trans.description}</p>
-                        <p className="text-xs text-on-surface-variant">{trans.category}</p>
-                      </div>
-                    </div>
-                    <p className={`font-bold ${trans.type === "income" ? "text-primary" : "text-tertiary"}`}>
-                      {trans.type === "income" ? "+" : "-"}{formatCurrencyWithSymbol(trans.amount)}
-                    </p>
-                  </div>
-                ))
-              )}
-            </section>
+            <Link href="/dashboard/budgets" className="block bg-surface-container rounded-lg p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-tertiary">pie_chart</span>
+                <span className="font-semibold">Orçamentos</span>
+              </div>
+              <span className="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+            </Link>
           </main>
 
           <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-2 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]">
@@ -205,13 +189,13 @@ export default function Dashboard() {
                 <span className="material-symbols-outlined text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
               </div>
             </Link>
-            <Link href="/dashboard/goals" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
-              <span className="material-symbols-outlined">track_changes</span>
-              <span className="font-inter font-medium text-[9px] mt-1">Metas</span>
-            </Link>
             <Link href="/dashboard/analytics" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
               <span className="material-symbols-outlined">trending_up</span>
               <span className="font-inter font-medium text-[9px] mt-1">Análise</span>
+            </Link>
+            <Link href="/dashboard/profile" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
+              <span className="material-symbols-outlined">person</span>
+              <span className="font-inter font-medium text-[9px] mt-1">Perfil</span>
             </Link>
           </nav>
         </>
