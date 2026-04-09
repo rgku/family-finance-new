@@ -1,26 +1,29 @@
 "use client";
 
 import { useState } from "react";
+import { useData } from "@/hooks/DataProvider";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 
 export default function AnalyticsPage() {
+  const { transactions } = useData();
   const [period, setPeriod] = useState<"month" | "year">("month");
 
-  const demoData = {
-    income: 5200,
-    expenses: 2850,
-    previousMonth: 3100,
-  };
+  const income = transactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
+  const expenses = transactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
 
-  const categoryBreakdown = [
-    { name: "Alimentação", value: 850, color: "#4edea3" },
-    { name: "Moradia", value: 1200, color: "#d0bcff" },
-    { name: "Transporte", value: 320, color: "#ffb3ad" },
-    { name: "Lazer", value: 280, color: "#4edea3" },
-    { name: "Outros", value: 200, color: "#d0bcff" },
-  ];
+  const categoryMap = new Map<string, number>();
+  transactions.filter(t => t.type === "expense").forEach(t => {
+    categoryMap.set(t.category, (categoryMap.get(t.category) || 0) + t.amount);
+  });
 
-  const trendChange = ((demoData.expenses - demoData.previousMonth) / demoData.previousMonth * 100).toFixed(1);
+  const categoryBreakdown = Array.from(categoryMap.entries()).map(([name, value]) => ({
+    name,
+    value,
+    color: "#4edea3",
+  }));
+
+  const previousMonth = expenses * 0.9;
+  const trendChange = previousMonth > 0 ? ((expenses - previousMonth) / previousMonth * 100).toFixed(1) : "0";
 
   return (
     <div className="p-8 space-y-6">
@@ -55,11 +58,11 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-2 gap-6">
         <div className="bg-gradient-to-br from-primary to-primary-container p-8 rounded-lg text-on-primary">
           <p className="text-sm opacity-80">Receitas</p>
-          <p className="text-4xl font-bold mt-2">{formatCurrencyWithSymbol(demoData.income)}</p>
+          <p className="text-4xl font-bold mt-2">{formatCurrencyWithSymbol(income)}</p>
         </div>
         <div className="bg-surface-container p-8 rounded-lg">
           <p className="text-sm text-on-surface-variant">Despesas</p>
-          <p className="text-4xl font-bold text-tertiary mt-2">{formatCurrencyWithSymbol(demoData.expenses)}</p>
+          <p className="text-4xl font-bold text-tertiary mt-2">{formatCurrencyWithSymbol(expenses)}</p>
         </div>
       </div>
 
@@ -69,11 +72,11 @@ export default function AnalyticsPage() {
         <div className="space-y-3">
           <div className="flex justify-between items-center">
             <span className="text-on-surface-variant">Este mês</span>
-            <span className="font-bold">{formatCurrencyWithSymbol(demoData.expenses)}</span>
+            <span className="font-bold">{formatCurrencyWithSymbol(expenses)}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-on-surface-variant">Mês anterior</span>
-            <span className="font-bold">{formatCurrencyWithSymbol(demoData.previousMonth)}</span>
+            <span className="font-bold">{formatCurrencyWithSymbol(previousMonth)}</span>
           </div>
           <div className="flex justify-between items-center pt-3 border-t border-surface-container-high">
             <span className="text-on-surface-variant">Variação</span>
@@ -94,6 +97,7 @@ export default function AnalyticsPage() {
             <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
               <circle cx="18" cy="18" fill="transparent" r="15.915" stroke="#222a3d" strokeWidth="3"></circle>
               {categoryBreakdown.map((cat, idx) => {
+                const total = categoryBreakdown.reduce((s, c) => s + c.value, 0);
                 const offsets = [0, -40, -65, -80, -95];
                 return (
                   <circle 
@@ -103,7 +107,7 @@ export default function AnalyticsPage() {
                     fill="transparent" 
                     r="15.915" 
                     stroke={cat.color}
-                    strokeDasharray={`${(cat.value / demoData.expenses) * 100} ${100 - (cat.value / demoData.expenses) * 100}`}
+                    strokeDasharray={`${total > 0 ? (cat.value / total) * 100 : 0} ${100 - (total > 0 ? (cat.value / total) * 100 : 0)}`}
                     strokeDashoffset={offsets[idx]}
                     strokeWidth="3"
                   />
@@ -112,7 +116,7 @@ export default function AnalyticsPage() {
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-[10px] text-on-surface-variant uppercase">Total</span>
-              <span className="font-bold">{formatCurrencyWithSymbol(demoData.expenses)}</span>
+              <span className="font-bold">{formatCurrencyWithSymbol(expenses)}</span>
             </div>
           </div>
           
@@ -135,24 +139,31 @@ export default function AnalyticsPage() {
       <div className="bg-surface-container rounded-lg p-6">
         <h3 className="font-bold text-lg mb-4">Dicas de Poupança</h3>
         <div className="space-y-3">
-          <div className="flex items-start gap-3 p-4 bg-primary/10 rounded-lg">
-            <span className="material-symbols-outlined text-primary">lightbulb</span>
-            <div>
-              <p className="font-medium">Gastos com Moradia</p>
-              <p className="text-sm text-on-surface-variant">
-                Este mês está no limite. Considere rever contratos de租赁.
-              </p>
+          {categoryBreakdown.length === 0 ? (
+            <div className="flex items-start gap-3 p-4 bg-primary/10 rounded-lg">
+              <span className="material-symbols-outlined text-primary">lightbulb</span>
+              <div>
+                <p className="font-medium">Sem dados suficientes</p>
+                <p className="text-sm text-on-surface-variant">
+                  Adicione transações para ver recomendações personalizadas.
+                </p>
+              </div>
             </div>
-          </div>
-          <div className="flex items-start gap-3 p-4 bg-secondary/10 rounded-lg">
-            <span className="material-symbols-outlined text-secondary">trending_down</span>
-            <div>
-              <p className="font-medium">Transporte</p>
-              <p className="text-sm text-on-surface-variant">
-                Este mês está 15% abaixo da média. Continue assim!
-              </p>
-            </div>
-          </div>
+          ) : (
+            <>
+              {categoryBreakdown.slice(0, 2).map((cat, idx) => (
+                <div key={cat.name} className="flex items-start gap-3 p-4 bg-primary/10 rounded-lg">
+                  <span className="material-symbols-outlined text-primary">{idx === 0 ? "lightbulb" : "trending_down"}</span>
+                  <div>
+                    <p className="font-medium">Gastos com {cat.name}</p>
+                    <p className="text-sm text-on-surface-variant">
+                      Este mês: {formatCurrencyWithSymbol(cat.value)} - Considere otimizar gastos nesta categoria.
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
         </div>
       </div>
     </div>

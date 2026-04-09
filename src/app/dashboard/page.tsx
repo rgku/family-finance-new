@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/AuthProvider";
+import { useData } from "@/hooks/DataProvider";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import Link from "next/link";
 
 export default function Dashboard() {
   const { user, signOut, supabase, loading } = useAuth();
+  const { transactions, goals: dataGoals } = useData();
   const [isMobile, setIsMobile] = useState(true);
 
   useEffect(() => {
@@ -18,33 +20,10 @@ export default function Dashboard() {
     return () => window.removeEventListener('resize', checkDevice);
   }, []);
 
-  // Demo data for display
-  const demoBalance = { total: 12500, income: 8400, expenses: 3100 };
-  const demoGoals = [
-    { id: "1", name: "Férias", target_amount: 3000, current_amount: 1800, icon: "flight" },
-    { id: "2", name: "Novo Carro", target_amount: 25000, current_amount: 8000, icon: "directions_car" },
-  ];
-  const demoTransactions = [
-    { id: "1", description: "Salário", amount: 8400, type: "income" as const, category: "Renda" },
-    { id: "2", description: "Supermercado", amount: 150, type: "expense" as const, category: "Alimentação" },
-    { id: "3", description: "Restaurante", amount: 85, type: "expense" as const, category: "Lazer" },
-  ];
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-surface flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-on-surface-variant">A carregar...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show user data if logged in, otherwise show demo
-  const balance = demoBalance;
-  const goals = demoGoals;
-  const transactions = demoTransactions;
+  const totalIncome = transactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = transactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
+  const balance = { total: totalIncome - totalExpenses, income: totalIncome, expenses: totalExpenses };
+  const goals = dataGoals;
 
   return (
     <div className="min-h-screen bg-surface">
