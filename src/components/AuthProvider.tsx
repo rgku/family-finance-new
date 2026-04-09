@@ -14,8 +14,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ziyriwdkgankrbmsjvhk.supabase.co';
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppeXJpd2RrZ2Fua3JibXNqdmhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3Mjg2MTUsImV4cCI6MjA5MTMwNDYxNX0.ukeAK91Nf13jL6LDhw8mrPrUlb98743BqyRn7Ns1UIA';
   
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -23,12 +23,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!supabaseUrl || !supabaseKey) {
-      console.warn("Supabase credentials not configured");
-      setLoading(false);
-      return;
-    }
-
     const client = createClient(supabaseUrl, supabaseKey);
     setSupabase(client);
 
@@ -57,15 +51,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push("/");
   };
 
-  const defaultValue = {
-    supabase,
-    user,
-    loading: !supabaseUrl || !supabaseKey ? false : loading,
-    signOut: async () => {},
-  };
-
   return (
-    <AuthContext.Provider value={supabase ? { supabase, user, loading, signOut } : defaultValue}>
+    <AuthContext.Provider value={{ supabase, user, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );
