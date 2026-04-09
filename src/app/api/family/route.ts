@@ -69,9 +69,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ error: "Ação inválida" }, { status: 400 });
-  } catch (error) {
+  } catch (error: any) {
+    console.error("Family API error:", error);
     return NextResponse.json(
-      { error: "Erro interno do servidor" },
+      { error: error?.message || "Erro interno do servidor" },
       { status: 500 }
     );
   }
@@ -101,9 +102,10 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ profile, family: profile?.families });
-  } catch (error) {
+  } catch (error: any) {
+    console.error("Family GET error:", error);
     return NextResponse.json(
-      { error: "Erro interno do servidor" },
+      { error: error?.message || "Erro interno do servidor" },
       { status: 500 }
     );
   }

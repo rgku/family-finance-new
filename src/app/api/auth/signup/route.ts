@@ -30,9 +30,10 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ user: data.user, session: data.session });
-  } catch (error) {
+  } catch (error: any) {
+    console.error("Signup error:", error);
     return NextResponse.json(
-      { error: "Erro interno do servidor" },
+      { error: error?.message || "Erro interno do servidor" },
       { status: 500 }
     );
   }
