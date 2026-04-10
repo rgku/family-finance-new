@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useBudgetAlerts } from "@/hooks/useBudgetAlerts";
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
 import Link from "next/link";
@@ -18,6 +18,9 @@ export default function AlertsPage() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+
+  const activeAlerts = useMemo(() => alerts.filter(a => a.is_active), [alerts]);
+  const inactiveAlerts = useMemo(() => alerts.filter(a => !a.is_active), [alerts]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,8 +46,9 @@ export default function AlertsPage() {
         notifyInApp: true,
       });
       setIsCreating(false);
-    } catch (err: any) {
-      setMessage(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+      setMessage(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -54,8 +58,9 @@ export default function AlertsPage() {
     if (confirm("Eliminar este alerta?")) {
       try {
         await deleteAlert(alertId);
-      } catch (err: any) {
-        setMessage(err.message);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+        setMessage(errorMessage);
       }
     }
   };
@@ -63,8 +68,9 @@ export default function AlertsPage() {
   const handleToggle = async (alertId: string, currentStatus: boolean) => {
     try {
       await toggleAlert(alertId, !currentStatus);
-    } catch (err: any) {
-      setMessage(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+      setMessage(errorMessage);
     }
   };
 

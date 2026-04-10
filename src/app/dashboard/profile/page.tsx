@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
@@ -8,10 +9,13 @@ export default function ProfilePage() {
   const { user, signOut } = useAuth();
   const { transactions, goals, budgets, loading } = useData();
 
-  const totalIncome = transactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
-  const totalExpenses = transactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
+  const { totalIncome, totalExpenses } = useMemo(() => {
+    const inc = transactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
+    const exp = transactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
+    return { totalIncome: inc, totalExpenses: exp };
+  }, [transactions]);
 
-  const firstName = user?.email?.split('@')[0] || 'Utilizador';
+  const firstName = useMemo(() => user?.email?.split('@')[0] || 'Utilizador', [user?.email]);
 
   return (
     <div className="p-8 max-w-2xl mx-auto space-y-8">
