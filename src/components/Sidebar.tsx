@@ -6,18 +6,18 @@ import { useState } from "react";
 
 export const navItems = [
   { href: "/dashboard", icon: "home", label: "Home" },
-  { href: "/dashboard/transactions", icon: "receipt_long", label: "Transações" },
+  { href: "/dashboard/transactions", icon: "receipt_long", label: "Trans" },
   { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
-  { href: "/dashboard/reports", icon: "assessment", label: "Relatórios" },
-  { href: "/dashboard/profile", icon: "person", label: "Perfil" },
+  { href: "/dashboard/family", icon: "group", label: "Família" },
+  { href: "/dashboard/settings", icon: "settings", label: "Definições" },
 ];
 
 export const navItemsSecondary = [
+  { href: "/dashboard/profile", icon: "person", label: "Perfil" },
+  { href: "/dashboard/reports", icon: "assessment", label: "Relatórios" },
   { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
   { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
   { href: "/dashboard/alerts", icon: "notifications", label: "Alertas" },
-  { href: "/dashboard/family", icon: "group", label: "Família" },
-  { href: "/dashboard/settings", icon: "settings", label: "Definições" },
 ];
 
 interface DesktopSidebarProps {
@@ -163,31 +163,6 @@ export function MobileHeader({ hideNotifications = false }: { hideNotifications?
       
       {menuOpen && (
         <div className="absolute top-full right-4 mt-2 w-48 bg-surface-container rounded-2xl shadow-xl py-2 z-50">
-          <Link
-            href="/dashboard/profile"
-            onClick={() => setMenuOpen(false)}
-            className="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-high"
-          >
-            <span className="material-symbols-outlined">person</span>
-            <span>Perfil</span>
-          </Link>
-          <Link
-            href="/dashboard/family"
-            onClick={() => setMenuOpen(false)}
-            className="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-high"
-          >
-            <span className="material-symbols-outlined">group</span>
-            <span>Família</span>
-          </Link>
-          <Link
-            href="/dashboard/settings"
-            onClick={() => setMenuOpen(false)}
-            className="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-high"
-          >
-            <span className="material-symbols-outlined">settings</span>
-            <span>Definições</span>
-          </Link>
-          <hr className="my-2 border-surface-container-high" />
           <button
             onClick={() => {
               setMenuOpen(false);

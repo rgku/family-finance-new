@@ -6,9 +6,8 @@ import { useData } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
-import { DesktopSidebar, MobileHeader } from "@/components/Sidebar";
+import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
 
 export default function Dashboard() {
   const pathname = usePathname();
@@ -123,29 +122,7 @@ export default function Dashboard() {
             </Link>
           </main>
 
-          <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-2 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]">
-<Link href="/dashboard" className="flex flex-col items-center justify-center p-2 flex-1 text-on-surface-variant">
-              <span className="material-symbols-outlined" style={pathname === "/dashboard" ? { fontVariationSettings: "'FILL' 1" } : {}}>home</span>
-              <span className="font-inter font-medium text-[9px] mt-1">Home</span>
-            </Link>
-            <Link href="/dashboard/transactions" className="flex flex-col items-center justify-center p-2 flex-1 text-on-surface-variant">
-              <span className="material-symbols-outlined">receipt_long</span>
-              <span className="font-inter font-medium text-[9px] mt-1">Trans</span>
-            </Link>
-            <Link href="/dashboard/transaction/new" className="flex flex-col items-center justify-center p-2 flex-1 -mt-6">
-              <div className="w-12 h-12 bg-primary rounded-full shadow-lg shadow-primary/30 flex items-center justify-center">
-                <span className="material-symbols-outlined text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
-              </div>
-            </Link>
-            <Link href="/dashboard/analytics" className="flex flex-col items-center justify-center p-2 flex-1 text-on-surface-variant">
-              <span className="material-symbols-outlined">trending_up</span>
-              <span className="font-inter font-medium text-[9px] mt-1">Análise</span>
-            </Link>
-            <Link href="/dashboard/profile" className="flex flex-col items-center justify-center p-2 flex-1 text-on-surface-variant">
-              <span className="material-symbols-outlined">person</span>
-              <span className="font-inter font-medium text-[9px] mt-1">Perfil</span>
-            </Link>
-          </nav>
+          <MobileNav />
         </>
       ) : (
         <main className="ml-64 p-8 space-y-8">
