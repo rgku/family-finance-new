@@ -35,12 +35,18 @@ export default function Dashboard() {
     });
   }, [transactions, year, month]);
 
-  const totalIncome = filteredTransactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
-  const totalExpenses = filteredTransactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
-  const balance = { total: totalIncome - totalExpenses, income: totalIncome, expenses: totalExpenses };
+  const { totalIncome, totalExpenses, balance } = useMemo(() => {
+    const inc = filteredTransactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
+    const exp = filteredTransactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
+    return { totalIncome: inc, totalExpenses: exp, balance: { total: inc - exp, income: inc, expenses: exp } };
+  }, [filteredTransactions]);
+
   const goals = dataGoals;
 
-  const monthChange = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome * 100).toFixed(0) : "0";
+  const monthChange = useMemo(() => {
+    return totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome * 100).toFixed(0) : "0";
+  }, [totalIncome, totalExpenses]);
+  
   const isPositive = balance.total >= 0;
 
   return (

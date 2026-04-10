@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, ReactNode } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useSupabase } from "@/hooks/useSupabase";
 
@@ -311,13 +311,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setBudgets(prev => prev.filter(budget => budget.id !== id));
   };
 
+  const contextValue = useMemo(() => ({
+    transactions, addTransaction, updateTransaction, deleteTransaction,
+    goals, addGoal, updateGoal, deleteGoal,
+    budgets, addBudget, updateBudget, deleteBudget,
+    loading,
+  }), [transactions, goals, budgets, loading]);
+
   return (
-    <DataContext.Provider value={{
-      transactions, addTransaction, updateTransaction, deleteTransaction,
-      goals, addGoal, updateGoal, deleteGoal,
-      budgets, addBudget, updateBudget, deleteBudget,
-      loading,
-    }}>
+    <DataContext.Provider value={contextValue}>
       {children}
     </DataContext.Provider>
   );
