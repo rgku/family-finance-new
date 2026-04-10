@@ -10,7 +10,6 @@ import Link from "next/link";
 import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
 
 export default function Dashboard() {
-  const pathname = usePathname();
   const { user, signOut, supabase, loading } = useAuth();
   const { transactions, goals: dataGoals } = useData();
   const isMobile = useDeviceType();
