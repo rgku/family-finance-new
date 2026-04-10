@@ -13,7 +13,7 @@ title: {
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website',
-    locale: 'pt_BR',
+    locale: 'pt_PT',
     url: 'https://famflow.app',
     siteName: 'FamFlow',
     title: 'FamFlow - Gestão Financeira Familiar',
@@ -37,7 +37,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className="dark">
+    <html lang="pt-PT" className="dark">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
