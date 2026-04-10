@@ -6,11 +6,11 @@ import { useState } from "react";
 
 export const navItems = [
   { href: "/dashboard", icon: "home", label: "Home" },
+  { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
 ];
 
 export const navItemsSecondary = [
   { href: "/dashboard/transactions", icon: "receipt_long", label: "Trans" },
-  { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
   { href: "/dashboard/reports", icon: "assessment", label: "Relatórios" },
   { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
   { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
@@ -67,21 +67,24 @@ export function MobileNav() {
   return (
     <>
       <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-1 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]" role="navigation" aria-label="Navegação principal">
-        <Link
-          href={navItems[0].href}
-          className={`flex flex-col items-center justify-center py-2 px-1 flex-1 min-h-[56px] ${
-            pathname === navItems[0].href ? "text-primary" : "text-on-surface-variant"
-          }`}
-          aria-current={pathname === navItems[0].href ? "page" : undefined}
-        >
-          <span
-            className="material-symbols-outlined text-[24px]"
-            style={pathname === navItems[0].href ? { fontVariationSettings: "'FILL' 1" } : {}}
+        {navItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`flex flex-col items-center justify-center py-2 px-1 flex-1 min-h-[56px] ${
+              pathname === item.href ? "text-primary" : "text-on-surface-variant"
+            }`}
+            aria-current={pathname === item.href ? "page" : undefined}
           >
-            {navItems[0].icon}
-          </span>
-          <span className="font-inter font-medium text-[10px] mt-0.5">{navItems[0].label}</span>
-        </Link>
+            <span
+              className="material-symbols-outlined text-[24px]"
+              style={pathname === item.href ? { fontVariationSettings: "'FILL' 1" } : {}}
+            >
+              {item.icon}
+            </span>
+            <span className="font-inter font-medium text-[10px] mt-0.5">{item.label}</span>
+          </Link>
+        ))}
         
         <div className="flex-1 flex justify-center">
           <Link
