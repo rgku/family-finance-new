@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
-export const navItems = [
+export const navItemsMobile = [
   { href: "/dashboard", icon: "home", label: "Home" },
   { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
 ];
@@ -14,6 +14,19 @@ export const navItemsSecondary = [
   { href: "/dashboard/reports", icon: "assessment", label: "Relatórios" },
   { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
   { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
+];
+
+export const navItemsDesktop = [
+  { href: "/dashboard", icon: "home", label: "Home" },
+  { href: "/dashboard/transactions", icon: "receipt_long", label: "Transações" },
+  { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
+  { href: "/dashboard/reports", icon: "assessment", label: "Relatórios" },
+  { href: "/dashboard/profile", icon: "person", label: "Perfil" },
+  { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
+  { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
+  { href: "/dashboard/alerts", icon: "notifications", label: "Alertas" },
+  { href: "/dashboard/family", icon: "group", label: "Família" },
+  { href: "/dashboard/settings", icon: "settings", label: "Definições" },
 ];
 
 interface DesktopSidebarProps {
@@ -30,7 +43,7 @@ export function DesktopSidebar({ onSignOut }: DesktopSidebarProps) {
         <p className="text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">Family Wealth</p>
       </div>
       <nav className="flex-1 px-4 space-y-1">
-        {navItems.map((item) => (
+        {navItemsDesktop.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -67,7 +80,7 @@ export function MobileNav() {
   return (
     <>
       <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-1 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]" role="navigation" aria-label="Navegação principal">
-        {navItems.map((item) => (
+        {navItemsMobile.map((item) => (
           <Link
             key={item.href}
             href={item.href}
