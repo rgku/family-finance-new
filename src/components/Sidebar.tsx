@@ -2,21 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, memo } from "react";
 
-export const navItemsMobile = [
+const navItemsMobile = [
   { href: "/dashboard", icon: "home", label: "Home" },
   { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
 ];
 
-export const navItemsSecondary = [
+const navItemsSecondary = [
   { href: "/dashboard/transactions", icon: "receipt_long", label: "Trans" },
   { href: "/dashboard/reports", icon: "assessment", label: "Relatórios" },
   { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
   { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
 ];
 
-export const navItemsDesktop = [
+const navItemsDesktop = [
   { href: "/dashboard", icon: "home", label: "Home" },
   { href: "/dashboard/transactions", icon: "receipt_long", label: "Transações" },
   { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
@@ -73,6 +73,36 @@ export function DesktopSidebar({ onSignOut }: DesktopSidebarProps) {
   );
 }
 
+function NavItem({ href, icon, label, isActive }: { href: string; icon: string; label: string; isActive: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={`flex flex-col items-center justify-center py-2 px-1 flex-1 min-h-[56px] ${isActive ? "text-primary" : "text-on-surface-variant"}`}
+    >
+      <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: isActive ? "'FILL' 1" : "normal" }}>
+        {icon}
+      </span>
+      <span className="font-inter font-medium text-[10px] mt-0.5">{label}</span>
+    </Link>
+  );
+}
+
+function NavItemSecondary({ href, icon, label, isActive, onClick }: { href: string; icon: string; label: string; isActive: boolean; onClick?: () => void }) {
+  return (
+    <Link
+      href={href}
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center p-3 rounded-xl ${isActive ? "bg-primary/20 text-primary" : "text-on-surface-variant"}`}
+    >
+      <span className="material-symbols-outlined text-[24px]">{icon}</span>
+      <span className="font-inter font-medium text-[10px] mt-1">{label}</span>
+    </Link>
+  );
+}
+
+const NavItemMemo = memo(NavItem);
+const NavItemSecondaryMemo = memo(NavItemSecondary);
+
 export function MobileNav() {
   const pathname = usePathname();
   const [showMore, setShowMore] = useState(false);
@@ -81,50 +111,23 @@ export function MobileNav() {
     <>
       <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-1 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]" role="navigation" aria-label="Navegação principal">
         {navItemsMobile.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={`flex flex-col items-center justify-center py-2 px-1 flex-1 min-h-[56px] ${
-              pathname === item.href ? "text-primary" : "text-on-surface-variant"
-            }`}
-            aria-current={pathname === item.href ? "page" : undefined}
-          >
-            <span
-              className="material-symbols-outlined text-[24px]"
-              style={pathname === item.href ? { fontVariationSettings: "'FILL' 1" } : {}}
-            >
-              {item.icon}
-            </span>
-            <span className="font-inter font-medium text-[10px] mt-0.5">{item.label}</span>
-          </Link>
+          <NavItemMemo key={item.href} {...item} isActive={pathname === item.href} />
         ))}
         
         <div className="flex-1 flex justify-center">
-          <Link
-            href="/dashboard/transaction/new"
-            className="flex flex-col items-center justify-center -mt-6"
-          >
+          <Link href="/dashboard/transaction/new" className="flex flex-col items-center justify-center -mt-6">
             <div className="w-12 h-12 bg-primary rounded-full shadow-lg shadow-primary/30 flex items-center justify-center">
-              <span className="material-symbols-outlined text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
-                add
-              </span>
+              <span className="material-symbols-outlined text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
             </div>
           </Link>
         </div>
         
         <button
-          onClick={() => setShowMore(!showMore)}
-          className={`flex flex-col items-center justify-center py-2 px-1 flex-1 min-h-[56px] ${
-            showMore ? "text-primary" : "text-on-surface-variant"
-          }`}
+          onClick={() => setShowMore(v => !v)}
+          className={`flex flex-col items-center justify-center py-2 px-1 flex-1 min-h-[56px] ${showMore ? "text-primary" : "text-on-surface-variant"}`}
           aria-label="Mais opções"
         >
-          <span
-            className="material-symbols-outlined text-[24px]"
-            style={showMore ? { fontVariationSettings: "'FILL' 1" } : {}}
-          >
-            more_horiz
-          </span>
+          <span className="material-symbols-outlined text-[24px]">more_horiz</span>
           <span className="font-inter font-medium text-[10px] mt-0.5">Mais</span>
         </button>
       </nav>
@@ -133,17 +136,12 @@ export function MobileNav() {
         <div className="fixed bottom-20 left-0 right-0 z-40 mx-4 bg-surface-container rounded-2xl p-4 shadow-xl">
           <div className="grid grid-cols-4 gap-3">
             {navItemsSecondary.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setShowMore(false)}
-                className={`flex flex-col items-center justify-center p-3 rounded-xl ${
-                  pathname === item.href ? "bg-primary/20 text-primary" : "text-on-surface-variant"
-                }`}
-              >
-                <span className="material-symbols-outlined text-[24px]">{item.icon}</span>
-                <span className="font-inter font-medium text-[10px] mt-1">{item.label}</span>
-              </Link>
+              <NavItemSecondaryMemo 
+                key={item.href} 
+                {...item} 
+                isActive={pathname === item.href} 
+                onClick={() => setShowMore(false)} 
+              />
             ))}
           </div>
         </div>
