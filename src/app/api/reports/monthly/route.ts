@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -14,48 +16,52 @@ export async function GET(request: NextRequest) {
     }
 
     const [year, monthNum] = month.split("-").map(Number);
+    const startDate = `${year}-${String(monthNum).padStart(2, "0")}-01`;
+    const endDate = monthNum === 12 
+      ? `${year + 1}-01-01` 
+      : `${year}-${String(monthNum + 1).padStart(2, "0")}-01`;
 
-    // Get transactions for the month
-    const { data: transactions, error: transError } = await supabase
-      .from("transactions")
-      .select("*")
-      .eq("user_id", user.id)
-      .gte("date", `${year}-${String(monthNum).padStart(2, "0")}-01`)
-      .lt("date", monthNum === 12 
-        ? `${year + 1}-01-01` 
-        : `${year}-${String(monthNum + 1).padStart(2, "0")}-01`)
-      .order("date", { ascending: false });
+    // Run both queries in parallel
+    const [transactionsRes, budgetsRes] = await Promise.all([
+      supabase
+        .from("transactions")
+        .select("id, description, amount, type, category, date")
+        .eq("user_id", user.id)
+        .gte("date", startDate)
+        .lt("date", endDate)
+        .order("date", { ascending: false }),
+      supabase
+        .from("budgets")
+        .select("category, limit_amount")
+        .eq("user_id", user.id)
+    ]);
 
-    if (transError) {
-      return NextResponse.json({ error: transError.message }, { status: 400 });
+    if (transactionsRes.error) {
+      return NextResponse.json({ error: transactionsRes.error.message }, { status: 400 });
     }
 
-    // Get budgets
-    const { data: budgets } = await supabase
-      .from("budgets")
-      .select("*")
-      .eq("user_id", user.id);
+    const transactions = transactionsRes.data || [];
+    const budgets = budgetsRes.data || [];
 
-    // Calculate budget spent
-    const budgetData = budgets?.map(b => {
+    const budgetData = budgets.map(b => {
       const spent = transactions
-        ?.filter(t => t.category === b.category && t.type === "expense")
-        .reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+        .filter(t => t.category === b.category && t.type === "expense")
+        .reduce((sum, t) => sum + Number(t.amount), 0);
       
       return {
         category: b.category,
         limit: Number(b.limit_amount),
         spent,
       };
-    }) || [];
+    });
 
     const income = transactions
-      ?.filter(t => t.type === "income")
-      .reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+      .filter(t => t.type === "income")
+      .reduce((sum, t) => sum + Number(t.amount), 0);
 
     const expenses = transactions
-      ?.filter(t => t.type === "expense")
-      .reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+      .filter(t => t.type === "expense")
+      .reduce((sum, t) => sum + Number(t.amount), 0);
 
     const monthNames = [
       "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -69,10 +75,14 @@ export async function GET(request: NextRequest) {
       expenses,
       balance: income - expenses,
       budget: budgetData,
-      transactions: transactions?.map(t => ({
-        ...t,
+      transactions: transactions.map(t => ({
+        id: t.id,
+        description: t.description,
         amount: Number(t.amount),
-      })) || [],
+        type: t.type,
+        category: t.category,
+        date: t.date,
+      })),
     };
 
     return NextResponse.json(reportData);
