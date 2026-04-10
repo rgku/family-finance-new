@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 
 const COHERE_API_KEY = process.env.COHERE_API_KEY;
 const COHERE_URL = "https://api.cohere.com/v1/classify";
@@ -8,7 +9,6 @@ const CATEGORIES = [
   "Saúde", "Educação", "Renda", "Outros"
 ];
 
-// Simple keyword-based fallback
 const KEYWORD_MAP: Record<string, string[]> = {
   'Moradia': ['aluguel', 'condomínio', 'luz', 'água', 'energia', 'iptu', 'renda', 'casa', 'apartamento'],
   'Alimentação': ['supermercado', 'mercado', 'comida', 'restaurante', 'lanchonete', 'padaria', 'pão', 'alimentação'],
@@ -35,6 +35,16 @@ function categorizeByKeyword(description: string): { category: string, confidenc
 
 export async function POST(request: NextRequest) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      return NextResponse.json(
+        { error: "Não autenticado" },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { description } = body;
 
@@ -45,7 +55,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Try Cohere API if key is valid
     if (COHERE_API_KEY && COHERE_API_KEY.length > 10) {
       try {
         const response = await fetch(COHERE_URL, {
@@ -77,12 +86,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Fallback to keyword-based categorization
     const result = categorizeByKeyword(description);
     return NextResponse.json(result);
     
   } catch (error) {
-    console.error("Categorization error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    console.error("Categorization error:", errorMessage);
+    // Don't expose error details to client
     return NextResponse.json(
       { category: "Outros", confidence: "0.50" },
       { status: 200 }

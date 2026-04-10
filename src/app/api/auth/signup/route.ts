@@ -23,9 +23,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (password.length < 6) {
+    if (password.length < 8 || !/[A-Z]/.test(password) || !/[0-9]/.test(password)) {
       return NextResponse.json(
-        { error: "Senha deve ter pelo menos 6 caracteres" },
+        { error: "Senha deve ter pelo menos 8 caracteres, uma maiúscula e um número" },
         { status: 400 }
       );
     }
@@ -35,8 +35,7 @@ export async function POST(request: NextRequest) {
       password,
       options: {
         data: {
-          full_name: fullName || "",
-          avatar_url: "",
+          full_name: fullName?.slice(0, 100) || "",
         },
       },
     });
@@ -47,9 +46,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ user: data.user, session: data.session });
   } catch (error: any) {
-    console.error("Signup error:", error);
+    console.error("Signup error:", error?.message || "Unknown error");
     return NextResponse.json(
-      { error: error?.message || "Erro interno do servidor" },
+      { error: "Erro interno do servidor" },
       { status: 500 }
     );
   }

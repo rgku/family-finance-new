@@ -41,9 +41,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ user: data.user, session: data.session });
   } catch (error: any) {
-    console.error("Signin error:", error);
+    console.error("Signin error:", error?.message || "Unknown error");
     return NextResponse.json(
-      { error: error?.message || "Erro interno do servidor" },
+      { error: "Erro interno do servidor" },
       { status: 500 }
     );
   }
