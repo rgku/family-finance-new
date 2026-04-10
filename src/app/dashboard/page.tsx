@@ -8,6 +8,8 @@ import { formatCurrencyWithSymbol } from "@/lib/currency";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { DesktopSidebar } from "@/components/Sidebar";
+
 export default function Dashboard() {
   const pathname = usePathname();
   const { user, signOut, supabase, loading } = useAuth();
@@ -43,48 +45,9 @@ export default function Dashboard() {
   const monthChange = totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome * 100).toFixed(0) : "0";
   const isPositive = balance.total >= 0;
 
-  const navItemsDesktop = [
-    { href: "/dashboard", icon: "home", label: "Home" },
-    { href: "/dashboard/transactions", icon: "account_balance_wallet", label: "Transações" },
-    { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
-    { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
-    { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
-    { href: "/dashboard/profile", icon: "person", label: "Perfil" },
-    { href: "/dashboard/settings", icon: "settings", label: "Definições" },
-  ];
-
   return (
     <div className="min-h-screen bg-surface">
-      {/* Desktop Sidebar - only show on desktop */}
-      {!isMobile && (
-        <aside className="fixed left-0 top-0 bottom-0 z-50 flex flex-col h-screen w-64 border-r border-slate-800/50 bg-slate-950/80 backdrop-blur-xl">
-          <div className="p-8">
-            <h1 className="text-xl font-bold tracking-tighter text-primary">Fiscal Sanctuary</h1>
-            <p className="text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">Family Wealth</p>
-          </div>
-          <nav className="flex-1 px-4 space-y-2">
-            {navItemsDesktop.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 hover:bg-surface-container-high transition-all ${
-                  pathname === item.href
-                    ? "text-primary font-bold border-r-2 border-primary bg-primary/5"
-                    : "text-on-surface-variant"
-                }`}
-              >
-                <span className="material-symbols-outlined">{item.icon}</span>
-                <span>{item.label}</span>
-              </Link>
-            ))}
-          </nav>
-          <div className="p-4">
-            <button onClick={signOut} className="w-full py-3 bg-surface-container text-on-surface rounded-lg text-sm font-medium hover:bg-surface-variant">
-              Sair
-            </button>
-          </div>
-        </aside>
-      )}
+      {!isMobile && <DesktopSidebar onSignOut={signOut} />}
 
       {isMobile ? (
         <>

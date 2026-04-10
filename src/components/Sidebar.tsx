@@ -3,18 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const navItems = [
+export const navItems = [
   { href: "/dashboard", icon: "home", label: "Home" },
   { href: "/dashboard/transactions", icon: "receipt_long", label: "Transações" },
-  { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
-  { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
-  { href: "/dashboard/profile", icon: "person", label: "Perfil" },
-  { href: "/dashboard/settings", icon: "settings", label: "Definições" },
-];
-
-const navItemsDesktop = [
-  { href: "/dashboard", icon: "home", label: "Home" },
-  { href: "/dashboard/transactions", icon: "account_balance_wallet", label: "Transações" },
   { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
   { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
   { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
@@ -30,13 +21,13 @@ export function DesktopSidebar({ onSignOut }: DesktopSidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 z-50 flex flex-col h-screen w-64 border-r border-slate-800/50 bg-slate-950/80 backdrop-blur-xl">
+    <aside className="fixed left-0 top-0 bottom-0 z-50 flex flex-col h-screen w-64 border-r border-slate-800/50 bg-slate-950/80 backdrop-blur-xl" role="navigation" aria-label="Navegação principal">
       <div className="p-8">
         <h1 className="text-xl font-bold tracking-tighter text-primary">Fiscal Sanctuary</h1>
         <p className="text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">Family Wealth</p>
       </div>
-      <nav className="flex-1 px-4 space-y-2">
-        {navItemsDesktop.map((item) => (
+      <nav className="flex-1 px-4 space-y-1">
+        {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -45,6 +36,7 @@ export function DesktopSidebar({ onSignOut }: DesktopSidebarProps) {
                 ? "text-primary font-bold border-r-2 border-primary bg-primary/5"
                 : "text-on-surface-variant"
             }`}
+            aria-current={pathname === item.href ? "page" : undefined}
           >
             <span className="material-symbols-outlined">{item.icon}</span>
             <span>{item.label}</span>
@@ -69,22 +61,23 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-2 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]">
+    <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-1 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]" role="navigation" aria-label="Navegação principal">
       {navItems.map((item) => (
         <Link
           key={item.href}
           href={item.href}
-          className={`flex flex-col items-center justify-center p-2 flex-1 ${
+          className={`flex flex-col items-center justify-center py-2 px-1 flex-1 min-h-[56px] ${
             pathname === item.href ? "text-primary" : "text-on-surface-variant"
           }`}
+          aria-current={pathname === item.href ? "page" : undefined}
         >
           <span
-            className="material-symbols-outlined"
+            className="material-symbols-outlined text-[24px]"
             style={pathname === item.href ? { fontVariationSettings: "'FILL' 1" } : {}}
           >
             {item.icon}
           </span>
-          <span className="font-inter font-medium text-[9px] mt-1">{item.label}</span>
+          <span className="font-inter font-medium text-[10px] mt-0.5">{item.label}</span>
         </Link>
       ))}
     </nav>
@@ -122,5 +115,3 @@ export function FABNewTransaction() {
     </Link>
   );
 }
-
-export { navItems };

@@ -3,18 +3,29 @@
 import { usePathname } from "next/navigation";
 import { DesktopSidebar, MobileNav } from "@/components/Sidebar";
 import { useDeviceType } from "@/hooks/useDeviceType";
+import Link from "next/link";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isMobile = useDeviceType();
 
   if (pathname === "/dashboard" || pathname === "/dashboard/settings/reset-password") {
-    return <>{children}</>;
+    return (
+      <>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:p-4 focus:bg-primary focus:text-on-primary focus:z-50">
+          Saltar para conteúdo principal
+        </a>
+        {children}
+      </>
+    );
   }
 
   if (isMobile) {
     return (
       <>
+        <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:p-4 focus:bg-primary focus:text-on-primary focus:z-50">
+          Saltar para conteúdo principal
+        </a>
         <div className="pb-24">
           {children}
         </div>
@@ -25,8 +36,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-surface">
+<a href="#main-content" className="sr-only focus:fixed focus:p-4 focus:bg-primary focus:text-on-primary focus:z-50 focus:top-2 focus:left-2">
+          Saltar para conteúdo principal
+        </a>
       <DesktopSidebar />
-      <main className="ml-64">
+      <main className="ml-64" id="main-content" tabIndex={-1}>
         {children}
       </main>
     </div>
