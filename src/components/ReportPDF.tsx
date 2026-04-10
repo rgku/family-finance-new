@@ -128,6 +128,8 @@ interface ReportData {
   transactions: Transaction[];
 }
 
+const MAX_TRANSACTIONS_IN_PDF = 20;
+
 export function PDFReport({ data }: { data: ReportData }) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("pt-PT", {
@@ -205,7 +207,7 @@ export function PDFReport({ data }: { data: ReportData }) {
               <Text style={{ ...styles.tableHeaderText, ...styles.col3 }}>Data</Text>
               <Text style={{ ...styles.tableHeaderText, ...styles.col4 }}>Valor</Text>
             </View>
-            {data.transactions.slice(0, 20).map((t, index) => (
+            {data.transactions.slice(0, MAX_TRANSACTIONS_IN_PDF).map((t, index) => (
               <View key={index} style={styles.tableRow}>
                 <Text style={{ ...styles.tableCell, ...styles.col1 }}>{t.description}</Text>
                 <Text style={{ ...styles.tableCell, ...styles.col2 }}>{t.category}</Text>
@@ -224,7 +226,7 @@ export function PDFReport({ data }: { data: ReportData }) {
             ))}
             {data.transactions.length > 20 && (
               <Text style={{ ...styles.tableCell, padding: 8, textAlign: "center" }}>
-                ... e mais {data.transactions.length - 20} transações
+                ... e mais {data.transactions.length - MAX_TRANSACTIONS_IN_PDF} transações
               </Text>
             )}
           </View>

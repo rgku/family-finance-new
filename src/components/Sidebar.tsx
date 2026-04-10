@@ -103,7 +103,7 @@ function NavItemSecondary({ href, icon, label, isActive, onClick }: { href: stri
 const NavItemMemo = memo(NavItem);
 const NavItemSecondaryMemo = memo(NavItemSecondary);
 
-export function MobileNav() {
+const MobileNavComponent = function MobileNav() {
   const pathname = usePathname();
   const [showMore, setShowMore] = useState(false);
 
@@ -150,7 +150,9 @@ export function MobileNav() {
   );
 }
 
-export function MobileHeader({ hideNotifications = false }: { hideNotifications?: boolean }) {
+export const MobileNav = memo(MobileNavComponent);
+
+const MobileHeaderComponent = function MobileHeader({ hideNotifications = false }: { hideNotifications?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
   
@@ -232,6 +234,8 @@ export function MobileHeader({ hideNotifications = false }: { hideNotifications?
     </header>
   );
 }
+
+export const MobileHeader = memo(MobileHeaderComponent);
 
 export function FABNewTransaction() {
   return (

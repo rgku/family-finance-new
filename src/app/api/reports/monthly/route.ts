@@ -7,7 +7,13 @@ export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
     const { searchParams } = new URL(request.url);
-    const month = searchParams.get("month") || new Date().toISOString().slice(0, 7);
+    const monthParam = searchParams.get("month");
+    
+    if (!monthParam || !/^\d{4}-\d{2}$/.test(monthParam)) {
+      return NextResponse.json({ error: "Parâmetro month inválido. Use o formato YYYY-MM" }, { status: 400 });
+    }
+    
+    const month = monthParam;
     
     const { data: { user } } = await supabase.auth.getUser();
 

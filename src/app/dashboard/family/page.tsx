@@ -36,8 +36,9 @@ export default function FamilyPage() {
       setMessage(`Membro adicionado! Código: ${result.inviteCode}`);
       setInviteForm({ name: "", email: "", role: "member" });
       setIsInviting(false);
-    } catch (err: any) {
-      setMessage(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+      setMessage(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -47,8 +48,9 @@ export default function FamilyPage() {
     if (confirm(`Remover ${memberName} da família?`)) {
       try {
         await removeMember(memberId);
-      } catch (err: any) {
-        setMessage(err.message);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+        setMessage(errorMessage);
       }
     }
   };

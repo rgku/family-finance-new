@@ -30,18 +30,26 @@ export default function ReportsPage() {
   const monthName = monthNames[month - 1];
 
   useEffect(() => {
+    let cancelled = false;
     const controller = new AbortController();
+    
     setLoading(true);
     fetch(`/api/reports/monthly?month=${selectedMonth}`, { cache: "no-store", signal: controller.signal })
       .then(res => res.json())
       .then(data => {
-        if (data && !controller.signal.aborted) setReportData(data);
+        if (!cancelled) setReportData(data);
       })
-      .catch(() => {})
+      .catch((err) => {
+        if (!cancelled) console.error("Failed to generate report:", err);
+      })
       .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
+        if (!cancelled) setLoading(false);
       });
-    return () => controller.abort();
+    
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [selectedMonth]);
 
   const handlePrevMonth = () => {
@@ -58,10 +66,8 @@ export default function ReportsPage() {
     setSelectedMonth(`${nextMonth.year}-${String(nextMonth.month).padStart(2, "0")}`);
   };
 
-  const canGoNext = () => {
-    const now = new Date();
-    return year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);
-  };
+  const now = new Date();
+  const canGoNext = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);
 
   if (loading) {
     return (
@@ -97,8 +103,8 @@ export default function ReportsPage() {
         </span>
         <button
           onClick={handleNextMonth}
-          disabled={!canGoNext()}
-          className={`p-2 rounded-full ${canGoNext() ? "hover:bg-surface-container-high text-on-surface-variant" : "opacity-50"}`}
+          disabled={!canGoNext}
+          className={`p-2 rounded-full ${canGoNext ? "hover:bg-surface-container-high text-on-surface-variant" : "opacity-50"}`}
         >
           <span className="material-symbols-outlined">chevron_right</span>
         </button>
@@ -193,12 +199,19 @@ export default function ReportsPage() {
             
             <button
               onClick={() => {
+                const escapeCSV = (str: string) => {
+                  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+                    return `"${str.replace(/"/g, '""')}"`;
+                  }
+                  return str;
+                };
+                
                 const csvRows = [
                   ["Data", "Descrição", "Categoria", "Tipo", "Valor"],
                   ...reportData.transactions.map(t => [
                     t.date,
-                    t.description,
-                    t.category,
+                    escapeCSV(t.description),
+                    escapeCSV(t.category),
                     t.type,
                     t.type === "income" ? t.amount : -t.amount,
                   ]),
