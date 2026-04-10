@@ -1,15 +1,8 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { createBrowserClient } from "@supabase/ssr";
 import { useAuth } from "@/components/AuthProvider";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
-
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables');
-}
+import { useSupabase } from "@/hooks/useSupabase";
 
 export interface Transaction {
   id: string;
@@ -57,10 +50,9 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-const supabase = createBrowserClient(supabaseUrl, supabaseKey);
-
 export function DataProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const supabase = useSupabase();
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);

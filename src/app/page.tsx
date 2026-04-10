@@ -2,15 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
 import Link from "next/link";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
-
-if (!supabaseUrl || !supabaseKey) {
-  throw new Error('Missing Supabase environment variables');
-}
+import { useSupabase } from "@/hooks/useSupabase";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -21,7 +14,7 @@ export default function AuthPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
-  const supabase = createBrowserClient(supabaseUrl, supabaseKey);
+  const supabase = useSupabase();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

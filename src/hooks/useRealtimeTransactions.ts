@@ -1,21 +1,22 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
-import { createBrowserClient } from "@supabase/ssr";
+import { useEffect, useRef } from "react";
 import { useAuth } from "@/components/AuthProvider";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
+import { useSupabase } from "@/hooks/useSupabase";
 
 export function useRealtimeTransactions(
   onTransactionChange?: () => void
 ) {
   const { user } = useAuth();
+  const supabase = useSupabase();
+  const onChangeRef = useRef(onTransactionChange);
+  
+  useEffect(() => {
+    onChangeRef.current = onTransactionChange;
+  }, [onTransactionChange]);
   
   useEffect(() => {
     if (!user) return;
-
-    const supabase = createBrowserClient(supabaseUrl, supabaseKey);
     
     const channel = supabase
       .channel(`transactions:${user.id}`)
@@ -28,7 +29,7 @@ export function useRealtimeTransactions(
           filter: `user_id=eq.${user.id}`,
         },
         () => {
-          onTransactionChange?.();
+          onChangeRef.current?.();
         }
       )
       .subscribe();
@@ -36,5 +37,5 @@ export function useRealtimeTransactions(
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, onTransactionChange]);
+  }, [user, supabase]);
 }

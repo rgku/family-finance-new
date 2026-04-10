@@ -3,15 +3,9 @@
 import { useState } from "react";
 import { useData } from "@/hooks/DataProvider";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
+import { EXPENSE_CATEGORIES } from "@/lib/constants";
 
-const categories = [
-  { value: "Moradia", icon: "home" },
-  { value: "Alimentação", icon: "restaurant" },
-  { value: "Transporte", icon: "directions_car" },
-  { value: "Lazer", icon: "movie" },
-  { value: "Saúde", icon: "local_hospital" },
-  { value: "Educação", icon: "school" },
-];
+const categories = EXPENSE_CATEGORIES.filter(c => c.value !== "Outros");
 
 export default function BudgetsPage() {
   const { budgets, addBudget, updateBudget, deleteBudget } = useData();

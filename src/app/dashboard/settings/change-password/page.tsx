@@ -2,14 +2,11 @@
 
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { createBrowserClient } from "@supabase/ssr";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
+import { useSupabase } from "@/hooks/useSupabase";
 
 export default function ChangePasswordPage() {
   const { user } = useAuth();
-  const supabase = createBrowserClient(supabaseUrl, supabaseKey);
+  const supabase = useSupabase();
   
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");

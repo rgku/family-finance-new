@@ -1,16 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { createBrowserClient } from "@supabase/ssr";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
+import { useSupabase } from "@/hooks/useSupabase";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
-  const supabase = createBrowserClient(supabaseUrl, supabaseKey);
+  const supabase = useSupabase();
   
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
