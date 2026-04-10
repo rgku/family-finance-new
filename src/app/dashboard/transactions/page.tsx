@@ -113,7 +113,7 @@ export default function TransactionsPage() {
         </div>
       ) : (
         <div className="bg-surface-container rounded-lg overflow-hidden">
-          <table className="w-full" role="table" aria-label="Transações">
+          <table className="w-full" aria-label="Transações">
             <thead className="bg-surface-container-low">
               <tr>
                 <th scope="col" className="text-left p-4 text-sm font-medium text-on-surface-variant">Descrição</th>
