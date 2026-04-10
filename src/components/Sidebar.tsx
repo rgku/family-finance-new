@@ -2,17 +2,21 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 
 export const navItems = [
   { href: "/dashboard", icon: "home", label: "Home" },
   { href: "/dashboard/transactions", icon: "receipt_long", label: "Transações" },
-  { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
-  { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
   { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
   { href: "/dashboard/reports", icon: "assessment", label: "Relatórios" },
+  { href: "/dashboard/profile", icon: "person", label: "Perfil" },
+];
+
+export const navItemsSecondary = [
+  { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
+  { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
   { href: "/dashboard/alerts", icon: "notifications", label: "Alertas" },
   { href: "/dashboard/family", icon: "group", label: "Família" },
-  { href: "/dashboard/profile", icon: "person", label: "Perfil" },
   { href: "/dashboard/settings", icon: "settings", label: "Definições" },
 ];
 
@@ -62,28 +66,66 @@ export function DesktopSidebar({ onSignOut }: DesktopSidebarProps) {
 
 export function MobileNav() {
   const pathname = usePathname();
+  const [showMore, setShowMore] = useState(false);
 
   return (
-    <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-1 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]" role="navigation" aria-label="Navegação principal">
-      {navItems.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
+    <>
+      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-1 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]" role="navigation" aria-label="Navegação principal">
+        {navItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`flex flex-col items-center justify-center py-2 px-1 flex-1 min-h-[56px] ${
+              pathname === item.href ? "text-primary" : "text-on-surface-variant"
+            }`}
+            aria-current={pathname === item.href ? "page" : undefined}
+          >
+            <span
+              className="material-symbols-outlined text-[24px]"
+              style={pathname === item.href ? { fontVariationSettings: "'FILL' 1" } : {}}
+            >
+              {item.icon}
+            </span>
+            <span className="font-inter font-medium text-[10px] mt-0.5">{item.label}</span>
+          </Link>
+        ))}
+        <button
+          onClick={() => setShowMore(!showMore)}
           className={`flex flex-col items-center justify-center py-2 px-1 flex-1 min-h-[56px] ${
-            pathname === item.href ? "text-primary" : "text-on-surface-variant"
+            showMore ? "text-primary" : "text-on-surface-variant"
           }`}
-          aria-current={pathname === item.href ? "page" : undefined}
+          aria-label="Mais opções"
         >
           <span
             className="material-symbols-outlined text-[24px]"
-            style={pathname === item.href ? { fontVariationSettings: "'FILL' 1" } : {}}
+            style={showMore ? { fontVariationSettings: "'FILL' 1" } : {}}
           >
-            {item.icon}
+            more_horiz
           </span>
-          <span className="font-inter font-medium text-[10px] mt-0.5">{item.label}</span>
-        </Link>
-      ))}
-    </nav>
+          <span className="font-inter font-medium text-[10px] mt-0.5">Mais</span>
+        </button>
+      </nav>
+      
+      {showMore && (
+        <div className="fixed bottom-20 left-0 right-0 z-40 mx-4 bg-surface-container rounded-2xl p-4 shadow-xl">
+          <div className="grid grid-cols-4 gap-3">
+            {navItemsSecondary.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setShowMore(false)}
+                className={`flex flex-col items-center justify-center p-3 rounded-xl ${
+                  pathname === item.href ? "bg-primary/20 text-primary" : "text-on-surface-variant"
+                }`}
+              >
+                <span className="material-symbols-outlined text-[24px]">{item.icon}</span>
+                <span className="font-inter font-medium text-[10px] mt-1">{item.label}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
