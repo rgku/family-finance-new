@@ -130,14 +130,15 @@ export default function AuthPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div>
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                <label htmlFor="fullName" className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
                   Nome Completo
                 </label>
                 <input
+                  id="fullName"
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface placeholder:text-slate-600 focus:ring-2 focus:ring-primary/20 transition-all"
+                  className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface placeholder:text-on-surface-variant focus:ring-2 focus:ring-primary/20 transition-all"
                   placeholder="Seu nome"
                   required={!isLogin}
                 />
@@ -145,28 +146,31 @@ export default function AuthPage() {
             )}
 
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+              <label htmlFor="email" className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
                 Email
               </label>
               <input
+                id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface placeholder:text-slate-600 focus:ring-2 focus:ring-primary/20 transition-all"
+                className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface placeholder:text-on-surface-variant focus:ring-2 focus:ring-primary/20 transition-all"
                 placeholder="seu@email.com"
                 required
+                aria-describedby={error ? "auth-error" : undefined}
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+              <label htmlFor="password" className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
                 Senha
               </label>
               <input
+                id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface placeholder:text-slate-600 focus:ring-2 focus:ring-primary/20 transition-all"
+                className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface placeholder:text-on-surface-variant focus:ring-2 focus:ring-primary/20 transition-all"
                 placeholder="••••••••"
                 required
                 minLength={6}
@@ -174,7 +178,7 @@ export default function AuthPage() {
             </div>
 
             {error && (
-              <p className="text-error text-sm text-center">{error}</p>
+              <p id="auth-error" className="text-error text-sm text-center" role="alert">{error}</p>
             )}
 
             <button

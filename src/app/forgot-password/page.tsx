@@ -54,14 +54,15 @@ export default function ForgotPasswordPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-on-surface-variant mb-2">
+            <label htmlFor="email" className="block text-sm font-medium text-on-surface-variant mb-2">
               Email
             </label>
             <input
+              id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface placeholder:text-slate-600"
+              className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface placeholder:text-on-surface-variant"
               placeholder="teu@email.com"
               required
             />

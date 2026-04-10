@@ -112,28 +112,30 @@ export default function NewTransaction() {
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+          <label htmlFor="description" className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
             Descrição
           </label>
           <div className="relative">
             <input
+              id="description"
               type="text"
               value={description}
               onChange={(e) => handleDescriptionChange(e.target.value)}
-              className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface placeholder:text-slate-600 focus:ring-2 focus:ring-primary/20 transition-all"
+              className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface placeholder:text-on-surface-variant focus:ring-2 focus:ring-primary/20 transition-all"
               placeholder="Ex: Supermercado, Netflix..."
               required
+              aria-describedby={analyzing ? "analyzing-hint" : undefined}
             />
             {analyzing && (
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-primary animate-pulse">
-                ✨ A analisar...
+              <span id="analyzing-hint" className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-primary animate-pulse">
+                A analisar...
               </span>
             )}
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+          <label htmlFor="amount" className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
             Valor ({CURRENCY.symbol})
           </label>
           <div className="relative">
@@ -141,11 +143,12 @@ export default function NewTransaction() {
               {CURRENCY.symbol}
             </span>
             <input
+              id="amount"
               type="number"
               step="0.01"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
-              className="w-full bg-surface-container-low border-none rounded-2xl pl-12 pr-5 py-4 text-on-surface placeholder:text-slate-600 focus:ring-2 focus:ring-primary/20 transition-all"
+              className="w-full bg-surface-container-low border-none rounded-2xl pl-12 pr-5 py-4 text-on-surface placeholder:text-on-surface-variant focus:ring-2 focus:ring-primary/20 transition-all"
               placeholder="0,00"
               required
             />
@@ -153,10 +156,11 @@ export default function NewTransaction() {
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+          <label htmlFor="date" className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
             Data
           </label>
           <input
+            id="date"
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
@@ -166,9 +170,9 @@ export default function NewTransaction() {
         </div>
 
         <div>
-          <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+          <span id="category-label" className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
             Categoria {category && <span className="text-primary">(sugerido)</span>}
-          </label>
+          </span>
           <div className="grid grid-cols-4 gap-2">
             {defaultCategories.map((cat) => (
               <button

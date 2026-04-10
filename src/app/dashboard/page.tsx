@@ -58,7 +58,7 @@ export default function Dashboard() {
         <aside className="fixed left-0 top-0 bottom-0 z-50 flex flex-col h-screen w-64 border-r border-slate-800/50 bg-slate-950/80 backdrop-blur-xl">
           <div className="p-8">
             <h1 className="text-xl font-bold tracking-tighter text-emerald-400">Fiscal Sanctuary</h1>
-            <p className="text-[10px] uppercase tracking-widest text-slate-500 mt-1">Family Wealth</p>
+            <p className="text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">Family Wealth</p>
           </div>
           <nav className="flex-1 px-4 space-y-2">
             <Link href="/dashboard" className="flex items-center gap-3 px-4 py-3 text-emerald-400 font-bold border-r-2 border-emerald-400 bg-emerald-400/5">
@@ -176,11 +176,11 @@ export default function Dashboard() {
           </main>
 
           <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-2 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]">
-            <Link href="/dashboard" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
+<Link href="/dashboard" className="flex flex-col items-center justify-center p-2 flex-1 text-on-surface-variant">
               <span className="material-symbols-outlined" style={pathname === "/dashboard" ? { fontVariationSettings: "'FILL' 1" } : {}}>home</span>
               <span className="font-inter font-medium text-[9px] mt-1">Home</span>
             </Link>
-            <Link href="/dashboard/transactions" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
+            <Link href="/dashboard/transactions" className="flex flex-col items-center justify-center p-2 flex-1 text-on-surface-variant">
               <span className="material-symbols-outlined">receipt_long</span>
               <span className="font-inter font-medium text-[9px] mt-1">Trans</span>
             </Link>
@@ -189,11 +189,11 @@ export default function Dashboard() {
                 <span className="material-symbols-outlined text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
               </div>
             </Link>
-            <Link href="/dashboard/analytics" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
+            <Link href="/dashboard/analytics" className="flex flex-col items-center justify-center p-2 flex-1 text-on-surface-variant">
               <span className="material-symbols-outlined">trending_up</span>
               <span className="font-inter font-medium text-[9px] mt-1">Análise</span>
             </Link>
-            <Link href="/dashboard/profile" className="flex flex-col items-center justify-center p-2 flex-1 text-slate-500">
+            <Link href="/dashboard/profile" className="flex flex-col items-center justify-center p-2 flex-1 text-on-surface-variant">
               <span className="material-symbols-outlined">person</span>
               <span className="font-inter font-medium text-[9px] mt-1">Perfil</span>
             </Link>
