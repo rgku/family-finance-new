@@ -78,17 +78,18 @@ export default function BudgetsPage() {
           
           <div>
             <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Categoria</label>
-            <div className="grid grid-cols-6 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
               {categories.map((cat) => (
                 <button
                   key={cat.value}
                   type="button"
                   onClick={() => setSelectedCategory(cat.value)}
-                  className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all ${
+                  className={`flex flex-col items-center gap-1 p-2 sm:p-3 rounded-xl transition-all min-h-[56px] ${
                     selectedCategory === cat.value
                       ? "bg-primary/20 text-primary border border-primary"
                       : "bg-surface-container-low text-on-surface-variant"
                   }`}
+                  aria-label={`Selecionar ${cat.value}`}
                 >
                   <span className="material-symbols-outlined">{cat.icon}</span>
                   <span className="text-[10px] font-medium">{cat.value}</span>
