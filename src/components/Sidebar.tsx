@@ -9,6 +9,8 @@ export const navItems = [
   { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
   { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
   { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
+  { href: "/dashboard/alerts", icon: "notifications", label: "Alertas" },
+  { href: "/dashboard/family", icon: "group", label: "Família" },
   { href: "/dashboard/profile", icon: "person", label: "Perfil" },
   { href: "/dashboard/settings", icon: "settings", label: "Definições" },
 ];
