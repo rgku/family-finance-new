@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, Suspense, lazy } from "react";
-import { useDeviceType } from "@/hooks/useDeviceType";
+import { useState, useEffect, Suspense, lazy } from "react";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import Link from "next/link";
 
@@ -25,7 +24,6 @@ export default function ReportsPage() {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
-  const isMobile = useDeviceType();
 
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const [year, month] = selectedMonth.split("-").map(Number);
@@ -34,7 +32,9 @@ export default function ReportsPage() {
   const generateReport = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/reports/monthly?month=${selectedMonth}`);
+      const res = await fetch(`/api/reports/monthly?month=${selectedMonth}`, {
+        cache: "no-store",
+      });
       const data = await res.json();
       
       if (res.ok) {
@@ -45,11 +45,22 @@ export default function ReportsPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedMonth]);
+  }, []);
 
   useEffect(() => {
-    generateReport();
-  }, [generateReport]);
+    const controller = new AbortController();
+    setLoading(true);
+    fetch(`/api/reports/monthly?month=${selectedMonth}`, { cache: "no-store", signal: controller.signal })
+      .then(res => res.json())
+      .then(data => {
+        if (data && !controller.signal.aborted) setReportData(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [selectedMonth]);
 
   const handlePrevMonth = () => {
     const prevMonth = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
