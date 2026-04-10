@@ -6,10 +6,10 @@ import { useState, memo } from "react";
 
 const navItemsMobile = [
   { href: "/dashboard", icon: "home", label: "Home" },
-  { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
 ];
 
 const navItemsSecondary = [
+  { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
   { href: "/dashboard/transactions", icon: "receipt_long", label: "Trans" },
   { href: "/dashboard/reports", icon: "assessment", label: "Relatórios" },
   { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
