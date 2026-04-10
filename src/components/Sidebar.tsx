@@ -129,18 +129,76 @@ export function MobileNav() {
   );
 }
 
-export function MobileHeader({ hideProfile = false, hideSettings = false }: { hideProfile?: boolean; hideSettings?: boolean }) {
+export function MobileHeader({ hideNotifications = false }: { hideNotifications?: boolean }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
+  
   return (
-    <header className="fixed top-0 w-full z-50 bg-surface flex justify-between items-center px-6 py-4">
-      {!hideProfile && (
-        <Link href="/dashboard/profile" className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
-          <span className="material-symbols-outlined text-primary">person</span>
-        </Link>
-      )}
-      {!hideSettings && (
-        <Link href="/dashboard/settings" className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
-          <span className="material-symbols-outlined text-primary">settings</span>
-        </Link>
+    <header className="fixed top-0 w-full z-50 bg-surface flex justify-between items-center px-4 py-3">
+      <div className="flex-1">
+        <span className="text-lg font-bold text-primary">FamFlow</span>
+      </div>
+      
+      <div className="flex items-center gap-2">
+        {!hideNotifications && (
+          <Link 
+            href="/dashboard/alerts" 
+            className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center"
+            aria-label="Notificações"
+          >
+            <span className="material-symbols-outlined text-primary">notifications</span>
+          </Link>
+        )}
+        
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center"
+          aria-label="Menu"
+        >
+          <span className="material-symbols-outlined text-primary">
+            {menuOpen ? "close" : "menu"}
+          </span>
+        </button>
+      </div>
+      
+      {menuOpen && (
+        <div className="absolute top-full right-4 mt-2 w-48 bg-surface-container rounded-2xl shadow-xl py-2 z-50">
+          <Link
+            href="/dashboard/profile"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-high"
+          >
+            <span className="material-symbols-outlined">person</span>
+            <span>Perfil</span>
+          </Link>
+          <Link
+            href="/dashboard/family"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-high"
+          >
+            <span className="material-symbols-outlined">group</span>
+            <span>Família</span>
+          </Link>
+          <Link
+            href="/dashboard/settings"
+            onClick={() => setMenuOpen(false)}
+            className="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-high"
+          >
+            <span className="material-symbols-outlined">settings</span>
+            <span>Definições</span>
+          </Link>
+          <hr className="my-2 border-surface-container-high" />
+          <button
+            onClick={() => {
+              setMenuOpen(false);
+              // Sign out logic here
+            }}
+            className="flex items-center gap-3 px-4 py-3 text-error hover:bg-error/10 w-full"
+          >
+            <span className="material-symbols-outlined">logout</span>
+            <span>Sair</span>
+          </button>
+        </div>
       )}
     </header>
   );

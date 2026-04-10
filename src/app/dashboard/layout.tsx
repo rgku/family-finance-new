@@ -1,9 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { DesktopSidebar, MobileNav } from "@/components/Sidebar";
+import { DesktopSidebar, MobileNav, MobileHeader } from "@/components/Sidebar";
 import { useDeviceType } from "@/hooks/useDeviceType";
-import Link from "next/link";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -15,6 +14,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:p-4 focus:bg-primary focus:text-on-primary focus:z-50">
           Saltar para conteúdo principal
         </a>
+        {isMobile && <MobileHeader />}
         {children}
       </>
     );
@@ -26,7 +26,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:p-4 focus:bg-primary focus:text-on-primary focus:z-50">
           Saltar para conteúdo principal
         </a>
-        <div className="pb-24">
+        <MobileHeader />
+        <div className="pb-24 pt-16">
           {children}
         </div>
         <MobileNav />
@@ -36,7 +37,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-surface">
-<a href="#main-content" className="sr-only focus:fixed focus:p-4 focus:bg-primary focus:text-on-primary focus:z-50 focus:top-2 focus:left-2">
+      <a href="#main-content" className="sr-only focus:fixed focus:p-4 focus:bg-primary focus:text-on-primary focus:z-50 focus:top-2 focus:left-2">
           Saltar para conteúdo principal
         </a>
       <DesktopSidebar />
