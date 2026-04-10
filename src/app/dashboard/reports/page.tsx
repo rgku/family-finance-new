@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import { PDFReport } from "@/components/ReportPDF";
-import { useData } from "@/hooks/DataProvider";
+import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import Link from "next/link";
 
@@ -18,13 +18,13 @@ interface ReportData {
 }
 
 export default function ReportsPage() {
-  const { transactions, budgets } = useData();
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
+  const isMobile = useDeviceType();
 
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const [year, month] = selectedMonth.split("-").map(Number);

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
-import { EXPENSE_CATEGORIES } from "@/lib/constants";
+import { useDeviceType } from "@/hooks/useDeviceType";
 import Link from "next/link";
 
 export default function FamilyPage() {
@@ -17,6 +17,7 @@ export default function FamilyPage() {
     updateMember, 
     removeMember 
   } = useFamilyMembers();
+  const isMobile = useDeviceType();
   
   const [isInviting, setIsInviting] = useState(false);
   const [inviteForm, setInviteForm] = useState({ name: "", email: "", role: "member" as "member" | "view_only" });
