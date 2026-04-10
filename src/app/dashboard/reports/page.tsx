@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { PDFDownloadLink } from "@react-pdf/renderer";
-import { PDFReport } from "@/components/ReportPDF";
+import { useState, useCallback, useEffect, Suspense, lazy } from "react";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import Link from "next/link";
+
+const PDFDownloadLink = lazy(() => import("@react-pdf/renderer").then(mod => ({ default: mod.PDFDownloadLink })));
+const PDFReport = lazy(() => import("@/components/ReportPDF").then(mod => ({ default: mod.PDFReport })));
 
 interface ReportData {
   month: string;
@@ -174,18 +175,20 @@ export default function ReportsPage() {
               Baixa um relatório PDF completo com todas as transações do mês.
             </p>
             
-            <PDFDownloadLink
-              document={<PDFReport data={reportData} />}
-              fileName={`famflow-relatorio-${selectedMonth}.pdf`}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full font-medium hover:brightness-110"
-            >
-              {({ loading }) => (
-                <>
-                  <span className="material-symbols-outlined">download</span>
-                  {loading ? "A gerar PDF..." : "Baixar PDF"}
-                </>
-              )}
-            </PDFDownloadLink>
+            <Suspense fallback={<button disabled className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary/50 text-on-primary rounded-full font-medium">A carregar...</button>}>
+              <PDFDownloadLink
+                document={<PDFReport data={reportData} />}
+                fileName={`famflow-relatorio-${selectedMonth}.pdf`}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full font-medium hover:brightness-110"
+              >
+                {({ loading }) => (
+                  <>
+                    <span className="material-symbols-outlined">download</span>
+                    {loading ? "A gerar PDF..." : "Baixar PDF"}
+                  </>
+                )}
+              </PDFDownloadLink>
+            </Suspense>
           </div>
 
           {/* Export CSV */}
