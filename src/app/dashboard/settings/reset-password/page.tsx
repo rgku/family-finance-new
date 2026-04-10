@@ -69,9 +69,10 @@ export default function ResetPasswordPage() {
       if (error) {
         setError(error.message);
       } else {
-        setMessage("Password redefinida com sucesso!");
-        setTimeout(() => {
-          router.push("/dashboard/profile");
+        setMessage("Password redefinida com sucesso! Vai ser redirecionado para o login.");
+        setTimeout(async () => {
+          await supabase.auth.signOut();
+          router.push("/");
         }, 2000);
       }
     } catch (err) {
