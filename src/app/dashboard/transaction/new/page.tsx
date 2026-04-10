@@ -1,21 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
 import { CURRENCY } from "@/lib/currency";
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/constants";
 
-const defaultCategories = [
-  { value: "Moradia", icon: "home" },
-  { value: "Alimentação", icon: "restaurant" },
-  { value: "Transporte", icon: "directions_car" },
-  { value: "Lazer", icon: "movie" },
-  { value: "Saúde", icon: "local_hospital" },
-  { value: "Educação", icon: "school" },
-  { value: "Renda", icon: "work" },
-  { value: "Outros", icon: "more_horiz" },
-];
+function debounce<T extends (...args: any[]) => any>(fn: T, ms: number) {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  return (...args: Parameters<T>) => {
+    if (timeoutId) clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => fn(...args), ms);
+  };
+}
 
 export default function NewTransaction() {
   const { user } = useAuth();
@@ -23,6 +21,7 @@ export default function NewTransaction() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
+  const [error, setError] = useState("");
   
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -30,9 +29,7 @@ export default function NewTransaction() {
   const [category, setCategory] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
 
-  const handleDescriptionChange = async (value: string) => {
-    setDescription(value);
-    
+  const categorizeDescription = useCallback(async (value: string) => {
     if (value.length > 3 && type === "expense") {
       setAnalyzing(true);
       try {
@@ -51,28 +48,46 @@ export default function NewTransaction() {
         setAnalyzing(false);
       }
     }
+  }, [type]);
+
+  const debouncedCategorize = useRef(debounce(categorizeDescription, 500)).current;
+
+  const handleDescriptionChange = (value: string) => {
+    setDescription(value);
+    if (value.length > 3 && type === "expense") {
+      debouncedCategorize(value);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || !description) return;
+    
+    const amountNum = parseFloat(amount);
+    if (!amount || amountNum <= 0) {
+      setError("O valor deve ser maior que zero");
+      return;
+    }
+    if (!description) {
+      setError("A descrição é obrigatória");
+      return;
+    }
 
     setLoading(true);
+    setError("");
 
     try {
       await addTransaction({
         description,
-        amount: parseFloat(amount),
+        amount: amountNum,
         type,
         category: category || "Outros",
         date,
       });
       
-      alert("Transação criada com sucesso!");
       router.push("/dashboard");
-    } catch (error) {
-      alert("Erro ao criar transação");
-      console.error(error);
+    } catch (err) {
+      setError("Erro ao criar transação");
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -89,7 +104,7 @@ export default function NewTransaction() {
         <div className="flex gap-2 bg-surface-container rounded-full p-1">
           <button
             type="button"
-            onClick={() => setType("expense")}
+            onClick={() => { setType("expense"); setCategory(""); setDescription(""); }}
             className={`flex-1 py-3 rounded-full text-sm font-semibold transition-all ${
               type === "expense"
                 ? "bg-tertiary text-on-tertiary"
@@ -100,7 +115,7 @@ export default function NewTransaction() {
           </button>
           <button
             type="button"
-            onClick={() => setType("income")}
+            onClick={() => { setType("income"); setCategory(""); setDescription(""); }}
             className={`flex-1 py-3 rounded-full text-sm font-semibold transition-all ${
               type === "income"
                 ? "bg-primary text-on-primary"
@@ -174,7 +189,7 @@ export default function NewTransaction() {
             Categoria {category && <span className="text-primary">(sugerido)</span>}
           </span>
           <div className="grid grid-cols-4 gap-2">
-            {defaultCategories.map((cat) => (
+            {(type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map((cat) => (
               <button
                 key={cat.value}
                 type="button"
@@ -191,6 +206,10 @@ export default function NewTransaction() {
             ))}
           </div>
         </div>
+
+        {error && (
+          <p className="text-error text-sm text-center" role="alert">{error}</p>
+        )}
 
         <button
           type="submit"

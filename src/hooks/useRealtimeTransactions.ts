@@ -1,69 +1,34 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { SupabaseClient } from "@supabase/supabase-js";
+import { useEffect, useCallback } from "react";
+import { createBrowserClient } from "@supabase/ssr";
+import { useAuth } from "@/components/AuthProvider";
 
-type Transaction = {
-  id: string;
-  description: string;
-  amount: number;
-  type: "income" | "expense";
-  category: string;
-  date: string;
-  created_at: string;
-};
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL as string;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string;
 
 export function useRealtimeTransactions(
-  supabase: SupabaseClient,
-  familyId: string | undefined,
-  initialData: Transaction[] = []
+  onTransactionChange?: () => void
 ) {
-  const [transactions, setTransactions] = useState<Transaction[]>(initialData);
-
-  const loadTransactions = useCallback(async () => {
-    if (!familyId) return;
-
-    const { data, error } = await supabase
-      .from("transactions")
-      .select("*")
-      .eq("family_id", familyId)
-      .order("date", { ascending: false })
-      .limit(50);
-
-    if (!error && data) {
-      setTransactions(data as Transaction[]);
-    }
-  }, [supabase, familyId]);
-
+  const { user } = useAuth();
+  
   useEffect(() => {
-    if (!familyId) return;
+    if (!user) return;
 
-    loadTransactions();
-
+    const supabase = createBrowserClient(supabaseUrl, supabaseKey);
+    
     const channel = supabase
-      .channel(`transactions:${familyId}`)
+      .channel(`transactions:${user.id}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "transactions",
-          filter: `family_id=eq.${familyId}`,
+          filter: `user_id=eq.${user.id}`,
         },
-        (payload) => {
-          if (payload.eventType === "INSERT") {
-            setTransactions((prev) => [payload.new as Transaction, ...prev]);
-          } else if (payload.eventType === "UPDATE") {
-            setTransactions((prev) =>
-              prev.map((t) =>
-                t.id === payload.new.id ? (payload.new as Transaction) : t
-              )
-            );
-          } else if (payload.eventType === "DELETE") {
-            setTransactions((prev) =>
-              prev.filter((t) => t.id !== payload.old.id)
-            );
-          }
+        () => {
+          onTransactionChange?.();
         }
       )
       .subscribe();
@@ -71,7 +36,5 @@ export function useRealtimeTransactions(
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, familyId, loadTransactions]);
-
-  return { transactions, refresh: loadTransactions };
+  }, [user, onTransactionChange]);
 }

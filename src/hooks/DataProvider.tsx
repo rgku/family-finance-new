@@ -79,12 +79,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const fetchData = async () => {
       setLoading(true);
       
-      // Fetch transactions - filtered by user_id
-      const { data: transData } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false });
+      // Fetch all data in parallel
+      const [transResult, goalsResult, budgetsResult] = await Promise.all([
+        supabase.from('transactions').select('*').eq('user_id', user.id).order('date', { ascending: false }),
+        supabase.from('goals').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('budgets').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+      ]);
+      
+      const transData = transResult.data;
+      const goalsData = goalsResult.data;
+      const budgetsData = budgetsResult.data;
       
       if (transData) {
         setTransactions(transData.map(t => ({
@@ -97,13 +101,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         })));
       }
 
-      // Fetch goals - filtered by user_id
-      const { data: goalsData } = await supabase
-        .from('goals')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      
       if (goalsData) {
         setGoals(goalsData.map(g => ({
           id: g.id,
@@ -115,20 +112,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
         })));
       }
 
-      // Fetch budgets - filtered by user_id
-      const { data: budgetsData } = await supabase
-        .from('budgets')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-      
       if (budgetsData) {
-        setBudgets(budgetsData.map(b => ({
-          id: b.id,
-          category: b.category,
-          limit: Number(b.limit_amount),
-          spent: Number(b.limit_amount) * 0.5,
-        })));
+        const currentMonth = new Date().toISOString().slice(0, 7);
+        
+        const budgetWithSpent = budgetsData.map(b => {
+          const monthTransactions = transData?.filter(t => 
+            t.category === b.category && 
+            t.type === 'expense' && 
+            t.date.startsWith(currentMonth)
+          ) || [];
+          
+          const spent = monthTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
+          
+          return {
+            id: b.id,
+            category: b.category,
+            limit: Number(b.limit_amount),
+            spent,
+          };
+        });
+        
+        setBudgets(budgetWithSpent);
       }
 
       setLoading(false);

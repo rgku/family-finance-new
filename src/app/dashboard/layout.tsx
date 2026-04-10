@@ -1,19 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { DesktopSidebar, MobileNav } from "@/components/Sidebar";
+import { useDeviceType } from "@/hooks/useDeviceType";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [isMobile, setIsMobile] = useState(true);
-
-  useEffect(() => {
-    const checkDevice = () => setIsMobile(window.innerWidth < 768);
-    checkDevice();
-    window.addEventListener('resize', checkDevice);
-    return () => window.removeEventListener('resize', checkDevice);
-  }, []);
+  const isMobile = useDeviceType();
 
   if (pathname === "/dashboard" || pathname === "/dashboard/settings/reset-password") {
     return <>{children}</>;

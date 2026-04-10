@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useData } from "@/hooks/DataProvider";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 
@@ -15,26 +15,30 @@ export default function AnalyticsPage() {
   const [year, month] = selectedMonth.split("-").map(Number);
   const monthName = monthNames[month - 1];
 
-  const filteredTransactions = transactions.filter(t => {
-    const transDate = new Date(t.date);
-    return transDate.getFullYear() === year && transDate.getMonth() === month - 1;
-  });
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      const transDate = new Date(t.date);
+      return transDate.getFullYear() === year && transDate.getMonth() === month - 1;
+    });
+  }, [transactions, year, month]);
 
-  const income = filteredTransactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
-  const expenses = filteredTransactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
+  const income = useMemo(() => filteredTransactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0), [filteredTransactions]);
+  const expenses = useMemo(() => filteredTransactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0), [filteredTransactions]);
 
-  const categoryMap = new Map<string, number>();
-  filteredTransactions.filter(t => t.type === "expense").forEach(t => {
-    categoryMap.set(t.category, (categoryMap.get(t.category) || 0) + t.amount);
-  });
+  const categoryBreakdown = useMemo(() => {
+    const categoryMap = new Map<string, number>();
+    filteredTransactions.filter(t => t.type === "expense").forEach(t => {
+      categoryMap.set(t.category, (categoryMap.get(t.category) || 0) + t.amount);
+    });
 
-  const categoryColors = ["#4edea3", "#d0bcff", "#ffb3ad", "#fde68a", "#67e8f9", "#fb7185"];
-  
-  const categoryBreakdown = Array.from(categoryMap.entries()).map(([name, value], idx) => ({
-    name,
-    value,
-    color: categoryColors[idx % categoryColors.length],
-  }));
+    const categoryColors = ["#4edea3", "#d0bcff", "#ffb3ad", "#fde68a", "#67e8f9", "#fb7185"];
+    
+    return Array.from(categoryMap.entries()).map(([name, value], idx) => ({
+      name,
+      value,
+      color: categoryColors[idx % categoryColors.length],
+    }));
+  }, [filteredTransactions]);
 
   const prevMonth = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
   const nextMonth = month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 };

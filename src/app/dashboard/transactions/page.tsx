@@ -1,21 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useData } from "@/hooks/DataProvider";
+import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 
 export default function TransactionsPage() {
   const { transactions, updateTransaction, deleteTransaction } = useData();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ description: "", amount: "", type: "expense" as "income" | "expense", category: "" });
-  const [isMobile, setIsMobile] = useState(true);
-
-  useEffect(() => {
-    const checkDevice = () => setIsMobile(window.innerWidth < 768);
-    checkDevice();
-    window.addEventListener('resize', checkDevice);
-    return () => window.removeEventListener('resize', checkDevice);
-  }, []);
+  const isMobile = useDeviceType();
 
   const handleEdit = (trans: any) => {
     setEditForm({
