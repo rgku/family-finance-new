@@ -29,24 +29,6 @@ export default function ReportsPage() {
   const [year, month] = selectedMonth.split("-").map(Number);
   const monthName = monthNames[month - 1];
 
-  const generateReport = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/reports/monthly?month=${selectedMonth}`, {
-        cache: "no-store",
-      });
-      const data = await res.json();
-      
-      if (res.ok) {
-        setReportData(data);
-      }
-    } catch (err) {
-      console.error("Failed to generate report:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
