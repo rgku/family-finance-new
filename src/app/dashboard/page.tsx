@@ -8,7 +8,7 @@ import { formatCurrencyWithSymbol } from "@/lib/currency";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-import { DesktopSidebar } from "@/components/Sidebar";
+import { DesktopSidebar, MobileHeader } from "@/components/Sidebar";
 
 export default function Dashboard() {
   const pathname = usePathname();
@@ -51,14 +51,7 @@ export default function Dashboard() {
 
       {isMobile ? (
         <>
-          <header className="fixed top-0 w-full z-50 bg-surface flex justify-between items-center px-6 py-4">
-            <Link href="/dashboard/profile" className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
-              <span className="material-symbols-outlined text-primary">person</span>
-            </Link>
-            <Link href="/dashboard/settings" className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden">
-              <span className="material-symbols-outlined text-primary">settings</span>
-            </Link>
-          </header>
+          <MobileHeader />
 
           {/* Month Navigation */}
           <div className="fixed top-16 left-0 right-0 z-40 bg-surface border-b border-surface-container py-2">
