@@ -23,7 +23,7 @@ export function DesktopSidebar({ onSignOut }: DesktopSidebarProps) {
   return (
     <aside className="fixed left-0 top-0 bottom-0 z-50 flex flex-col h-screen w-64 border-r border-slate-800/50 bg-slate-950/80 backdrop-blur-xl" role="navigation" aria-label="Navegação principal">
       <div className="p-8">
-        <h1 className="text-xl font-bold tracking-tighter text-primary">Fiscal Sanctuary</h1>
+        <h1 className="text-xl font-bold tracking-tighter text-primary">FamFlow</h1>
         <p className="text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">Family Wealth</p>
       </div>
       <nav className="flex-1 px-4 space-y-1">

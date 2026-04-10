@@ -4,25 +4,25 @@ import { AuthProvider } from "@/components/AuthProvider";
 import { DataProvider } from "@/hooks/DataProvider";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://fiscalsanctuary.com'),
-  title: {
-    default: "Fiscal Sanctuary - Gestão Financeira Familiar",
-    template: "%s | Fiscal Sanctuary"
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://famflow.app'),
+title: {
+    default: "FamFlow - Family Financial Management",
+    template: "%s | FamFlow"
   },
-  description: "Aplicação de gestão financeira familiar em tempo real. Controle gastos, defina orçamentos, acompanhe metas e analise suas finanças com uma ferramenta intuitiva.",
+  description: "Family finance management app. Track expenses, set budgets, monitor goals and analyze your family finances in real-time.",
   robots: { index: true, follow: true },
   openGraph: {
     type: 'website',
     locale: 'pt_BR',
-    url: 'https://fiscalsanctuary.com',
-    siteName: 'Fiscal Sanctuary',
-    title: 'Fiscal Sanctuary - Gestão Financeira Familiar',
+    url: 'https://famflow.app',
+    siteName: 'FamFlow',
+    title: 'FamFlow - Gestão Financeira Familiar',
     description: 'Controle suas finanças familiares em tempo real com orçamentos, metas e análise detalhada.',
     images: [{ url: '/og-image.svg', width: 1200, height: 630 }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Fiscal Sanctuary',
+    title: 'FamFlow',
     description: 'Gestão financeira familiar em tempo real',
   },
   icons: [

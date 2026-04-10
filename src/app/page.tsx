@@ -87,7 +87,7 @@ export default function AuthPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="font-headline text-3xl font-bold text-primary tracking-tight">
-            Fiscal Sanctuary
+            FamFlow
           </h1>
           <p className="text-on-surface-variant text-sm mt-2">
             Gestão financeira familiar em tempo real
