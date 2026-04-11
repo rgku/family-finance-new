@@ -3,10 +3,12 @@
 import { usePathname } from "next/navigation";
 import { DesktopSidebar, MobileNav, MobileHeader } from "@/components/Sidebar";
 import { useDeviceType } from "@/hooks/useDeviceType";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isMobile = useDeviceType();
+  const { signOut } = useAuth();
 
   if (pathname === "/dashboard" || pathname === "/dashboard/settings/reset-password") {
     return (
@@ -14,7 +16,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:p-4 focus:bg-primary focus:text-on-primary focus:z-50">
           Saltar para conteúdo principal
         </a>
-        {isMobile && <MobileHeader />}
+        {isMobile && <MobileHeader onSignOut={signOut} />}
         {children}
       </>
     );
@@ -26,7 +28,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:p-4 focus:bg-primary focus:text-on-primary focus:z-50">
           Saltar para conteúdo principal
         </a>
-        <MobileHeader />
+        <MobileHeader onSignOut={signOut} />
         <div className="pb-24 pt-16">
           {children}
         </div>
@@ -40,7 +42,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <a href="#main-content" className="sr-only focus:fixed focus:p-4 focus:bg-primary focus:text-on-primary focus:z-50 focus:top-2 focus:left-2">
           Saltar para conteúdo principal
         </a>
-      <DesktopSidebar />
+      <DesktopSidebar onSignOut={signOut} />
       <main className="ml-64" id="main-content" tabIndex={-1}>
         {children}
       </main>

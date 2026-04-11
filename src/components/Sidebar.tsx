@@ -152,7 +152,7 @@ const MobileNavComponent = function MobileNav() {
 
 export const MobileNav = memo(MobileNavComponent);
 
-const MobileHeaderComponent = function MobileHeader({ hideNotifications = false }: { hideNotifications?: boolean }) {
+const MobileHeaderComponent = function MobileHeader({ hideNotifications = false, onSignOut }: { hideNotifications?: boolean; onSignOut?: () => void }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
   
@@ -222,7 +222,7 @@ const MobileHeaderComponent = function MobileHeader({ hideNotifications = false 
           <button
             onClick={() => {
               setMenuOpen(false);
-              // Sign out logic here
+              if (onSignOut) onSignOut();
             }}
             className="flex items-center gap-3 px-4 py-3 text-error hover:bg-error/10 w-full"
           >
