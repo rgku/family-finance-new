@@ -11,6 +11,7 @@ import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
 
 export default function Dashboard() {
   const { user, signOut, supabase, loading } = useAuth();
+  console.log("[Dashboard page] signOut:", signOut);
   const { transactions, goals: dataGoals } = useData();
   const isMobile = useDeviceType();
   
@@ -55,7 +56,7 @@ export default function Dashboard() {
 
       {isMobile ? (
         <>
-          <MobileHeader />
+          <MobileHeader onSignOut={signOut} />
 
           {/* Month Navigation */}
           <div className="fixed top-16 left-0 right-0 z-40 bg-surface border-b border-surface-container py-2">

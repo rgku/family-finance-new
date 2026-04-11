@@ -8,7 +8,8 @@ import { useAuth } from "@/components/AuthProvider";
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isMobile = useDeviceType();
-  const { signOut } = useAuth();
+  const auth = useAuth();
+  const signOut = auth?.signOut;
 
   if (pathname === "/dashboard" || pathname === "/dashboard/settings/reset-password") {
     return (
