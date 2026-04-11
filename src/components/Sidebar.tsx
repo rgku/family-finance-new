@@ -156,8 +156,6 @@ const MobileHeaderComponent = function MobileHeader({ hideNotifications = false,
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
   
-  console.log("[MobileHeader] onSignOut:", onSignOut);
-  
   return (
     <header className="fixed top-0 w-full z-50 bg-surface flex justify-between items-center px-4 py-3">
       <div className="flex-1">
