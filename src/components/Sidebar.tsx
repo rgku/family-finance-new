@@ -242,7 +242,7 @@ const MobileHeaderComponent = function MobileHeader({ hideNotifications = false,
   );
 }
 
-export const MobileHeader = memo(MobileHeaderComponent);
+export { MobileHeaderComponent as MobileHeader };
 
 export function FABNewTransaction() {
   return (
