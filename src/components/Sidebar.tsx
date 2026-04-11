@@ -224,13 +224,9 @@ const MobileHeaderComponent = function MobileHeader({ hideNotifications = false,
               setMenuOpen(false);
               if (onSignOut) {
                 console.log("Signing out...");
-                onSignOut().then(() => {
-                  console.log("Signed out, redirecting...");
-                  window.location.href = "/";
-                }).catch((err) => {
-                  console.error("Logout error:", err);
-                  alert("Erro ao sair: " + err.message);
-                });
+                onSignOut();
+                console.log("SignOut called, redirecting...");
+                window.location.href = "/";
               } else {
                 console.error("onSignOut is undefined");
                 alert("Função de logout não disponível");
