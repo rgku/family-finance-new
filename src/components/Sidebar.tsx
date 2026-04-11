@@ -220,15 +220,20 @@ const MobileHeaderComponent = function MobileHeader({ hideNotifications = false,
           </Link>
           <hr className="my-2 border-surface-container-high" />
           <button
-            onClick={async () => {
+            onClick={() => {
               setMenuOpen(false);
               if (onSignOut) {
-                try {
-                  await onSignOut();
+                console.log("Signing out...");
+                onSignOut().then(() => {
+                  console.log("Signed out, redirecting...");
                   window.location.href = "/";
-                } catch (err) {
-                  console.error("Logout failed:", err);
-                }
+                }).catch((err) => {
+                  console.error("Logout error:", err);
+                  alert("Erro ao sair: " + err.message);
+                });
+              } else {
+                console.error("onSignOut is undefined");
+                alert("Função de logout não disponível");
               }
             }}
             className="flex items-center gap-3 px-4 py-3 text-error hover:bg-error/10 w-full"
