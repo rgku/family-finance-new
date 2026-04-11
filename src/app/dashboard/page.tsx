@@ -11,7 +11,6 @@ import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
 
 export default function Dashboard() {
   const { user, signOut, supabase, loading } = useAuth();
-  console.log("[Dashboard page] signOut:", signOut);
   const { transactions, goals: dataGoals } = useData();
   const isMobile = useDeviceType();
   
