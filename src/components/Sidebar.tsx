@@ -220,9 +220,16 @@ const MobileHeaderComponent = function MobileHeader({ hideNotifications = false,
           </Link>
           <hr className="my-2 border-surface-container-high" />
           <button
-            onClick={() => {
+            onClick={async () => {
               setMenuOpen(false);
-              if (onSignOut) onSignOut();
+              if (onSignOut) {
+                try {
+                  await onSignOut();
+                  window.location.href = "/";
+                } catch (err) {
+                  console.error("Logout failed:", err);
+                }
+              }
             }}
             className="flex items-center gap-3 px-4 py-3 text-error hover:bg-error/10 w-full"
           >
