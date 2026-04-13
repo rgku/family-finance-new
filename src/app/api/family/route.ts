@@ -51,16 +51,66 @@ export async function POST(request: NextRequest) {
 
       return NextResponse.json({ family, inviteCode });
     } else if (action === "join") {
+      // Check if user already has a family
+      const { data: existingProfile } = await adminSupabase
+        .from("profiles")
+        .select("family_id")
+        .eq("id", user.id)
+        .single();
+
+      if (existingProfile?.family_id) {
+        return NextResponse.json(
+          { error: "Já pertences a uma família. Sai primeiro para entrar noutra." },
+          { status: 400 }
+        );
+      }
+
       const inviteCode = typeof name === 'string' ? name.toUpperCase().slice(0, 6) : "";
       
-      // Use admin client to bypass RLS
+      // First, try to find by invite_code (family table)
       const { data: family, error: familyError } = await adminSupabase
         .from("families")
         .select("*")
         .eq("invite_code", inviteCode)
         .single();
 
+      let targetFamily = family;
+      let newRole = "partner";
+
+      // If not found by family invite_code, try to find by invite_token (member invitation)
       if (familyError || !family) {
+        const { data: memberInvite, error: inviteError } = await adminSupabase
+          .from("family_members")
+          .select("*, families(*)")
+          .eq("invite_token", inviteCode)
+          .single();
+
+        if (inviteError || !memberInvite) {
+          return NextResponse.json(
+            { error: "Código de convite inválido" },
+            { status: 400 }
+          );
+        }
+
+        // Check if invite is already used
+        if (memberInvite.status === "active") {
+          return NextResponse.json(
+            { error: "Este convite já foi utilizado" },
+            { status: 400 }
+          );
+        }
+
+        targetFamily = memberInvite.families;
+        newRole = memberInvite.role;
+
+        // Mark invite as active
+        await adminSupabase
+          .from("family_members")
+          .update({ status: "active", user_id: user.id })
+          .eq("id", memberInvite.id);
+      }
+
+      if (!targetFamily) {
         return NextResponse.json(
           { error: "Código de convite inválido" },
           { status: 400 }
@@ -69,14 +119,14 @@ export async function POST(request: NextRequest) {
 
       const { error: profileError } = await adminSupabase
         .from("profiles")
-        .update({ family_id: family.id, role: "partner" })
+        .update({ family_id: targetFamily.id, role: newRole })
         .eq("id", user.id);
 
       if (profileError) {
         return NextResponse.json({ error: profileError.message }, { status: 400 });
       }
 
-      return NextResponse.json({ family, message: "Entrou na família com sucesso!" });
+      return NextResponse.json({ family: targetFamily, message: "Entrou na família com sucesso!" });
     }
 
     return NextResponse.json({ error: "Ação inválida" }, { status: 400 });
