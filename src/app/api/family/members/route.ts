@@ -76,9 +76,7 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
     const body = await request.json();
-    console.log("POST /api/family/members body:", JSON.stringify(body));
     const { data: { user } } = await supabase.auth.getUser();
-    console.log("User:", user?.id);
 
     if (!user) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
@@ -90,8 +88,6 @@ export async function POST(request: NextRequest) {
       .select("family_id, role, tier, member_limit")
       .eq("id", user.id)
       .single();
-
-    console.log("Profile:", profile);
     
     if (!profile?.family_id) {
       return NextResponse.json({ error: "Não pertence a uma família" }, { status: 400 });
@@ -116,7 +112,6 @@ export async function POST(request: NextRequest) {
 
     const parsed = inviteSchema.safeParse(body);
     if (!parsed.success) {
-      console.log("Validation failed:", parsed.error);
       return NextResponse.json({ error: "Dados inválidos", details: parsed.error.issues }, { status: 400 });
     }
 

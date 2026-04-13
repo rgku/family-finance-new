@@ -52,15 +52,12 @@ export function useFamilyMembers() {
   }, [fetchMembers]);
 
   const inviteMember = async (name: string, email: string, role: "member" | "view_only" = "member") => {
-    const payload = { name, email, role };
-    console.log("inviteMember payload:", JSON.stringify(payload));
     const res = await fetch("/api/family/members", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ name, email, role }),
     });
     const data = await res.json();
-    console.log("inviteMember response:", res.status, data);
     
     if (!res.ok) {
       throw new Error(data.error);

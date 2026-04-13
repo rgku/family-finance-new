@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function FamilyPage() {
   const { 
@@ -18,11 +19,74 @@ export default function FamilyPage() {
     removeMember 
   } = useFamilyMembers();
   const isMobile = useDeviceType();
+  const router = useRouter();
   
   const [isInviting, setIsInviting] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
   const [inviteForm, setInviteForm] = useState({ name: "", email: "", role: "member" as "member" | "view_only" });
+  const [createForm, setCreateForm] = useState({ name: "" });
+  const [joinCode, setJoinCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+
+  const handleCreateFamily = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setMessage("");
+    
+    try {
+      const res = await fetch("/api/family", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "create", name: createForm.name || "Minha Família" }),
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Erro ao criar família");
+      }
+      
+      setMessage("Família criada com sucesso!");
+      setIsCreating(false);
+      router.refresh();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+      setMessage(errorMessage);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleJoinFamily = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!joinCode.trim()) return;
+    
+    setSubmitting(true);
+    setMessage("");
+    
+    try {
+      const res = await fetch("/api/family", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "join", name: joinCode }),
+      });
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Erro ao entrar na família");
+      }
+      
+      setMessage("Entrou na família com sucesso!");
+      setIsJoining(false);
+      router.refresh();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+      setMessage(errorMessage);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,8 +153,80 @@ export default function FamilyPage() {
       </header>
 
       {message && (
-        <div className={`mb-6 p-4 rounded-lg ${message.includes('adicionado') ? 'bg-primary/20 text-primary' : 'bg-error/20 text-error'}`}>
+        <div className={`mb-6 p-4 rounded-lg ${message.includes('sucesso') ? 'bg-primary/20 text-primary' : 'bg-error/20 text-error'}`}>
           {message}
+        </div>
+      )}
+
+      {/* No Family - Create or Join */}
+      {!family && (
+        <div className="bg-surface-container rounded-2xl p-6 mb-6">
+          <h2 className="text-xl font-bold text-on-surface mb-4">Ainda não pertences a uma família</h2>
+          <p className="text-on-surface-variant mb-6">Cria uma nova família ou entra numa família existente com código de convite.</p>
+          
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              onClick={() => setIsCreating(!isCreating)}
+              className="flex-1 py-3 bg-primary text-on-primary rounded-full font-medium"
+            >
+              Criar Família
+            </button>
+            <button
+              onClick={() => setIsJoining(!isJoining)}
+              className="flex-1 py-3 bg-surface-container-high text-on-surface rounded-full font-medium"
+            >
+              Entrar com Código
+            </button>
+          </div>
+
+          {isCreating && (
+            <form onSubmit={handleCreateFamily} className="mt-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">
+                  Nome da Família
+                </label>
+                <input
+                  type="text"
+                  value={createForm.name}
+                  onChange={(e) => setCreateForm({ name: e.target.value })}
+                  className="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 text-on-surface"
+                  placeholder="Minha Família"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full py-3 bg-primary text-on-primary rounded-full font-medium disabled:opacity-50"
+              >
+                {submitting ? "A criar..." : "Criar Família"}
+              </button>
+            </form>
+          )}
+
+          {isJoining && (
+            <form onSubmit={handleJoinFamily} className="mt-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase mb-2">
+                  Código de Convite
+                </label>
+                <input
+                  type="text"
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  className="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 text-on-surface font-mono"
+                  placeholder="ABC123"
+                  maxLength={6}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full py-3 bg-primary text-on-primary rounded-full font-medium disabled:opacity-50"
+              >
+                {submitting ? "A entrar..." : "Entrar na Família"}
+              </button>
+            </form>
+          )}
         </div>
       )}
 
