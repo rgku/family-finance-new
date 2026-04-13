@@ -76,6 +76,7 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
     const body = await request.json();
+    console.log("POST /api/family/members body:", body);
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -112,7 +113,8 @@ export async function POST(request: NextRequest) {
 
     const parsed = inviteSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
+      console.log("Validation failed:", parsed.error);
+      return NextResponse.json({ error: "Dados inválidos", details: parsed.error.issues }, { status: 400 });
     }
 
     const { name, email, role } = parsed.data;
