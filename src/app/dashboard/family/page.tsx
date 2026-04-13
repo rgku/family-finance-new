@@ -148,8 +148,14 @@ export default function FamilyPage() {
       </div>
 
       <header className="mb-8">
-        <h1 className="text-3xl font-bold text-on-surface">Família</h1>
-        <p className="text-on-surface-variant">Gerir membros da família</p>
+        <h1 className="text-3xl font-bold text-on-surface">
+          {family ? family.name : "Família"}
+        </h1>
+        <p className="text-on-surface-variant">
+          {family 
+            ? `${currentCount} membro${currentCount !== 1 ? 's' : ''} • Código: ${family.invite_code}`
+            : "Gerir membros da família"}
+        </p>
       </header>
 
       {message && (
