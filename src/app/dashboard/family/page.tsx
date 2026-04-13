@@ -21,6 +21,8 @@ export default function FamilyPage() {
   const isMobile = useDeviceType();
   const router = useRouter();
   
+  console.log("FamilyPage render:", { family, members, currentCount, userRole });
+  
   const [isInviting, setIsInviting] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
