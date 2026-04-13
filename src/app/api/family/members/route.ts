@@ -91,6 +91,8 @@ export async function POST(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
+    console.log("Profile:", profile);
+    
     if (!profile?.family_id) {
       return NextResponse.json({ error: "Não pertence a uma família" }, { status: 400 });
     }

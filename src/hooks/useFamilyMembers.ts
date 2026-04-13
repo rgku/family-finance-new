@@ -62,8 +62,6 @@ export function useFamilyMembers() {
     const data = await res.json();
     console.log("inviteMember response:", res.status, data);
     
-    const data = await res.json();
-    
     if (!res.ok) {
       throw new Error(data.error);
     }
