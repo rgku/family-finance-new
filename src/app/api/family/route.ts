@@ -126,6 +126,27 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: profileError.message }, { status: 400 });
       }
 
+      // Also add to family_members table if not already there
+      const { data: existingMember } = await adminSupabase
+        .from("family_members")
+        .select("id")
+        .eq("family_id", targetFamily.id)
+        .eq("user_id", user.id)
+        .single();
+
+      if (!existingMember) {
+        await adminSupabase
+          .from("family_members")
+          .insert({
+            family_id: targetFamily.id,
+            user_id: user.id,
+            name: user.email?.split("@")[0] || "Membro",
+            email: user.email || "",
+            role: newRole,
+            status: "active",
+          });
+      }
+
       return NextResponse.json({ family: targetFamily, message: "Entrou na família com sucesso!" });
     }
 
