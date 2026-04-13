@@ -20,17 +20,20 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { searchParams } = new URL(request.url);
     const { data: { user } } = await supabase.auth.getUser();
+    console.log("GET /api/family/members - user:", user?.id);
 
     if (!user) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
 
     // Get user's profile to find their family
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("family_id, role, tier, member_limit")
       .eq("id", user.id)
       .single();
+    
+    console.log("Profile:", profile, "Error:", profileError);
 
     if (!profile?.family_id) {
       return NextResponse.json({ 
