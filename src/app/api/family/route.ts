@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminSupabase } from "@/lib/supabase/server";
 import { z } from "zod";
 
 const familySchema = z.object({
@@ -10,6 +10,13 @@ const familySchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
+    let adminSupabase;
+    try {
+      adminSupabase = await createAdminSupabase();
+    } catch (e) {
+      console.log("Admin client not available, using regular supabase");
+      adminSupabase = supabase;
+    }
     const body = await request.json();
     
     const parsed = familySchema.safeParse(body);
