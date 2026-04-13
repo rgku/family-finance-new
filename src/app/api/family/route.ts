@@ -32,13 +32,22 @@ export async function POST(request: NextRequest) {
 
     if (action === "create") {
       const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-      const client = adminSupabase || supabase;
+
+      // Try admin first, fallback to regular client
+      let client = supabase;
+      if (adminSupabase) {
+        client = adminSupabase;
+      }
+
+      console.log("Using client:", adminSupabase ? "admin" : "regular");
 
       const { data: family, error: familyError } = await client
         .from("families")
         .insert({ name: name || "Minha Família", invite_code: inviteCode })
         .select()
         .single();
+
+      console.log("Family insert result:", family, familyError);
 
       if (familyError) {
         return NextResponse.json({ error: familyError.message }, { status: 400 });
