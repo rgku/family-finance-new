@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminSupabase } from "@/lib/supabase/server";
 import { z } from "zod";
 
 const familySchema = z.object({
@@ -10,6 +10,7 @@ const familySchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
+    const adminSupabase = await createAdminSupabase();
     const body = await request.json();
     
     const parsed = familySchema.safeParse(body);
@@ -27,28 +28,22 @@ export async function POST(request: NextRequest) {
     if (action === "create") {
       const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-      console.log("Attempting to create family for user:", user.id);
-      
-      const { data: family, error: familyError } = await supabase
+      // Use admin client to bypass RLS
+      const { data: family, error: familyError } = await adminSupabase
         .from("families")
         .insert({ name: name || "Minha Família", invite_code: inviteCode })
         .select()
         .single();
 
-      console.log("Family insert result:", { family, familyError });
-
       if (familyError) {
         return NextResponse.json({ error: familyError.message }, { status: 400 });
       }
 
-      console.log("Updating profile for user:", user.id, "with family_id:", family.id);
-      
-      const { error: profileError } = await supabase
+      // Also use admin for profile update
+      const { error: profileError } = await adminSupabase
         .from("profiles")
         .update({ family_id: family.id, role: "owner" })
         .eq("id", user.id);
-
-      console.log("Profile update result:", profileError);
 
       if (profileError) {
         return NextResponse.json({ error: profileError.message }, { status: 400 });
@@ -58,7 +53,8 @@ export async function POST(request: NextRequest) {
     } else if (action === "join") {
       const inviteCode = typeof name === 'string' ? name.toUpperCase().slice(0, 6) : "";
       
-      const { data: family, error: familyError } = await supabase
+      // Use admin client to bypass RLS
+      const { data: family, error: familyError } = await adminSupabase
         .from("families")
         .select("*")
         .eq("invite_code", inviteCode)
@@ -71,7 +67,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const { error: profileError } = await supabase
+      const { error: profileError } = await adminSupabase
         .from("profiles")
         .update({ family_id: family.id, role: "partner" })
         .eq("id", user.id);
