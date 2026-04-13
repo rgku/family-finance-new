@@ -27,7 +27,8 @@ ALTER TABLE families ENABLE ROW LEVEL SECURITY;
 -- RLS Policies
 DROP POLICY IF EXISTS "Users can create families" ON families;
 CREATE POLICY "Users can create families" ON families
-  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+  FOR INSERT
+  WITH CHECK (true);
 
 DROP POLICY IF EXISTS "Family members can view families" ON families;
 CREATE POLICY "Family members can view families" ON families
@@ -152,7 +153,8 @@ CREATE POLICY "Family members can view families" ON families
 -- Families: Authenticated users can create families
 DROP POLICY IF EXISTS "Users can create families" ON families;
 CREATE POLICY "Users can create families" ON families
-  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+  FOR INSERT
+  WITH CHECK (true);
 
 -- ============================================
 -- SEED DEFAULT CATEGORIES
