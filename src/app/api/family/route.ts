@@ -14,8 +14,7 @@ export async function POST(request: NextRequest) {
     try {
       adminSupabase = await createAdminSupabase();
     } catch (e) {
-      console.log("Admin client not available, using regular supabase");
-      adminSupabase = supabase;
+      adminSupabase = null;
     }
     const body = await request.json();
     
@@ -33,8 +32,9 @@ export async function POST(request: NextRequest) {
 
     if (action === "create") {
       const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const client = adminSupabase || supabase;
 
-      const { data: family, error: familyError } = await supabase
+      const { data: family, error: familyError } = await client
         .from("families")
         .insert({ name: name || "Minha Família", invite_code: inviteCode })
         .select()
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: familyError.message }, { status: 400 });
       }
 
-      const { error: profileError } = await supabase
+      const { error: profileError } = await client
         .from("profiles")
         .update({ family_id: family.id, role: "owner" })
         .eq("id", user.id);
@@ -56,8 +56,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ family, inviteCode });
     } else if (action === "join") {
       const inviteCode = typeof name === 'string' ? name.toUpperCase().slice(0, 6) : "";
+      const client = adminSupabase || supabase;
       
-      const { data: family, error: familyError } = await supabase
+      const { data: family, error: familyError } = await client
         .from("families")
         .select("*")
         .eq("invite_code", inviteCode)
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const { error: profileError } = await supabase
+      const { error: profileError } = await client
         .from("profiles")
         .update({ family_id: family.id, role: "partner" })
         .eq("id", user.id);
