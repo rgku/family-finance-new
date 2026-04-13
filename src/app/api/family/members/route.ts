@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       .eq("id", profile.family_id)
       .single();
 
-    // Get all family members
+    // Get all family members (from family_members table)
     const { data: members, error: membersError } = await supabase
       .from("family_members")
       .select("*")
@@ -59,11 +59,34 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: membersError.message }, { status: 400 });
     }
 
+    // Get owner from profiles (the user who created the family)
+    const { data: ownerProfile } = await supabase
+      .from("profiles")
+      .select("id, full_name, role")
+      .eq("family_id", profile.family_id)
+      .eq("role", "owner")
+      .single();
+
+    // Build members list including owner
+    const allMembers = [...(members || [])];
+    if (ownerProfile && !allMembers.find(m => m.user_id === ownerProfile.id)) {
+      allMembers.unshift({
+        id: ownerProfile.id,
+        family_id: profile.family_id,
+        user_id: ownerProfile.id,
+        name: ownerProfile.full_name || "Owner",
+        email: "",
+        role: "owner",
+        status: "active",
+        created_at: new Date().toISOString(),
+      });
+    }
+
     return NextResponse.json({
-      members: members || [],
+      members: allMembers,
       family,
       memberLimit: profile.member_limit || 1,
-      currentCount: (members || []).length,
+      currentCount: allMembers.length,
       userRole: profile.role,
     });
   } catch (error: any) {
