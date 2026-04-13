@@ -11,14 +11,18 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
     const body = await request.json();
+    console.log("POST /api/family body:", JSON.stringify(body));
     
     const parsed = familySchema.safeParse(body);
     if (!parsed.success) {
+      console.log("Validation failed:", parsed.error);
       return NextResponse.json({ error: "Dados inválidos" }, { status: 400 });
     }
     
     const { name, action } = parsed.data;
+    console.log("Action:", action, "Name:", name);
     const { data: { user } } = await supabase.auth.getUser();
+    console.log("User:", user?.id);
 
     if (!user) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
