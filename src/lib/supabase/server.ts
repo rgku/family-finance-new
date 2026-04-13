@@ -1,4 +1,4 @@
-import { createServerClient, createAdminClient } from '@supabase/ssr'
+import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
 export async function createClient() {
@@ -41,5 +41,10 @@ export async function createAdminSupabase() {
     throw new Error('Missing Supabase admin environment variables')
   }
 
-  return createAdminClient(supabaseUrl, supabaseKey)
+  return createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll() { return [] },
+      setAll() { },
+    },
+  })
 }
