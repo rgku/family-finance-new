@@ -231,7 +231,7 @@ export default function FamilyPage() {
       )}
 
       {/* Family Info Card */}
-      {family && (
+      {family ? (
         <div className="bg-surface-container rounded-lg p-6 mb-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-on-surface">{family.name}</h2>
@@ -245,6 +245,10 @@ export default function FamilyPage() {
               {family.invite_code}
             </code>
           </div>
+        </div>
+      ) : (
+        <div className="bg-yellow-500/20 text-yellow-400 p-4 rounded-lg mb-6">
+          Sem família associada. family_id não está definido no teu perfil.
         </div>
       )}
 
