@@ -3,10 +3,10 @@
 -- Run this in Supabase SQL Editor
 -- ============================================
 
--- 1. Enable UUID extension
+-- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 2. Families table (optional - not used in single user mode)
+-- Create families table (if not exists)
 CREATE TABLE IF NOT EXISTS families (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL,
@@ -14,13 +14,43 @@ CREATE TABLE IF NOT EXISTS families (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 3. Profiles table (extends auth.users)
-CREATE TABLE IF NOT EXISTS profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  family_id UUID REFERENCES families(id) ON DELETE SET NULL,
-  full_name TEXT,
-  avatar_url TEXT,
-  role TEXT CHECK (role IN ('owner', 'partner')) DEFAULT 'owner',
+-- Add family_id to profiles (if not exists)
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS family_id UUID;
+ALTER TABLE profiles ADD CONSTRAINT fk_family FOREIGN KEY (family_id) REFERENCES families(id) ON DELETE SET NULL;
+
+-- Add role column (if not exists)
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'owner';
+
+-- Enable RLS on families
+ALTER TABLE families ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies
+DROP POLICY IF EXISTS "Users can create families" ON families;
+CREATE POLICY "Users can create families" ON families
+  FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+DROP POLICY IF EXISTS "Family members can view families" ON families;
+CREATE POLICY "Family members can view families" ON families
+  FOR SELECT USING (
+    id IN (SELECT family_id FROM profiles WHERE id = auth.uid())
+  );
+
+-- ============================================
+-- SEED DEFAULT CATEGORIES
+-- ============================================
+
+-- 1. Enable UUID extension
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 2. Add family_id column to profiles if it doesn't exist
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS family_id UUID REFERENCES families(id) ON DELETE SET NULL;
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS role TEXT CHECK (role IN ('owner', 'partner')) DEFAULT 'owner';
+
+-- 3. Families table
+CREATE TABLE IF NOT EXISTS families (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  name TEXT NOT NULL,
+  invite_code TEXT UNIQUE,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
