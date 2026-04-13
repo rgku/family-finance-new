@@ -27,22 +27,28 @@ export async function POST(request: NextRequest) {
     if (action === "create") {
       const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
 
-      // Force bypass RLS by using service role key in query string
+      console.log("Attempting to create family for user:", user.id);
+      
       const { data: family, error: familyError } = await supabase
         .from("families")
         .insert({ name: name || "Minha Família", invite_code: inviteCode })
         .select()
         .single();
 
+      console.log("Family insert result:", { family, familyError });
+
       if (familyError) {
-        console.log("Family insert error:", familyError);
         return NextResponse.json({ error: familyError.message }, { status: 400 });
       }
 
+      console.log("Updating profile for user:", user.id, "with family_id:", family.id);
+      
       const { error: profileError } = await supabase
         .from("profiles")
         .update({ family_id: family.id, role: "owner" })
         .eq("id", user.id);
+
+      console.log("Profile update result:", profileError);
 
       if (profileError) {
         return NextResponse.json({ error: profileError.message }, { status: 400 });
