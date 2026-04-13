@@ -76,8 +76,9 @@ export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
     const body = await request.json();
-    console.log("POST /api/family/members body:", body);
+    console.log("POST /api/family/members body:", JSON.stringify(body));
     const { data: { user } } = await supabase.auth.getUser();
+    console.log("User:", user?.id);
 
     if (!user) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
