@@ -60,10 +60,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all family members from profiles table (owner + partner + members)
+    console.log('Fetching profile members for family:', profile.family_id);
     const { data: profileMembers, error: profileMembersError } = await supabase
       .from('profiles')
       .select('id, full_name, role')
       .eq('family_id', profile.family_id);
+
+    if (profileMembersError) {
+      console.error('Profile members error:', profileMembersError);
+    }
+    console.log('Profile members:', profileMembers);
 
     // Combine family_members with profile members
     const allMembers = [...(members || [])];
