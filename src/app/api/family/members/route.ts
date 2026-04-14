@@ -32,13 +32,7 @@ export async function GET(request: NextRequest) {
       .eq('id', user.id)
       .single();
 
-    if (profileError) {
-      console.error('Profile error:', profileError);
-      return NextResponse.json({ error: profileError.message }, { status: 500 });
-    }
-
     if (!profile?.family_id) {
-      console.log('User profile:', profile);
       return NextResponse.json({ 
         members: [], 
         family: null,
