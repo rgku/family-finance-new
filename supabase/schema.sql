@@ -124,7 +124,7 @@ DROP POLICY IF EXISTS “Users can update own profile” ON profiles;
 CREATE POLICY “Users can update own profile” ON profiles
   FOR UPDATE USING (id = auth.uid());
 
--- Allow family members to view each other's profiles
+-- Allow family members to view each other's profiles (without this, getUser won't see profile)
 DROP POLICY IF EXISTS “Family members can view profiles” ON profiles;
 CREATE POLICY “Family members can view profiles” ON profiles
   FOR SELECT USING (

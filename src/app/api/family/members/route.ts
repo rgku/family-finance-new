@@ -25,14 +25,20 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
     }
 
-    // Get user's profile to find their family
+// Get user's profile to find their family
     const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("family_id, role, tier, member_limit")
-      .eq("id", user.id)
+      .from('profiles')
+      .select('family_id, role, tier, member_limit')
+      .eq('id', user.id)
       .single();
 
+    if (profileError) {
+      console.error('Profile error:', profileError);
+      return NextResponse.json({ error: profileError.message }, { status: 500 });
+    }
+
     if (!profile?.family_id) {
+      console.log('User profile:', profile);
       return NextResponse.json({ 
         members: [], 
         family: null,
