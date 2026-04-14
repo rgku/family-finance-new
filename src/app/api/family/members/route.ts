@@ -48,38 +48,42 @@ export async function GET(request: NextRequest) {
       .eq("id", profile.family_id)
       .single();
 
-    // Get all family members (from family_members table)
+// Get all family members (from family_members table)
     const { data: members, error: membersError } = await supabase
-      .from("family_members")
-      .select("*")
-      .eq("family_id", profile.family_id)
-      .order("created_at", { ascending: true });
+      .from('family_members')
+      .select('*')
+      .eq('family_id', profile.family_id)
+      .order('created_at', { ascending: true });
 
     if (membersError) {
       return NextResponse.json({ error: membersError.message }, { status: 400 });
     }
 
-    // Get owner from profiles (the user who created the family)
-    const { data: ownerProfile } = await supabase
-      .from("profiles")
-      .select("id, full_name, role")
-      .eq("family_id", profile.family_id)
-      .eq("role", "owner")
-      .single();
+    // Get all family members from profiles table (owner + partner + members)
+    const { data: profileMembers, error: profileMembersError } = await supabase
+      .from('profiles')
+      .select('id, full_name, role')
+      .eq('family_id', profile.family_id);
 
-    // Build members list including owner
+    // Combine family_members with profile members
     const allMembers = [...(members || [])];
-    if (ownerProfile && !allMembers.find(m => m.user_id === ownerProfile.id)) {
-      allMembers.unshift({
-        id: ownerProfile.id,
-        family_id: profile.family_id,
-        user_id: ownerProfile.id,
-        name: ownerProfile.full_name || "Owner",
-        email: "",
-        role: "owner",
-        status: "active",
-        created_at: new Date().toISOString(),
-      });
+
+    // Add profile members that aren't already in family_members
+    if (profileMembers) {
+      for (const pm of profileMembers) {
+        if (!allMembers.find(m => m.user_id === pm.id)) {
+          allMembers.unshift({
+            id: pm.id,
+            family_id: profile.family_id,
+            user_id: pm.id,
+            name: pm.full_name || 'Membro',
+            email: '',
+            role: pm.role,
+            status: 'active',
+            created_at: new Date().toISOString(),
+          });
+        }
+      }
     }
 
     return NextResponse.json({
