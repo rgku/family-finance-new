@@ -60,18 +60,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all family members from profiles table using admin client (bypasses RLS)
-    console.log('Fetching profile members for family:', profile.family_id);
     const adminSupabase = await createAdminSupabase();
     const { data: profileMembers, error: profileMembersError } = await adminSupabase
       .from('profiles')
       .select('id, full_name, role')
       .eq('family_id', profile.family_id);
-
-    if (profileMembersError) {
-      console.error('Profile members error:', profileMembersError);
-    }
-    console.log('Profile members:', profileMembers);
-    console.log('Members from family_members table:', members);
 
     // Combine family_members with profile members
     const allMembers = [...(members || [])];
