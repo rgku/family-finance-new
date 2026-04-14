@@ -70,6 +70,7 @@ export async function GET(request: NextRequest) {
       console.error('Profile members error:', profileMembersError);
     }
     console.log('Profile members:', profileMembers);
+    console.log('Members from family_members table:', members);
 
     // Combine family_members with profile members
     const allMembers = [...(members || [])];
