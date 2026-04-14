@@ -116,13 +116,20 @@ ALTER TABLE family_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE budget_alerts ENABLE ROW LEVEL SECURITY;
 
 -- Profiles: Users can view/update their own profile
-DROP POLICY IF EXISTS "Users can view own profile" ON profiles;
-CREATE POLICY "Users can view own profile" ON profiles
+DROP POLICY IF EXISTS “Users can view own profile” ON profiles;
+CREATE POLICY “Users can view own profile” ON profiles
   FOR SELECT USING (id = auth.uid());
 
-DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
-CREATE POLICY "Users can update own profile" ON profiles
+DROP POLICY IF EXISTS “Users can update own profile” ON profiles;
+CREATE POLICY “Users can update own profile” ON profiles
   FOR UPDATE USING (id = auth.uid());
+
+-- Allow family members to view each other's profiles
+DROP POLICY IF EXISTS “Family members can view profiles” ON profiles;
+CREATE POLICY “Family members can view profiles” ON profiles
+  FOR SELECT USING (
+    family_id IN (SELECT family_id FROM profiles WHERE id = auth.uid())
+  );
 
 -- Transactions: Users can only access their own transactions
 DROP POLICY IF EXISTS "Users can access own transactions" ON transactions;
