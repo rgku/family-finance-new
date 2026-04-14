@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminSupabase } from "@/lib/supabase/server";
 import { z } from "zod";
 
 const inviteSchema = z.object({
@@ -59,9 +59,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: membersError.message }, { status: 400 });
     }
 
-    // Get all family members from profiles table (owner + partner + members)
+    // Get all family members from profiles table using admin client (bypasses RLS)
     console.log('Fetching profile members for family:', profile.family_id);
-    const { data: profileMembers, error: profileMembersError } = await supabase
+    const adminSupabase = await createAdminSupabase();
+    const { data: profileMembers, error: profileMembersError } = await adminSupabase
       .from('profiles')
       .select('id, full_name, role')
       .eq('family_id', profile.family_id);
