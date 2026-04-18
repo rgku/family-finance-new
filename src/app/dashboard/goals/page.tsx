@@ -75,6 +75,7 @@ const [name, setName] = useState("");
     setCurrentAmount(goal.current_amount.toString());
     setDeadline(goal.deadline || "");
     setIcon(goal.icon);
+    setGoalType(goal.goal_type || 'savings');
     setEditingId(goal.id);
     setShowForm(true);
   };
@@ -83,16 +84,6 @@ const [name, setName] = useState("");
     if (confirm("Tem a certeza que deseja excluir esta meta?")) {
       deleteGoal(id);
     }
-  };
-
-  const resetForm = () => {
-    setName("");
-    setTargetAmount("");
-    setCurrentAmount("0");
-    setDeadline("");
-    setIcon("savings");
-    setEditingId(null);
-    setShowForm(false);
   };
 
   return (
