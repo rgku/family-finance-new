@@ -69,17 +69,6 @@ const [name, setName] = useState("");
     setShowForm(false);
   };
 
-  const handleEdit = (goal: any) => {
-    setName(goal.name);
-    setTargetAmount(goal.target_amount.toString());
-    setCurrentAmount(goal.current_amount.toString());
-    setDeadline(goal.deadline || "");
-    setIcon(goal.icon);
-    setGoalType(goal.goal_type || 'savings');
-    setEditingId(goal.id);
-    setShowForm(true);
-  };
-
   const handleDelete = (id: string) => {
     if (confirm("Tem a certeza que deseja excluir esta meta?")) {
       deleteGoal(id);
