@@ -76,13 +76,13 @@ export default function AnalyticsPage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-6">
-        <div className="bg-gradient-to-br from-primary to-primary-container p-8 rounded-lg text-on-primary">
+        <div className="bg-gradient-to-br from-primary to-primary-container p-6 sm:p-8 rounded-lg text-on-primary min-w-0">
           <p className="text-sm opacity-80">Receitas</p>
-          <p className="text-4xl font-bold mt-2">{formatCurrencyWithSymbol(income)}</p>
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold mt-2 min-w-0 truncate">{formatCurrencyWithSymbol(income)}</p>
         </div>
-        <div className="bg-surface-container p-8 rounded-lg">
+        <div className="bg-surface-container p-6 sm:p-8 rounded-lg min-w-0">
           <p className="text-sm text-on-surface-variant">Despesas</p>
-          <p className="text-4xl font-bold text-tertiary mt-2">{formatCurrencyWithSymbol(expenses)}</p>
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-tertiary mt-2 min-w-0 truncate">{formatCurrencyWithSymbol(expenses)}</p>
         </div>
       </div>
 
@@ -90,15 +90,15 @@ export default function AnalyticsPage() {
       <div className="bg-surface-container rounded-lg p-6">
         <h3 className="font-bold text-lg mb-4">Comparativo Mensal</h3>
         <div className="space-y-3">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center min-w-0">
             <span className="text-on-surface-variant">{monthName}</span>
-            <span className="font-bold">{formatCurrencyWithSymbol(expenses)}</span>
+            <span className="font-bold min-w-0 truncate">{formatCurrencyWithSymbol(expenses)}</span>
           </div>
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center min-w-0">
             <span className="text-on-surface-variant">{monthNames[prevMonth.month - 1]}</span>
-            <span className="font-bold">{formatCurrencyWithSymbol(0)}</span>
+            <span className="font-bold min-w-0 truncate">{formatCurrencyWithSymbol(0)}</span>
           </div>
-          <div className="flex justify-between items-center pt-3 border-t border-surface-container-high">
+          <div className="flex justify-between items-center pt-3 border-t border-surface-container-high min-w-0">
             <span className="text-on-surface-variant">Variação</span>
             <span className="font-bold text-on-surface-variant">--</span>
           </div>
@@ -109,9 +109,9 @@ export default function AnalyticsPage() {
       <div className="bg-surface-container rounded-lg p-6">
         <h3 className="font-bold text-lg mb-6">Gastos por Categoria</h3>
         
-        <div className="flex items-center gap-8 mb-6">
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 mb-6">
           {/* Donut Chart */}
-          <div className="relative w-32 h-32">
+          <div className="relative w-32 h-32 flex-shrink-0">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
               <circle cx="18" cy="18" fill="transparent" r="15.915" stroke="#222a3d" strokeWidth="3"></circle>
               {categoryBreakdown.map((cat, idx) => {
@@ -134,19 +134,19 @@ export default function AnalyticsPage() {
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-[10px] text-on-surface-variant uppercase">Total</span>
-              <span className="font-bold">{formatCurrencyWithSymbol(expenses)}</span>
+              <span className="font-bold text-sm min-w-0 truncate">{formatCurrencyWithSymbol(expenses)}</span>
             </div>
           </div>
           
           {/* Legend */}
-          <div className="flex-1 space-y-2">
+          <div className="flex-1 space-y-2 w-full min-w-0">
             {categoryBreakdown.map((cat) => (
-              <div key={cat.name} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }}></div>
-                  <span className="text-sm">{cat.name}</span>
+              <div key={cat.name} className="flex items-center justify-between min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }}></div>
+                  <span className="text-sm truncate">{cat.name}</span>
                 </div>
-                <span className="font-semibold">{formatCurrencyWithSymbol(cat.value)}</span>
+                <span className="font-semibold flex-shrink-0 ml-2">{formatCurrencyWithSymbol(cat.value)}</span>
               </div>
             ))}
           </div>
