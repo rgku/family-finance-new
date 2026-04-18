@@ -135,7 +135,7 @@ export default function ReportsPage() {
           </div>
 
           {/* Budget Overview */}
-          {reportData.budget && reportData.budget.length > 0 && useMemo(() => (
+          {reportData.budget && reportData.budget.length > 0 && (
             <div className="bg-surface-container rounded-lg p-6 mb-8">
               <h2 className="text-lg font-bold text-on-surface mb-4">Orçamentos</h2>
               <div className="space-y-4">
@@ -165,7 +165,7 @@ export default function ReportsPage() {
                 })}
               </div>
             </div>
-          ), [reportData.budget])}
+          )}
 
           {/* Download PDF */}
           <div className="bg-surface-container rounded-lg p-6 mb-8">
