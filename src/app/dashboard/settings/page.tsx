@@ -226,7 +226,7 @@ export default function ExportPage() {
 
       {/* Billing Cycle Settings */}
       <div className="bg-surface-container rounded-lg p-6 space-y-4">
-        <h2 className="font-bold text-lg">Ciclo de Faturação</h2>
+        <h2 className="font-bold text-lg">Ciclo de Despesas</h2>
         <p className="text-sm text-on-surface-variant">
           Define o dia de início do teu ciclo mensal de despesas. Por exemplo, se escolheres o dia 20, o teu mês financeiro será de dia 20 a dia 19 do mês seguinte.
         </p>
