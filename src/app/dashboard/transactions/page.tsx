@@ -8,7 +8,7 @@ import { formatCurrencyWithSymbol } from "@/lib/currency";
 export default function TransactionsPage() {
   const { transactions, updateTransaction, deleteTransaction } = useData();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({ description: "", amount: "", type: "expense" as "income" | "expense", category: "" });
+  const [editForm, setEditForm] = useState({ description: "", amount: "", type: "expense" as "income" | "expense", category: "", date: "" });
   const isMobile = useDeviceType();
 
   const [dateRange, setDateRange] = useState<{ start: string; end: string } | null>(null);
@@ -36,6 +36,7 @@ export default function TransactionsPage() {
       amount: trans.amount.toString(),
       type: trans.type,
       category: trans.category,
+      date: trans.date,
     });
     setEditingId(trans.id);
   };
@@ -46,6 +47,7 @@ export default function TransactionsPage() {
       amount: parseFloat(editForm.amount),
       type: editForm.type,
       category: editForm.category,
+      date: editForm.date,
     });
     setEditingId(null);
   };
@@ -111,26 +113,34 @@ export default function TransactionsPage() {
                     type="text"
                     value={editForm.description}
                     onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                    className="bg-surface-container-low border-none rounded px-3 py-2 text-on-surface w-full"
+                    className="bg-surface-container-low border-none rounded px-3 py-2 text-on-surface w-full text-sm"
+                    placeholder="Descrição"
                   />
-                  <div className="flex gap-2">
+                  <div className="flex flex-col gap-2">
+                    <input
+                      type="date"
+                      value={editForm.date}
+                      onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                      className="bg-surface-container-low border-none rounded px-3 py-2 text-on-surface text-sm w-full"
+                    />
                     <input
                       type="text"
                       value={editForm.category}
                       onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                      className="bg-surface-container-low border-none rounded px-3 py-2 text-on-surface flex-1"
+                      className="bg-surface-container-low border-none rounded px-3 py-2 text-on-surface text-sm w-full"
                       placeholder="Categoria"
                     />
                     <input
                       type="number"
                       value={editForm.amount}
                       onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
-                      className="bg-surface-container-low border-none rounded px-3 py-2 text-on-surface w-24"
+                      className="bg-surface-container-low border-none rounded px-3 py-2 text-on-surface text-sm w-full"
+                      placeholder="Valor"
                     />
                   </div>
-                  <div className="flex gap-2 justify-end">
-                    <button onClick={handleCancel} className="text-on-surface-variant text-sm">Cancelar</button>
-                    <button onClick={() => handleSave(trans.id)} className="text-primary text-sm font-medium">Guardar</button>
+                  <div className="flex gap-2 justify-end pt-2">
+                    <button onClick={handleCancel} className="text-on-surface-variant text-sm px-3 py-1.5">Cancelar</button>
+                    <button onClick={() => handleSave(trans.id)} className="text-primary text-sm font-medium px-3 py-1.5">Guardar</button>
                   </div>
                 </div>
               ) : (
@@ -197,7 +207,15 @@ export default function TransactionsPage() {
                           aria-label="Categoria"
                         />
                       </td>
-                      <td className="p-4 text-on-surface-variant">{trans.date}</td>
+                      <td className="p-4">
+                        <input
+                          type="date"
+                          value={editForm.date}
+                          onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                          className="bg-surface-container-low border-none rounded px-3 py-2 text-on-surface w-full"
+                          aria-label="Data"
+                        />
+                      </td>
                       <td className="p-4">
                         <input
                           type="number"
