@@ -24,7 +24,7 @@ export default function Dashboard() {
   const [year, month] = selectedMonth.split("-").map(Number);
   
   const billingDay = profile?.billing_cycle_day || 1;
-  const monthName = profile?.billing_cycle_day 
+  const monthName = profile?.billing_cycle_day && profile.billing_cycle_day > 1
     ? formatCustomMonth(billingDay, new Date(year, month - 1))
     : monthNames[month - 1];
 
@@ -34,7 +34,8 @@ export default function Dashboard() {
   const canGoNext = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);
 
   const filteredTransactions = useMemo(() => {
-    if (profile?.billing_cycle_day) {
+    if (!transactions.length) return [];
+    if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
       return transactions.filter(t => isDateInCustomMonth(t.date, billingDay, year, month));
     }
     return transactions.filter(t => {

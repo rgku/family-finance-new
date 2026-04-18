@@ -24,7 +24,7 @@ export default function BudgetsPage() {
   });
 
   const billingDay = profile?.billing_cycle_day || 1;
-  const displayMonth = profile?.billing_cycle_day 
+  const displayMonth = profile?.billing_cycle_day && profile.billing_cycle_day > 1
     ? formatCustomMonth(billingDay, new Date(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]) - 1))
     : (() => {
         const [y, m] = selectedMonth.split('-').map(Number);

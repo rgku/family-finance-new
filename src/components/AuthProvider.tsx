@@ -41,22 +41,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
-    
-    if (!error && data) {
-      setProfile({
-        id: data.id,
-        full_name: data.full_name,
-        avatar_url: data.avatar_url,
-        role: data.role,
-        tier: data.tier,
-        member_limit: data.member_limit,
-        billing_cycle_day: data.billing_cycle_day || 1,
-      });
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (!error && data) {
+        setProfile({
+          id: data.id,
+          full_name: data.full_name,
+          avatar_url: data.avatar_url,
+          role: data.role,
+          tier: data.tier,
+          member_limit: data.member_limit,
+          billing_cycle_day: data.billing_cycle_day || 1,
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching profile:', err);
     }
   };
 
@@ -80,24 +84,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        if (mounted && session?.user) {
-          // Check if email is confirmed
+        if (!mounted) return;
+        
+        if (session?.user) {
           if (session.user.email_confirmed_at) {
             setUser(session.user);
             await fetchProfile(session.user.id);
           } else {
-            // Email not confirmed - sign out and redirect to login
             await supabase.auth.signOut();
             setUser(null);
           }
         } else {
-          // No session, check server user
           const { data: { user: serverUser } } = await supabase.auth.getUser();
-          if (mounted && serverUser?.email_confirmed_at) {
+          if (!mounted) return;
+          
+          if (serverUser?.email_confirmed_at) {
             setUser(serverUser);
             await fetchProfile(serverUser.id);
-          } else if (mounted && serverUser && !serverUser.email_confirmed_at) {
-            // Email not confirmed
+          } else if (serverUser) {
             await supabase.auth.signOut();
             setUser(null);
           }
@@ -115,17 +119,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
-        if (mounted) {
-          if (session?.user?.email_confirmed_at) {
-            setUser(session.user);
-            fetchProfile(session.user.id);
-          } else {
-            // User logged in but email not confirmed - sign out
-            setUser(null);
-            setProfile(null);
-          }
-          setLoading(false);
+        if (!mounted) return;
+        
+        if (session?.user?.email_confirmed_at) {
+          setUser(session.user);
+          fetchProfile(session.user.id);
+        } else {
+          setUser(null);
+          setProfile(null);
         }
+        setLoading(false);
       }
     );
 
