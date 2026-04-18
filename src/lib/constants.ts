@@ -5,6 +5,8 @@ export const EXPENSE_CATEGORIES = [
   { value: "Lazer", icon: "movie" },
   { value: "Saúde", icon: "local_hospital" },
   { value: "Educação", icon: "school" },
+  { value: "Bem estar", icon: "spa" },
+  { value: "Restauração", icon: "local_cafe" },
   { value: "Outros", icon: "more_horiz" },
 ] as const;
 

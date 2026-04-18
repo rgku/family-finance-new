@@ -2,18 +2,40 @@
 
 import { useState } from "react";
 import { useData } from "@/hooks/DataProvider";
+import { useAuth } from "@/components/AuthProvider";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
+import { formatCustomMonth } from "@/lib/dateUtils";
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
 
 const categories = EXPENSE_CATEGORIES.filter(c => c.value !== "Outros");
 
 export default function BudgetsPage() {
-  const { budgets, addBudget, updateBudget, deleteBudget } = useData();
+  const { budgets, setCurrentBudgetMonth, addBudget, updateBudget, deleteBudget } = useData();
+  const { profile } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
   const [selectedCategory, setSelectedCategory] = useState("");
   const [limitAmount, setLimitAmount] = useState("");
+  
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
+
+  const billingDay = profile?.billing_cycle_day || 1;
+  const displayMonth = profile?.billing_cycle_day 
+    ? formatCustomMonth(billingDay, new Date(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]) - 1))
+    : (() => {
+        const [y, m] = selectedMonth.split('-').map(Number);
+        const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+        return `${monthNames[m - 1]} ${y}`;
+      })();
+
+  const handleMonthChange = (month: string) => {
+    setSelectedMonth(month);
+    setCurrentBudgetMonth(month);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +91,16 @@ export default function BudgetsPage() {
           {showForm ? "Cancelar" : "+ Novo Orçamento"}
         </button>
       </header>
+
+      <div className="flex items-center gap-4 py-3 bg-surface-container rounded-lg px-4">
+        <span className="text-sm font-medium text-on-surface-variant">Período:</span>
+        <input
+          type="month"
+          value={selectedMonth}
+          onChange={(e) => handleMonthChange(e.target.value)}
+          className="bg-surface-container-low border-none rounded-lg px-4 py-2 text-on-surface font-medium"
+        />
+      </div>
 
       {showForm && (
         <form onSubmit={handleSubmit} className="bg-surface-container rounded-lg p-6 space-y-4">

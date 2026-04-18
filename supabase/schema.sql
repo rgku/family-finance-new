@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   role TEXT CHECK (role IN ('owner', 'partner', 'member', 'view_only')) DEFAULT 'owner',
   tier TEXT DEFAULT 'free',
   member_limit INT DEFAULT 1,
+  billing_cycle_day INT DEFAULT 1,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -63,6 +64,7 @@ CREATE TABLE IF NOT EXISTS goals (
   current_amount DECIMAL(12, 2) DEFAULT 0,
   deadline DATE,
   icon TEXT,
+  goal_type TEXT DEFAULT 'savings' CHECK (goal_type IN ('savings', 'expense')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -188,6 +190,8 @@ INSERT INTO categories (name, icon, keywords, is_system) VALUES
   ('Lazer', 'movie', ARRAY['netflix', 'spotify', 'cinema', 'show', 'bar', 'lazer', 'praia'], true),
   ('Saúde', 'local_hospital', ARRAY['farmácia', 'médico', 'hospital', 'consulta', 'exame', 'plano de saúde'], true),
   ('Educação', 'school', ARRAY['escola', 'universidade', 'curso', 'livro', 'material'], true),
+  ('Bem estar', 'spa', ARRAY['spa', 'massagem', 'academia', 'ginásio', 'yoga', 'meditação', 'bem-estar'], true),
+  ('Restauração', 'local_cafe', ARRAY['café', 'jantar', 'almoço', 'takeaway', 'delivery', 'restaurante'], true),
   ('Renda', 'work', ARRAY['salário', 'freela', 'provento', 'aluguel recebido'], true),
   ('Outros', 'more_horiz', ARRAY[]::text[], true)
 ON CONFLICT DO NOTHING;

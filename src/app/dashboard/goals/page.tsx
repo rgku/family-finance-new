@@ -14,11 +14,12 @@ export default function GoalsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
-  const [name, setName] = useState("");
+const [name, setName] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
   const [currentAmount, setCurrentAmount] = useState("0");
   const [deadline, setDeadline] = useState("");
   const [icon, setIcon] = useState("savings");
+  const [goalType, setGoalType] = useState<'savings' | 'expense'>('savings');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +31,7 @@ export default function GoalsPage() {
         current_amount: parseFloat(currentAmount) || 0,
         deadline: deadline || undefined,
         icon,
+        goal_type: goalType,
       });
     } else {
       addGoal({
@@ -38,10 +40,33 @@ export default function GoalsPage() {
         current_amount: parseFloat(currentAmount) || 0,
         deadline: deadline || undefined,
         icon,
+        goal_type: goalType,
       });
     }
     
     resetForm();
+  };
+
+  const handleEdit = (goal: any) => {
+    setName(goal.name);
+    setTargetAmount(goal.target_amount.toString());
+    setCurrentAmount(goal.current_amount.toString());
+    setDeadline(goal.deadline || "");
+    setIcon(goal.icon);
+    setGoalType(goal.goal_type || 'savings');
+    setEditingId(goal.id);
+    setShowForm(true);
+  };
+
+  const resetForm = () => {
+    setName("");
+    setTargetAmount("");
+    setCurrentAmount("0");
+    setDeadline("");
+    setIcon("savings");
+    setGoalType('savings');
+    setEditingId(null);
+    setShowForm(false);
   };
 
   const handleEdit = (goal: any) => {
@@ -135,6 +160,39 @@ export default function GoalsPage() {
               onChange={(e) => setDeadline(e.target.value)}
               className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface [color-scheme:dark]"
             />
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Tipo de Meta</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setGoalType('savings')}
+                className={`flex items-center justify-center gap-2 p-4 rounded-xl transition-all ${
+                  goalType === 'savings'
+                    ? "bg-secondary/20 text-secondary border border-secondary"
+                    : "bg-surface-container-low text-on-surface-variant"
+                }`}
+              >
+                <span className="material-symbols-outlined">savings</span>
+                <span className="font-medium">Poupança</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setGoalType('expense')}
+                className={`flex items-center justify-center gap-2 p-4 rounded-xl transition-all ${
+                  goalType === 'expense'
+                    ? "bg-tertiary/20 text-tertiary border border-tertiary"
+                    : "bg-surface-container-low text-on-surface-variant"
+                }`}
+              >
+                <span className="material-symbols-outlined">payments</span>
+                <span className="font-medium">Despesa</span>
+              </button>
+            </div>
+            <p className="text-xs text-on-surface-variant mt-2">
+              {goalType === 'savings' ? 'Valor será subtraído do saldo disponível' : 'Valor será incluído nos gráficos de despesas'}
+            </p>
           </div>
 
           <div>

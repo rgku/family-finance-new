@@ -3,11 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useData } from "@/hooks/DataProvider";
+import { useAuth } from "@/components/AuthProvider";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 
 export default function ExportPage() {
   const { transactions, goals, budgets, loading } = useData();
+  const { profile, updateProfile } = useAuth();
   const [exporting, setExporting] = useState(false);
+  const [savingCycle, setSavingCycle] = useState(false);
 
   const handleExport = async (type: 'all' | 'transactions' | 'goals' | 'budgets') => {
     setExporting(true);
@@ -117,6 +120,19 @@ export default function ExportPage() {
     }
   };
 
+  const handleCycleDayChange = async (day: number) => {
+    setSavingCycle(true);
+    try {
+      await updateProfile({ billing_cycle_day: day });
+      alert("Ciclo de faturação atualizado!");
+    } catch (error) {
+      console.error("Error updating cycle day:", error);
+      alert("Erro ao atualizar ciclo de faturação");
+    } finally {
+      setSavingCycle(false);
+    }
+  };
+
   return (
     <div className="p-8 max-w-2xl mx-auto space-y-8">
       <header>
@@ -206,6 +222,40 @@ export default function ExportPage() {
         >
           {exporting ? "A exportar..." : "Exportar Dados Completos (JSON)"}
         </button>
+      </div>
+
+      {/* Billing Cycle Settings */}
+      <div className="bg-surface-container rounded-lg p-6 space-y-4">
+        <h2 className="font-bold text-lg">Ciclo de Faturação</h2>
+        <p className="text-sm text-on-surface-variant">
+          Define o dia de início do teu ciclo mensal de despesas. Por exemplo, se escolheres o dia 20, o teu mês financeiro será de dia 20 a dia 19 do mês seguinte.
+        </p>
+        
+        <div className="space-y-3">
+          <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider">Dia de início do ciclo</label>
+          <div className="grid grid-cols-7 gap-2">
+            {Array.from({ length: 28 }, (_, i) => i + 1).map(day => (
+              <button
+                key={day}
+                onClick={() => handleCycleDayChange(day)}
+                disabled={savingCycle}
+                className={`p-3 rounded-lg text-sm font-medium transition-all ${
+                  profile?.billing_cycle_day === day
+                    ? "bg-primary text-on-primary"
+                    : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
+                }`}
+              >
+                {day}
+              </button>
+            ))}
+          </div>
+          
+          {profile?.billing_cycle_day && (
+            <p className="text-sm text-on-surface-variant mt-2">
+              Ciclo atual: dia <strong>{profile.billing_cycle_day}</strong> de cada mês
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Account Actions */}

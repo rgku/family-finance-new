@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useData } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
@@ -10,6 +10,25 @@ export default function TransactionsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ description: "", amount: "", type: "expense" as "income" | "expense", category: "" });
   const isMobile = useDeviceType();
+
+  const [dateRange, setDateRange] = useState<{ start: string; end: string } | null>(null);
+
+  const filteredTransactions = useMemo(() => {
+    let result = transactions;
+    
+    if (dateRange?.start) {
+      result = result.filter(t => t.date >= dateRange.start);
+    }
+    if (dateRange?.end) {
+      result = result.filter(t => t.date <= dateRange.end);
+    }
+    
+    return result;
+  }, [transactions, dateRange]);
+
+  const handleClearFilter = () => {
+    setDateRange(null);
+  };
 
   const handleEdit = (trans: any) => {
     setEditForm({
@@ -50,9 +69,41 @@ export default function TransactionsPage() {
         </div>
       </header>
 
+      <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-surface-container rounded-lg">
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-on-surface-variant">De:</label>
+          <input
+            type="date"
+            value={dateRange?.start || ''}
+            onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value, end: prev?.end || '' }))}
+            className="bg-surface-container-low border-none rounded-lg px-3 py-2 text-sm text-on-surface"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-on-surface-variant">Até:</label>
+          <input
+            type="date"
+            value={dateRange?.end || ''}
+            onChange={(e) => setDateRange(prev => ({ ...prev, start: prev?.start || '', end: e.target.value }))}
+            className="bg-surface-container-low border-none rounded-lg px-3 py-2 text-sm text-on-surface"
+          />
+        </div>
+        {dateRange && (dateRange.start || dateRange.end) && (
+          <button 
+            onClick={handleClearFilter} 
+            className="text-sm text-primary hover:underline"
+          >
+            Limpar filtro
+          </button>
+        )}
+        <span className="ml-auto text-sm text-on-surface-variant">
+          {filteredTransactions.length} de {transactions.length} transações
+        </span>
+      </div>
+
       {isMobile ? (
         <div className="space-y-3">
-          {transactions.map((trans) => (
+          {filteredTransactions.map((trans) => (
             <div key={trans.id} className="bg-surface-container rounded-lg p-4">
               {editingId === trans.id ? (
                 <div className="space-y-3">
@@ -124,7 +175,7 @@ export default function TransactionsPage() {
               </tr>
             </thead>
             <tbody>
-              {transactions.map((trans) => (
+              {filteredTransactions.map((trans) => (
                 <tr key={trans.id} className="border-t border-surface-container-high hover:bg-surface-container-low transition-colors">
                   {editingId === trans.id ? (
                     <>

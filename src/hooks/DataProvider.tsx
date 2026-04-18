@@ -20,6 +20,7 @@ export interface Goal {
   current_amount: number;
   deadline?: string;
   icon: string;
+  goal_type: 'savings' | 'expense';
 }
 
 export interface Budget {
@@ -41,6 +42,7 @@ interface DataContextType {
   deleteGoal: (id: string) => Promise<void>;
   
   budgets: Budget[];
+  setCurrentBudgetMonth: (month: string) => void;
   addBudget: (b: Omit<Budget, "id" | "spent">) => Promise<void>;
   updateBudget: (id: string, b: Partial<Budget>) => Promise<void>;
   deleteBudget: (id: string) => Promise<void>;
@@ -56,14 +58,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [budgets, setBudgets] = useState<Budget[]>([]);
+  const [budgetsRaw, setBudgetsRaw] = useState<any[]>([]);
+  const [currentMonth, setCurrentMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [loading, setLoading] = useState(true);
+
+  const budgets = useMemo(() => {
+    return budgetsRaw.map(b => {
+      const monthTransactions = transactions.filter(t => 
+        t.category === b.category && 
+        t.type === 'expense' && 
+        t.date.startsWith(currentMonth)
+      );
+      
+      const spent = monthTransactions.reduce((sum, t) => sum + t.amount, 0);
+      
+      return {
+        id: b.id,
+        category: b.category,
+        limit: Number(b.limit_amount),
+        spent,
+      };
+    });
+  }, [budgetsRaw, transactions, currentMonth]);
 
   useEffect(() => {
     if (!user) {
       setTransactions([]);
       setGoals([]);
-      setBudgets([]);
+      setBudgetsRaw([]);
       setLoading(false);
       return;
     }
@@ -71,19 +93,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const fetchData = async () => {
       setLoading(true);
       
-      // Fetch all data in parallel
       const [transResult, goalsResult, budgetsResult] = await Promise.all([
         supabase.from('transactions').select('*').eq('user_id', user.id).order('date', { ascending: false }),
         supabase.from('goals').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('budgets').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
       ]);
       
-      const transData = transResult.data;
-      const goalsData = goalsResult.data;
-      const budgetsData = budgetsResult.data;
-      
-      if (transData) {
-        setTransactions(transData.map(t => ({
+      if (transResult.data) {
+        setTransactions(transResult.data.map(t => ({
           id: t.id,
           description: t.description,
           amount: Number(t.amount),
@@ -93,38 +110,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
         })));
       }
 
-      if (goalsData) {
-        setGoals(goalsData.map(g => ({
+      if (goalsResult.data) {
+        setGoals(goalsResult.data.map(g => ({
           id: g.id,
           name: g.name,
           target_amount: Number(g.target_amount),
           current_amount: Number(g.current_amount),
           deadline: g.deadline,
           icon: g.icon || 'savings',
+          goal_type: g.goal_type || 'savings',
         })));
       }
 
-      if (budgetsData) {
-        const currentMonth = new Date().toISOString().slice(0, 7);
-        
-        const budgetWithSpent = budgetsData.map(b => {
-          const monthTransactions = transData?.filter(t => 
-            t.category === b.category && 
-            t.type === 'expense' && 
-            t.date.startsWith(currentMonth)
-          ) || [];
-          
-          const spent = monthTransactions.reduce((sum, t) => sum + Number(t.amount), 0);
-          
-          return {
-            id: b.id,
-            category: b.category,
-            limit: Number(b.limit_amount),
-            spent,
-          };
-        });
-        
-        setBudgets(budgetWithSpent);
+      if (budgetsResult.data) {
+        setBudgetsRaw(budgetsResult.data);
       }
 
       setLoading(false);
@@ -205,6 +204,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         current_amount: g.current_amount || 0,
         deadline: g.deadline,
         icon: g.icon,
+        goal_type: g.goal_type || 'savings',
       })
       .select()
       .single();
@@ -219,6 +219,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         current_amount: Number(data.current_amount),
         deadline: data.deadline,
         icon: data.icon || 'savings',
+        goal_type: data.goal_type || 'savings',
       }]);
     }
   };
@@ -272,12 +273,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
     
     if (data) {
-      setBudgets(prev => [...prev, {
-        id: data.id,
-        category: data.category,
-        limit: Number(data.limit_amount),
-        spent: 0,
-      }]);
+      setBudgetsRaw(prev => [...prev, data]);
     }
   };
 
@@ -292,8 +288,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     if (error) throw error;
     
-    setBudgets(prev => prev.map(budget => 
-      budget.id === id ? { ...budget, ...b } : budget
+    setBudgetsRaw(prev => prev.map(budget => 
+      budget.id === id ? { ...budget, limit_amount: b.limit } : budget
     ));
   };
 
@@ -308,15 +304,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     if (error) throw error;
     
-    setBudgets(prev => prev.filter(budget => budget.id !== id));
+    setBudgetsRaw(prev => prev.filter(budget => budget.id !== id));
+  };
+
+  const setCurrentBudgetMonth = (month: string) => {
+    setCurrentMonth(month);
   };
 
   const contextValue = useMemo(() => ({
     transactions, addTransaction, updateTransaction, deleteTransaction,
     goals, addGoal, updateGoal, deleteGoal,
-    budgets, addBudget, updateBudget, deleteBudget,
+    budgets, setCurrentBudgetMonth, addBudget, updateBudget, deleteBudget,
     loading,
-  }), [transactions, goals, budgets, loading]);
+  }), [transactions, goals, budgetsRaw, currentMonth, loading]);
 
   return (
     <DataContext.Provider value={contextValue}>
