@@ -9,7 +9,12 @@ import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/constants";
 
 const ALL_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES]
   .map(c => c.value)
-  .filter((v, i, a) => a.indexOf(v) === i);
+  .filter((v, i, a) => a.indexOf(v) === i)
+  .sort((a, b) => {
+    if (a === "Outros") return 1;
+    if (b === "Outros") return -1;
+    return a.localeCompare(b);
+  });
 
 function debounce<T extends (...args: any[]) => any>(fn: T, ms: number) {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
