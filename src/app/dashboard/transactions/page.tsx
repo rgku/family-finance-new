@@ -4,6 +4,9 @@ import { useState, useMemo } from "react";
 import { useData } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/constants";
+
+const allCategories = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES].map(c => c.value);
 
 export default function TransactionsPage() {
   const { transactions, updateTransaction, deleteTransaction } = useData();
@@ -123,13 +126,16 @@ export default function TransactionsPage() {
                       onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
                       className="bg-surface-container-low border-none rounded px-3 py-2 text-on-surface text-sm w-full"
                     />
-                    <input
-                      type="text"
+                    <select
                       value={editForm.category}
                       onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
                       className="bg-surface-container-low border-none rounded px-3 py-2 text-on-surface text-sm w-full"
-                      placeholder="Categoria"
-                    />
+                    >
+                      <option value="">Selecionar categoria</option>
+                      {allCategories.map(cat => (
+                        <option key={cat} value={cat}>{cat}</option>
+                      ))}
+                    </select>
                     <input
                       type="number"
                       value={editForm.amount}
@@ -199,13 +205,17 @@ export default function TransactionsPage() {
                         />
                       </td>
                       <td className="p-4">
-                        <input
-                          type="text"
+                        <select
                           value={editForm.category}
                           onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
                           className="bg-surface-container-low border-none rounded px-3 py-2 text-on-surface w-full"
                           aria-label="Categoria"
-                        />
+                        >
+                          <option value="">Selecionar</option>
+                          {allCategories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
                       </td>
                       <td className="p-4">
                         <input
