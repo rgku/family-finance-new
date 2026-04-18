@@ -62,25 +62,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [currentMonth, setCurrentMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [loading, setLoading] = useState(true);
 
-  const budgets = useMemo(() => {
-    return budgetsRaw.map(b => {
-      const monthTransactions = transactions.filter(t => 
-        t.category === b.category && 
-        t.type === 'expense' && 
-        t.date.startsWith(currentMonth)
-      );
-      
-      const spent = monthTransactions.reduce((sum, t) => sum + t.amount, 0);
-      
-      return {
-        id: b.id,
-        category: b.category,
-        limit: Number(b.limit_amount),
-        spent,
-      };
-    });
-  }, [budgetsRaw, transactions, currentMonth]);
-
   useEffect(() => {
     if (!user) {
       setTransactions([]);
@@ -131,6 +112,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     fetchData();
   }, [user]);
+
+  const budgets = useMemo(() => {
+    return budgetsRaw.map(b => {
+      const monthTransactions = transactions.filter(t => 
+        t.category === b.category && 
+        t.type === 'expense' && 
+        t.date.startsWith(currentMonth)
+      );
+      
+      const spent = monthTransactions.reduce((sum, t) => sum + t.amount, 0);
+      
+      return {
+        id: b.id,
+        category: b.category,
+        limit: Number(b.limit_amount),
+        spent,
+      };
+    });
+  }, [budgetsRaw, transactions, currentMonth]);
 
   const addTransaction = async (t: Omit<Transaction, "id">) => {
     if (!user) throw new Error("Must be logged in");
