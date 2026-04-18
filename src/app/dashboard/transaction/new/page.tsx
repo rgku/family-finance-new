@@ -7,6 +7,10 @@ import { useData } from "@/hooks/DataProvider";
 import { CURRENCY } from "@/lib/currency";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/constants";
 
+const ALL_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES]
+  .map(c => c.value)
+  .filter((v, i, a) => a.indexOf(v) === i);
+
 function debounce<T extends (...args: any[]) => any>(fn: T, ms: number) {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   return (...args: Parameters<T>) => {
@@ -188,22 +192,25 @@ export default function NewTransaction() {
           <span id="category-label" className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
             Categoria {category && <span className="text-primary">(sugerido)</span>}
           </span>
-          <div className="grid grid-cols-4 gap-2">
-            {(type === "expense" ? EXPENSE_CATEGORIES : INCOME_CATEGORIES).map((cat) => (
-              <button
-                key={cat.value}
-                type="button"
-                onClick={() => setCategory(cat.value)}
-                className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all ${
-                  category === cat.value
-                    ? "bg-primary/20 text-primary border border-primary"
-                    : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
-                }`}
-              >
-                <span className="material-symbols-outlined text-lg">{cat.icon}</span>
-                <span className="text-[10px] font-medium">{cat.value}</span>
-              </button>
-            ))}
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {ALL_CATEGORIES.map((cat) => {
+              const catInfo = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES].find(c => c.value === cat);
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategory(cat)}
+                  className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all ${
+                    category === cat
+                      ? "bg-primary/20 text-primary border border-primary"
+                      : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-lg">{catInfo?.icon || "folder"}</span>
+                  <span className="text-[10px] font-medium">{cat}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 

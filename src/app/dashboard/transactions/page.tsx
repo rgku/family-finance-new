@@ -6,7 +6,7 @@ import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/constants";
 
-const allCategories = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES].map(c => c.value);
+const allCategories = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES].map(c => c.value).filter((v, i, a) => a.indexOf(v) === i);
 
 export default function TransactionsPage() {
   const { transactions, updateTransaction, deleteTransaction } = useData();
