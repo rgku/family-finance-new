@@ -5,7 +5,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
-import { isDateInCustomMonth, formatCustomMonth } from "@/lib/dateUtils";
+import { isDateInCustomMonth, formatCustomMonth, getCustomMonthRange } from "@/lib/dateUtils";
 import Link from "next/link";
 
 import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
@@ -15,17 +15,22 @@ export default function Dashboard() {
   const { transactions, goals: dataGoals } = useData();
   const isMobile = useDeviceType();
   
+  const billingDay = profile?.billing_cycle_day || 1;
+  
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
+    if (billingDay > 1) {
+      const { startDate } = getCustomMonthRange(billingDay, now);
+      return `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}`;
+    }
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
 
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const [year, month] = selectedMonth.split("-").map(Number);
   
-  const billingDay = profile?.billing_cycle_day || 1;
   const monthName = profile?.billing_cycle_day && profile.billing_cycle_day > 1
-    ? formatCustomMonth(billingDay, new Date(year, month - 1))
+    ? formatCustomMonth(billingDay, new Date(year, month - 1, 25))
     : monthNames[month - 1];
 
   const prevMonth = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };

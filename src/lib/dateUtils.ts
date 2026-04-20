@@ -26,6 +26,6 @@ export function formatCustomMonth(billingDay: number, date: Date = new Date()): 
 
 export function isDateInCustomMonth(dateStr: string, billingDay: number, year: number, month: number): boolean {
   const date = new Date(dateStr);
-  const { startDate, endDate } = getCustomMonthRange(billingDay, new Date(year, month - 1));
+  const { startDate, endDate } = getCustomMonthRange(billingDay, new Date(year, month - 1, billingDay));
   return date >= startDate && date <= endDate;
 }
