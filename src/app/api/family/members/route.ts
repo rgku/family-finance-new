@@ -94,8 +94,8 @@ export async function GET(request: NextRequest) {
       currentCount: allMembers.length,
       userRole: profile.role,
     });
-  } catch (error: any) {
-    console.error("Family members GET error:", error?.message || "Unknown error");
+  } catch (error: unknown) {
+    console.error("Family members GET error:", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }
