@@ -2,32 +2,26 @@
 
 import { useState, useEffect } from "react";
 
-function isMobileDevice(): boolean {
-  if (typeof window === "undefined") return true;
-  
-  const ua = navigator.userAgent.toLowerCase();
-  const isMobileUA = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua);
-  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-  const isSmallScreen = window.innerWidth < 768;
-  
-  return isMobileUA || isTouchDevice || isSmallScreen;
-}
-
 export function useDeviceType() {
-  const [isMobile, setIsMobile] = useState(true);
+  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    const checkDevice = () => setIsMobile(isMobileDevice());
+    
+    const checkDevice = () => {
+      const width = window.innerWidth;
+      setIsMobile(width < 768);
+    };
+    
     checkDevice();
     window.addEventListener('resize', checkDevice);
-    window.addEventListener('orientationchange', checkDevice);
-    return () => {
-      window.removeEventListener('resize', checkDevice);
-      window.removeEventListener('orientationchange', checkDevice);
-    };
+    return () => window.removeEventListener('resize', checkDevice);
   }, []);
 
-  return isClient ? isMobile : true;
+  if (!isClient || isMobile === undefined) {
+    return false;
+  }
+
+  return isMobile;
 }
