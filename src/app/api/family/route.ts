@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminSupabase } from "@/lib/supabase/server";
+import { randomBytes } from "crypto";
 import { z } from "zod";
 
 const familySchema = z.object({
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "create") {
-      const inviteCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      const inviteCode = randomBytes(4).toString('hex').toUpperCase();
 
       // Use admin client to bypass RLS
       const { data: family, error: familyError } = await adminSupabase

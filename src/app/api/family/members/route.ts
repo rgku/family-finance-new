@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, createAdminSupabase } from "@/lib/supabase/server";
+import { randomBytes } from "crypto";
 import { z } from "zod";
 
 const inviteSchema = z.object({
@@ -144,7 +145,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { name, email, role } = parsed.data;
-    const inviteToken = Math.random().toString(36).substring(2, 10).toUpperCase();
+    const inviteToken = randomBytes(6).toString('hex').toUpperCase();
 
     // Create invitation
     const { data: member, error: memberError } = await supabase
