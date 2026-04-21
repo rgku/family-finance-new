@@ -46,8 +46,7 @@ export const metadata: Metadata = {
     description: 'Gestão financeira familiar em tempo real',
   },
   icons: [
-    { rel: 'icon', url: '/favicon.ico' },
-    { rel: 'apple-touch-icon', url: '/apple-touch-icon.png' },
+    { rel: 'icon', url: '/icon.svg' },
   ],
 };
 
