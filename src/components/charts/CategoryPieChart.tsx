@@ -51,9 +51,12 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
     );
   };
 
-  const height = isMobile ? 280 : 320;
+  const baseHeight = isMobile ? 280 : 320;
+  const height = baseHeight + (isMobile && chartData.length > 4 ? 40 : 0);
+  const legendHeight = chartData.length > 4 ? 60 : 36;
   const innerRadius = isMobile ? 50 : 60;
   const outerRadius = isMobile ? 85 : 100;
+  const showLabel = !isMobile || chartData.length <= 4;
 
   return (
     <div className="relative">
@@ -68,7 +71,7 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
             paddingAngle={3}
             dataKey="value"
             labelLine={false}
-            label={renderCustomLabel}
+            label={showLabel ? renderCustomLabel : false}
             animationDuration={800}
           >
             {chartData.map((entry, index) => (
@@ -87,7 +90,7 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
           />
           <Legend
             verticalAlign="bottom"
-            height={36}
+            height={legendHeight}
             formatter={(value) => <span className="text-xs text-on-surface-variant">{value}</span>}
           />
         </RechartsPieChart>
