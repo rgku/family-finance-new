@@ -3,6 +3,10 @@ import { createClient, createAdminSupabase } from "@/lib/supabase/server";
 import { randomBytes } from "crypto";
 import { z } from "zod";
 
+function generateSecureInviteToken(): string {
+  return randomBytes(8).toString('hex').toUpperCase();
+}
+
 const inviteSchema = z.object({
   name: z.string().min(1).max(100),
   email: z.string().email(),
@@ -145,7 +149,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { name, email, role } = parsed.data;
-    const inviteToken = randomBytes(6).toString('hex').toUpperCase();
+    const inviteToken = generateSecureInviteToken();
 
     // Create invitation
     const { data: member, error: memberError } = await supabase

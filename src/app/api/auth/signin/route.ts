@@ -7,6 +7,19 @@ const rateLimitMap = new Map<string, { count: number; timestamp: number }>();
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000;
 const RATE_LIMIT_MAX = 5;
 
+function cleanupRateLimitMap() {
+  const now = Date.now();
+  for (const [ip, record] of rateLimitMap) {
+    if (now - record.timestamp > RATE_LIMIT_WINDOW) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}
+
+if (typeof setInterval !== 'undefined') {
+  setInterval(cleanupRateLimitMap, 5 * 60 * 1000);
+}
+
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
   const record = rateLimitMap.get(ip);

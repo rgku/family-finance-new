@@ -3,6 +3,10 @@ import { createClient, createAdminSupabase } from "@/lib/supabase/server";
 import { randomBytes } from "crypto";
 import { z } from "zod";
 
+function generateSecureInviteCode(): string {
+  return randomBytes(8).toString('hex').toUpperCase();
+}
+
 const familySchema = z.object({
   name: z.string().max(100).trim().optional(),
   action: z.enum(["create", "join"]),
@@ -27,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "create") {
-      const inviteCode = randomBytes(4).toString('hex').toUpperCase();
+      const inviteCode = generateSecureInviteCode();
 
       // Use admin client to bypass RLS
       const { data: family, error: familyError } = await adminSupabase

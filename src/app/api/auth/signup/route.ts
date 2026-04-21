@@ -7,6 +7,19 @@ const rateLimitMap = new Map<string, { count: number; timestamp: number }>();
 const RATE_LIMIT_WINDOW = 15 * 60 * 1000;
 const RATE_LIMIT_MAX = 3;
 
+function cleanupRateLimitMap() {
+  const now = Date.now();
+  for (const [ip, record] of rateLimitMap) {
+    if (now - record.timestamp > RATE_LIMIT_WINDOW) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}
+
+if (typeof setInterval !== 'undefined') {
+  setInterval(cleanupRateLimitMap, 5 * 60 * 1000);
+}
+
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
   const record = rateLimitMap.get(ip);
@@ -62,12 +75,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (fullName && (fullName.length < 2 || fullName.length > 100)) {
+      return NextResponse.json(
+        { error: "Nome deve ter entre 2 e 100 caracteres" },
+        { status: 400 }
+      );
+    }
+
+    const sanitizedFullName = fullName?.replace(/[<>\"'&]/g, '').slice(0, 100) || "";
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          full_name: fullName?.slice(0, 100) || "",
+          full_name: sanitizedFullName,
         },
       },
     });
