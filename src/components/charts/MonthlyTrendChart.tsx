@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, useEffect } from "react";
+import { memo } from "react";
 import {
   AreaChart as RechartsAreaChart,
   Area,
@@ -9,20 +9,14 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { useDeviceType } from "@/hooks/useDeviceType";
 
 interface MonthlyTrendChartProps {
   data: { month: string; income: number; expense: number }[];
 }
 
 export const MonthlyTrendChart = memo(function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
-  const [isMobile, setIsMobile] = useState(false);
-  
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
+  const isMobile = useDeviceType();
 
   if (data.length === 0) {
     return (

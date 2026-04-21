@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo, useState, useEffect } from "react";
+import { memo, useMemo } from "react";
 import {
   BarChart as RechartsBarChart,
   Bar,
@@ -11,20 +11,14 @@ import {
   Cell,
 } from "recharts";
 import { getCategoryColor } from "@/lib/categoryColors";
+import { useDeviceType } from "@/hooks/useDeviceType";
 
 interface ExpenseChartProps {
   data: { category: string; amount: number }[];
 }
 
 export const ExpenseChart = memo(function ExpenseChart({ data }: ExpenseChartProps) {
-  const [isMobile, setIsMobile] = useState(false);
-  
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, []);
+  const isMobile = useDeviceType();
   const chartData = useMemo(() => {
     return data
       .filter((d) => d.amount > 0)
