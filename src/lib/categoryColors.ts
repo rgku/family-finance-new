@@ -28,6 +28,27 @@ export const COLORS_PALETTE = [
   "#64748b",
 ];
 
+function normalizeCategory(category: string): string {
+  return category
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 export function getCategoryColor(category: string, index?: number): string {
-  return CATEGORY_COLORS[category] || COLORS_PALETTE[index ?? 0] || COLORS_PALETTE[0];
+  const normalized = normalizeCategory(category);
+  
+  if (CATEGORY_COLORS[category]) return CATEGORY_COLORS[category];
+  
+  const lowerMatch = Object.entries(CATEGORY_COLORS).find(
+    ([key]) => key.toLowerCase() === category.toLowerCase()
+  );
+  if (lowerMatch) return lowerMatch[1];
+  
+  const noAccentMatch = Object.entries(CATEGORY_COLORS).find(
+    ([key]) => normalizeCategory(key) === normalized
+  );
+  if (noAccentMatch) return noAccentMatch[1];
+  
+  return COLORS_PALETTE[index ?? 0] || COLORS_PALETTE[0];
 }
