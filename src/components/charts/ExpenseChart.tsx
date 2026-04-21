@@ -10,28 +10,11 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
-import { EXPENSE_CATEGORIES } from "@/lib/constants";
+import { getCategoryColor } from "@/lib/categoryColors";
 
 interface ExpenseChartProps {
   data: { category: string; amount: number }[];
 }
-
-const COLORS = [
-  "#6366f1",
-  "#8b5cf6",
-  "#ec4899",
-  "#f43f5e",
-  "#f97316",
-  "#eab308",
-  "#22c55e",
-  "#14b8a6",
-  "#06b6d4",
-];
-
-const categoryColors: Record<string, string> = {};
-EXPENSE_CATEGORIES.forEach((cat, i) => {
-  categoryColors[cat.value] = COLORS[i % COLORS.length];
-});
 
 export const ExpenseChart = memo(function ExpenseChart({ data }: ExpenseChartProps) {
   const chartData = useMemo(() => {
@@ -40,7 +23,7 @@ export const ExpenseChart = memo(function ExpenseChart({ data }: ExpenseChartPro
       .map((d, idx) => ({
         name: d.category,
         value: d.amount,
-        fill: categoryColors[d.category] || COLORS[idx % COLORS.length],
+        fill: getCategoryColor(d.category, idx),
       }))
       .sort((a, b) => b.value - a.value);
   }, [data]);
