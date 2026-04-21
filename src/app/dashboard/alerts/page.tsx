@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useBudgetAlerts } from "@/hooks/useBudgetAlerts";
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
 
 export default function AlertsPage() {
   const { alerts, loading, createAlert, updateAlert, deleteAlert, toggleAlert } = useBudgetAlerts();
@@ -216,7 +217,7 @@ export default function AlertsPage() {
       <div className="space-y-3">
         {alerts.length === 0 ? (
           <div className="text-center py-12 bg-surface-container rounded-lg">
-            <span className="material-symbols-outlined text-4xl text-on-surface-variant">notifications_off</span>
+            <Icon name="notifications_off" size={36} className="text-4xl text-on-surface-variant" />
             <p className="mt-4 text-on-surface-variant">Nenhum alerta configurado</p>
             <button
               onClick={() => setIsCreating(true)}
@@ -237,11 +238,7 @@ export default function AlertsPage() {
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                   alert.alert_type === "warning" ? "bg-yellow-500/20" : "bg-error/20"
                 }`}>
-                  <span className={`material-symbols-outlined ${
-                    alert.alert_type === "warning" ? "text-yellow-400" : "text-error"
-                  }`}>
-                    {alert.alert_type === "warning" ? "warning" : "error"}
-                  </span>
+                  <Icon name={alert.alert_type === "warning" ? "warning" : "error"} size={20} className={alert.alert_type === "warning" ? "text-yellow-400" : "text-error"} />
                 </div>
                 <div>
                   <p className="font-medium text-on-surface">{alert.category}</p>
@@ -256,13 +253,13 @@ export default function AlertsPage() {
               
               <div className="flex items-center gap-3">
                 {alert.notify_email && (
-                  <span className="material-symbols-outlined text-on-surface-variant text-sm" title="Email enabled">
-                    email
+                  <span title="Email enabled">
+                    <Icon name="email" size={14} className="text-on-surface-variant text-sm" />
                   </span>
                 )}
                 {alert.notify_in_app && (
-                  <span className="material-symbols-outlined text-on-surface-variant text-sm" title="In-app enabled">
-                    notifications
+                  <span title="In-app enabled">
+                    <Icon name="notifications" size={14} className="text-on-surface-variant text-sm" />
                   </span>
                 )}
                 
@@ -275,9 +272,7 @@ export default function AlertsPage() {
                   }`}
                   title={alert.is_active ? "Desativar" : "Ativar"}
                 >
-                  <span className="material-symbols-outlined text-base">
-                    {alert.is_active ? "notifications_active" : "notifications_off"}
-                  </span>
+                  <Icon name={alert.is_active ? "notifications_active" : "notifications_off"} size={16} className="text-base" />
                 </button>
                 
                 <button
@@ -285,7 +280,7 @@ export default function AlertsPage() {
                   className="p-2 text-error hover:bg-error/20 rounded-lg"
                   title="Eliminar"
                 >
-                  <span className="material-symbols-outlined text-base">delete</span>
+                  <Icon name="delete" size={16} className="text-base" />
                 </button>
               </div>
             </div>

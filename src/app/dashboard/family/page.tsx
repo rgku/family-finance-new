@@ -5,6 +5,7 @@ import { useFamilyMembers } from "@/hooks/useFamilyMembers";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Icon } from "@/components/Icon";
 
 export default function FamilyPage() {
   const { 
@@ -382,7 +383,7 @@ export default function FamilyPage() {
                       className="p-2 text-error hover:bg-error/20 rounded-lg"
                       aria-label="Remover membro"
                     >
-                      <span className="material-symbols-outlined text-base">delete</span>
+                      <Icon name="delete" size={16} className="text-base" />
                     </button>
                   )}
                 </div>

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSupabase } from "@/hooks/useSupabase";
+import { Icon } from "@/components/Icon";
 
 export default function ForgotPasswordPage() {
   const router = useRouter();
@@ -42,7 +43,7 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen bg-surface flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <span className="material-symbols-outlined text-6xl text-primary mb-4">lock_reset</span>
+          <Icon name="lock_reset" size={60} className="text-6xl text-primary mb-4" />
           <h1 className="text-2xl font-bold text-on-surface">Esqueci a Password</h1>
           <p className="text-on-surface-variant mt-2">
             Enter o teu email e vamos enviar-te um link para redefinir a password.

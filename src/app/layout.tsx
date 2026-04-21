@@ -60,8 +60,6 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link rel="preload" href="https://fonts.gstatic.com/s/materialsymbolsoutlined/v220/kJEhBvYX7BgnkSrUwT8OhrdQw4oELdPIeeII9v6oDMzByHX9rU.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0&display=block" rel="stylesheet" />
       </head>
       <body className="bg-surface text-on-surface min-h-screen antialiased font-sans">
         <SWRegistration />

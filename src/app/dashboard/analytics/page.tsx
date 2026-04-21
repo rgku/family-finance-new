@@ -9,6 +9,7 @@ import { isDateInCustomMonth, formatCustomMonth, getCustomMonthRange } from "@/l
 import { MonthlyTrendChart } from "@/components/charts/MonthlyTrendChart";
 import { ExpenseChart } from "@/components/charts/ExpenseChart";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
+import { Icon } from "@/components/Icon";
 
 export default function AnalyticsPage() {
   const { transactions } = useData();
@@ -98,7 +99,7 @@ export default function AnalyticsPage() {
           onClick={() => setSelectedMonth(`${prevMonth.year}-${String(prevMonth.month).padStart(2, "0")}`)}
           className="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant"
         >
-          <span className="material-symbols-outlined">chevron_left</span>
+          <Icon name="chevron_left" size={20} />
         </button>
         <span className="text-xl font-bold text-on-surface min-w-[160px] text-center">
           {monthName} {year}
@@ -108,7 +109,7 @@ export default function AnalyticsPage() {
           disabled={!canGoNext}
           className={`p-2 rounded-full text-on-surface-variant ${canGoNext ? "hover:bg-surface-container-high cursor-pointer" : "opacity-50 cursor-not-allowed"}`}
         >
-          <span className="material-symbols-outlined">chevron_right</span>
+          <Icon name="chevron_right" size={20} />
         </button>
       </div>
 
@@ -138,7 +139,7 @@ export default function AnalyticsPage() {
         <div className="space-y-3">
           {categoryBreakdown.length === 0 ? (
             <div className="flex items-start gap-3 p-4 bg-primary/10 rounded-lg">
-              <span className="material-symbols-outlined text-primary">lightbulb</span>
+              <Icon name="lightbulb" size={20} className="text-primary" />
               <div>
                 <p className="font-medium">Sem dados suficientes</p>
                 <p className="text-sm text-on-surface-variant">
@@ -150,7 +151,7 @@ export default function AnalyticsPage() {
             <>
               {categoryBreakdown.slice(0, 2).map((cat, idx) => (
                 <div key={cat.category} className="flex items-start gap-3 p-4 bg-primary/10 rounded-lg">
-                  <span className="material-symbols-outlined text-primary">{idx === 0 ? "lightbulb" : "trending_down"}</span>
+                  <Icon name={idx === 0 ? "lightbulb" : "trending_down"} size={20} className="text-primary" />
                   <div>
                     <p className="font-medium">Gastos com {cat.category}</p>
                     <p className="text-sm text-on-surface-variant">

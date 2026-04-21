@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { Icon } from "@/components/Icon";
 
 type ToastType = "success" | "error" | "info";
 
@@ -54,16 +55,14 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             className={`flex items-center gap-3 px-4 py-3 rounded-full shadow-lg ${typeStyles[toast.type]}`}
             role="alert"
           >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-              {typeIcons[toast.type]}
-            </span>
+            <Icon name={typeIcons[toast.type]} size={20} fill />
             <span className="flex-1 text-sm font-medium">{toast.message}</span>
             <button
               onClick={() => removeToast(toast.id)}
               className="opacity-70 hover:opacity-100"
               aria-label="Fechar"
             >
-              <span className="material-symbols-outlined text-sm">close</span>
+              <Icon name="close" size={14} className="text-sm" />
             </button>
           </div>
         ))}

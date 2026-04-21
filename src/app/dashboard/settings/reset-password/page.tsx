@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSupabase } from "@/hooks/useSupabase";
+import { Icon } from "@/components/Icon";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -83,7 +84,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen bg-surface flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <span className="material-symbols-outlined text-6xl text-primary mb-4">lock</span>
+          <Icon name="lock" size={60} className="text-6xl text-primary mb-4" />
           <h1 className="text-2xl font-bold text-on-surface">Nova Password</h1>
           <p className="text-on-surface-variant mt-2">
             {isValidToken ? "Introduz a tua nova password." : "Link de recuperação inválido ou expirado."}

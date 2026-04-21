@@ -6,6 +6,7 @@ import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import Link from "next/link";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
+import { Icon } from "@/components/Icon";
 
 const PDFDownloadLink = lazy(() => import("@react-pdf/renderer").then(mod => ({ default: mod.PDFDownloadLink })));
 const PDFReport = lazy(() => import("@/components/ReportPDF").then(mod => ({ default: mod.PDFReport })));
@@ -116,7 +117,7 @@ export default function ReportsPage() {
           onClick={() => setSelectedMonth(`${prevMonth.year}-${String(prevMonth.month).padStart(2, "0")}`)}
           className="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant"
         >
-          <span className="material-symbols-outlined">chevron_left</span>
+          <Icon name="chevron_left" size={20} />
         </button>
         <span className="text-lg font-bold text-on-surface min-w-[160px] text-center">
           {monthName} {year}
@@ -126,7 +127,7 @@ export default function ReportsPage() {
           disabled={!canGoNext}
           className={`p-2 rounded-full ${canGoNext ? "hover:bg-surface-container-high text-on-surface-variant" : "opacity-50"}`}
         >
-          <span className="material-symbols-outlined">chevron_right</span>
+          <Icon name="chevron_right" size={20} />
         </button>
       </div>
 
@@ -204,7 +205,7 @@ export default function ReportsPage() {
                 >
                   {({ loading }) => (
                     <>
-                      <span className="material-symbols-outlined">download</span>
+                      <Icon name="download" size={20} />
                       {loading ? "A gerar PDF..." : "Baixar PDF"}
                     </>
                   )}
@@ -215,7 +216,7 @@ export default function ReportsPage() {
                 onClick={handleShare}
                 className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-container-high text-on-surface rounded-full font-medium"
               >
-                <span className="material-symbols-outlined">share</span>
+                <Icon name="share" size={20} />
                 Compartilhar
               </button>
             </div>
@@ -231,7 +232,7 @@ export default function ReportsPage() {
               onClick={handleCSVExport}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-container-high text-on-surface rounded-full font-medium"
             >
-              <span className="material-symbols-outlined">table_chart</span>
+              <Icon name="table_chart" size={20} />
               Exportar CSV
             </button>
           </div>

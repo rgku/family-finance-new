@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { Icon } from "@/components/Icon";
 
 const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
@@ -53,7 +54,7 @@ export function MonthNavigator({ selectedMonth, onMonthChange, isMobile = false 
         className={buttonClass}
         aria-label="Mês anterior"
       >
-        <span className="material-symbols-outlined">chevron_left</span>
+        <Icon name="chevron_left" size={20} />
       </button>
       <span className={isMobile ? "text-sm font-bold text-on-surface min-w-[120px] text-center" : "text-lg font-bold text-on-surface min-w-[160px] text-center"}>
         {monthName} {year}
@@ -64,7 +65,7 @@ export function MonthNavigator({ selectedMonth, onMonthChange, isMobile = false 
         className={`${buttonClass} ${!canGoNext ? buttonDisabledClass : ""}`}
         aria-label="Mês seguinte"
       >
-        <span className="material-symbols-outlined">chevron_right</span>
+        <Icon name="chevron_right" size={20} />
       </button>
     </div>
   );

@@ -6,6 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
 import { CURRENCY } from "@/lib/currency";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/constants";
+import { Icon } from "@/components/Icon";
 
 const ALL_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES]
   .map(c => c.value)
@@ -211,7 +212,7 @@ export default function NewTransaction() {
                       : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
                   }`}
                 >
-                  <span className="material-symbols-outlined text-lg">{catInfo?.icon || "folder"}</span>
+                  <Icon name={catInfo?.icon || "folder"} size={18} className="text-lg" />
                   <span className="text-[10px] font-medium">{cat}</span>
                 </button>
               );

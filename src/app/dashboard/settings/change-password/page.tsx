@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useSupabase } from "@/hooks/useSupabase";
+import { Icon } from "@/components/Icon";
 
 export default function ChangePasswordPage() {
   const { user } = useAuth();
@@ -70,7 +71,7 @@ export default function ChangePasswordPage() {
     return (
       <div className="min-h-screen bg-surface flex items-center justify-center p-4">
         <div className="w-full max-w-md text-center">
-          <span className="material-symbols-outlined text-6xl text-on-surface-variant mb-4">lock</span>
+          <Icon name="lock" size={60} className="text-6xl text-on-surface-variant mb-4" />
           <p className="text-on-surface-variant">Precisas de estar logged in para alterar a password</p>
         </div>
       </div>

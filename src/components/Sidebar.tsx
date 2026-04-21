@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, memo } from "react";
+import { Icon } from "./Icon";
 
 const navItemsMobile = [
   { href: "/dashboard", icon: "home", label: "Home" },
@@ -54,7 +55,7 @@ export function DesktopSidebar({ onSignOut }: DesktopSidebarProps) {
             }`}
             aria-current={pathname === item.href ? "page" : undefined}
           >
-            <span className="material-symbols-outlined">{item.icon}</span>
+            <Icon name={item.icon} size={20} />
             <span>{item.label}</span>
           </Link>
         ))}
@@ -79,9 +80,7 @@ function NavItem({ href, icon, label, isActive }: { href: string; icon: string; 
       href={href}
       className={`flex flex-col items-center justify-center py-2 px-1 flex-1 min-h-[56px] ${isActive ? "text-primary" : "text-on-surface-variant"}`}
     >
-      <span className="material-symbols-outlined text-[24px]" style={{ fontVariationSettings: isActive ? "'FILL' 1" : "normal" }}>
-        {icon}
-      </span>
+      <Icon name={icon} size={24} fill={isActive} />
       <span className="font-inter font-medium text-[10px] mt-0.5">{label}</span>
     </Link>
   );
@@ -94,7 +93,7 @@ function NavItemSecondary({ href, icon, label, isActive, onClick }: { href: stri
       onClick={onClick}
       className={`flex flex-col items-center justify-center p-3 rounded-xl ${isActive ? "bg-primary/20 text-primary" : "text-on-surface-variant"}`}
     >
-      <span className="material-symbols-outlined text-[24px]">{icon}</span>
+      <Icon name={icon} size={24} />
       <span className="font-inter font-medium text-[10px] mt-1">{label}</span>
     </Link>
   );
@@ -117,7 +116,7 @@ const MobileNavComponent = function MobileNav() {
         <div className="flex-1 flex justify-center">
           <Link href="/dashboard/transaction/new" className="flex flex-col items-center justify-center -mt-6">
             <div className="w-12 h-12 bg-primary rounded-full shadow-lg shadow-primary/30 flex items-center justify-center">
-              <span className="material-symbols-outlined text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>add</span>
+              <Icon name="add" size={24} className="text-on-primary" fill />
             </div>
           </Link>
         </div>
@@ -127,7 +126,7 @@ const MobileNavComponent = function MobileNav() {
           className={`flex flex-col items-center justify-center py-2 px-1 flex-1 min-h-[56px] ${showMore ? "text-primary" : "text-on-surface-variant"}`}
           aria-label="Mais opções"
         >
-          <span className="material-symbols-outlined text-[24px]">more_horiz</span>
+          <Icon name="more_horiz" size={24} />
           <span className="font-inter font-medium text-[10px] mt-0.5">Mais</span>
         </button>
       </nav>
@@ -169,7 +168,7 @@ const MobileHeaderComponent = function MobileHeader({ hideNotifications = false,
             className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center"
             aria-label="Notificações"
           >
-            <span className="material-symbols-outlined text-primary">notifications</span>
+            <Icon name="notifications" size={20} className="text-primary" />
           </Link>
         )}
         
@@ -178,9 +177,7 @@ const MobileHeaderComponent = function MobileHeader({ hideNotifications = false,
           className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center"
           aria-label="Menu"
         >
-          <span className="material-symbols-outlined text-primary">
-            {menuOpen ? "close" : "menu"}
-          </span>
+          <Icon name={menuOpen ? "close" : "menu"} size={20} className="text-primary" />
         </button>
       </div>
       
@@ -191,7 +188,7 @@ const MobileHeaderComponent = function MobileHeader({ hideNotifications = false,
             onClick={() => setMenuOpen(false)}
             className="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-high"
           >
-            <span className="material-symbols-outlined">person</span>
+            <Icon name="person" size={20} />
             <span>Perfil</span>
           </Link>
           <Link
@@ -199,7 +196,7 @@ const MobileHeaderComponent = function MobileHeader({ hideNotifications = false,
             onClick={() => setMenuOpen(false)}
             className="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-high"
           >
-            <span className="material-symbols-outlined">group</span>
+            <Icon name="group" size={20} />
             <span>Família</span>
           </Link>
           <Link
@@ -207,7 +204,7 @@ const MobileHeaderComponent = function MobileHeader({ hideNotifications = false,
             onClick={() => setMenuOpen(false)}
             className="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-high"
           >
-            <span className="material-symbols-outlined">settings</span>
+            <Icon name="settings" size={20} />
             <span>Definições</span>
           </Link>
           <Link
@@ -215,7 +212,7 @@ const MobileHeaderComponent = function MobileHeader({ hideNotifications = false,
             onClick={() => setMenuOpen(false)}
             className="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container-high"
           >
-            <span className="material-symbols-outlined">notifications</span>
+            <Icon name="notifications" size={20} />
             <span>Alertas</span>
           </Link>
           <hr className="my-2 border-surface-container-high" />
@@ -234,7 +231,7 @@ const MobileHeaderComponent = function MobileHeader({ hideNotifications = false,
             }}
             className="flex items-center gap-3 px-4 py-3 text-error hover:bg-error/10 w-full"
           >
-            <span className="material-symbols-outlined">logout</span>
+            <Icon name="logout" size={20} />
             <span>Sair</span>
           </button>
         </div>
@@ -252,9 +249,7 @@ export function FABNewTransaction() {
       className="flex flex-col items-center justify-center p-2 flex-1 -mt-6"
     >
       <div className="w-12 h-12 bg-primary rounded-full shadow-lg shadow-primary/30 flex items-center justify-center">
-        <span className="material-symbols-outlined text-on-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
-          add
-        </span>
+        <Icon name="add" size={24} className="text-on-primary" fill />
       </div>
     </Link>
   );

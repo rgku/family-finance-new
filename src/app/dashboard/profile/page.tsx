@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
+import { Icon } from "@/components/Icon";
 
 export default function ProfilePage() {
   const { user, signOut } = useAuth();
@@ -28,7 +29,7 @@ export default function ProfilePage() {
       <div className="bg-surface-container rounded-lg p-6 space-y-4">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
-            <span className="material-symbols-outlined text-3xl text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
+            <Icon name="person" size={30} className="text-3xl text-primary" fill />
           </div>
           <div>
             <h2 className="text-xl font-bold text-on-surface capitalize">{firstName}</h2>

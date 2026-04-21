@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useData } from "@/hooks/DataProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
+import { Icon } from "@/components/Icon";
 
 export default function ExportPage() {
   const { transactions, goals, budgets, loading } = useData();
@@ -176,7 +177,7 @@ export default function ExportPage() {
             disabled={exporting || transactions.length === 0}
             className="flex flex-col items-center gap-2 p-4 bg-surface-container-low rounded-lg hover:bg-surface-container-high transition-colors disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-primary">receipt_long</span>
+            <Icon name="receipt_long" size={20} className="text-primary" />
             <span className="text-sm font-medium">Transações</span>
           </button>
           
@@ -185,7 +186,7 @@ export default function ExportPage() {
             disabled={exporting || goals.length === 0}
             className="flex flex-col items-center gap-2 p-4 bg-surface-container-low rounded-lg hover:bg-surface-container-high transition-colors disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-secondary">track_changes</span>
+            <Icon name="track_changes" size={20} className="text-secondary" />
             <span className="text-sm font-medium">Metas</span>
           </button>
           
@@ -194,7 +195,7 @@ export default function ExportPage() {
             disabled={exporting || budgets.length === 0}
             className="flex flex-col items-center gap-2 p-4 bg-surface-container-low rounded-lg hover:bg-surface-container-high transition-colors disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-tertiary">pie_chart</span>
+            <Icon name="pie_chart" size={20} className="text-tertiary" />
             <span className="text-sm font-medium">Orçamentos</span>
           </button>
           
@@ -203,7 +204,7 @@ export default function ExportPage() {
             disabled={exporting || (transactions.length === 0 && goals.length === 0 && budgets.length === 0)}
             className="flex flex-col items-center gap-2 p-4 bg-surface-container-low rounded-lg hover:bg-surface-container-high transition-colors disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-on-surface">download</span>
+            <Icon name="download" size={20} className="text-on-surface" />
             <span className="text-sm font-medium">Tudo (CSV)</span>
           </button>
         </div>
@@ -267,10 +268,10 @@ export default function ExportPage() {
             className="flex items-center justify-between p-4 bg-surface-container-low rounded-lg hover:bg-surface-container-high transition-colors"
           >
             <div className="flex items-center gap-3">
-              <span className="material-symbols-outlined text-on-surface">lock</span>
+              <Icon name="lock" size={20} className="text-on-surface" />
               <span className="font-medium">Alterar Password</span>
             </div>
-            <span className="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+            <Icon name="chevron_right" size={20} className="text-on-surface-variant" />
           </Link>
         </div>
       </div>
@@ -278,7 +279,7 @@ export default function ExportPage() {
       {/* GDPR Notice */}
       <div className="bg-surface-container-low border border-surface-container-high rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <span className="material-symbols-outlined text-on-surface-variant">info</span>
+          <Icon name="info" size={20} className="text-on-surface-variant" />
           <div className="text-sm text-on-surface-variant">
             <p className="font-medium text-on-surface mb-1">Direito à Portabilidade (GDPR)</p>
             <p>Tens o direito de receber os teus dados pessoais num formato estruturado, de uso comum e leitura automática. Este ficheiro inclui todas as transações, metas e orçamentos.</p>

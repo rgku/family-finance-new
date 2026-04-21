@@ -9,6 +9,7 @@ import { isDateInCustomMonth, formatCustomMonth, getCustomMonthRange } from "@/l
 import Link from "next/link";
 
 import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
+import { Icon } from "@/components/Icon";
 import { CategoryPieChart } from "@/components/charts/CategoryPieChart";
 
 export default function Dashboard() {
@@ -102,7 +103,7 @@ export default function Dashboard() {
                 onClick={() => setSelectedMonth(`${prevMonth.year}-${String(prevMonth.month).padStart(2, "0")}`)}
                 className="p-1 rounded-full hover:bg-surface-container text-on-surface-variant"
               >
-                <span className="material-symbols-outlined">chevron_left</span>
+                <Icon name="chevron_left" size={20} />
               </button>
               <span className="text-sm font-bold text-on-surface min-w-[120px] text-center">
                 {monthName} {year}
@@ -112,7 +113,7 @@ export default function Dashboard() {
                 disabled={!canGoNext}
                 className={`p-1 rounded-full text-on-surface-variant ${canGoNext ? "hover:bg-surface-container" : "opacity-50"}`}
               >
-                <span className="material-symbols-outlined">chevron_right</span>
+                <Icon name="chevron_right" size={20} />
               </button>
             </div>
           </div>
@@ -122,7 +123,7 @@ export default function Dashboard() {
               <p className="font-label text-sm font-medium opacity-80 mb-1">Saldo Atual</p>
               <h2 className="font-headline text-3xl sm:text-4xl font-extrabold tracking-tight min-w-0 truncate">{formatCurrencyWithSymbol(balance.total)}</h2>
               <div className="mt-6 flex items-center gap-2 text-sm font-semibold bg-white/10 backdrop-blur-md w-fit px-3 py-1 rounded-full">
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>{isPositive ? "trending_up" : "trending_down"}</span>
+                <Icon name={isPositive ? "trending_up" : "trending_down"} size={20} fill />
                 <span>{isPositive ? `+${monthChange}% este mês` : "Despesas superiores"}</span>
               </div>
             </section>
@@ -147,7 +148,7 @@ export default function Dashboard() {
                   <div key={goal.id} className="bg-surface-container-low rounded-lg p-6">
                     <div className="flex justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-secondary">{goal.icon}</span>
+                        <Icon name={goal.icon} size={20} className="text-secondary" />
                         <span className="font-semibold">{goal.name}</span>
                       </div>
                       <span className="font-bold text-secondary">{Math.round(goal.current_amount / goal.target_amount * 100)}%</span>
@@ -167,10 +168,10 @@ export default function Dashboard() {
 
             <Link href="/dashboard/budgets" className="block bg-surface-container rounded-lg p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-tertiary">pie_chart</span>
+                <Icon name="pie_chart" size={20} className="text-tertiary" />
                 <span className="font-semibold">Orçamentos</span>
               </div>
-              <span className="material-symbols-outlined text-on-surface-variant">chevron_right</span>
+              <Icon name="chevron_right" size={20} className="text-on-surface-variant" />
             </Link>
           </main>
 
@@ -194,7 +195,7 @@ export default function Dashboard() {
               onClick={() => setSelectedMonth(`${prevMonth.year}-${String(prevMonth.month).padStart(2, "0")}`)}
               className="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant"
             >
-              <span className="material-symbols-outlined">chevron_left</span>
+              <Icon name="chevron_left" size={20} />
             </button>
             <span className="text-lg font-bold text-on-surface min-w-[160px] text-center">
               {monthName} {year}
@@ -204,7 +205,7 @@ export default function Dashboard() {
               disabled={!canGoNext}
               className={`p-2 rounded-full text-on-surface-variant ${canGoNext ? "hover:bg-surface-container-high" : "opacity-50"}`}
             >
-              <span className="material-symbols-outlined">chevron_right</span>
+              <Icon name="chevron_right" size={20} />
             </button>
           </div>
 
@@ -260,7 +261,7 @@ export default function Dashboard() {
                 filteredTransactions.filter(t => t.type === 'expense').slice(0, 5).map(trans => (
                   <div key={trans.id} className="flex justify-between py-3 border-b border-surface-container-highest">
                     <div className="flex items-center gap-3">
-                      <span className="material-symbols-outlined text-slate-400">shopping_bag</span>
+                      <Icon name="shopping_bag" size={20} className="text-slate-400" />
                       <div>
                         <p className="font-medium">{trans.description}</p>
                         <p className="text-xs text-on-surface-variant">{trans.category}</p>

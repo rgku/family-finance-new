@@ -7,6 +7,7 @@ import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import { ProgressRing } from "@/components/charts/ProgressRing";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
+import { Icon } from "@/components/Icon";
 
 const defaultIcons = [
   "directions_car", "flight", "home", "school", "shopping_bag", 
@@ -160,7 +161,7 @@ const [name, setName] = useState("");
                     : "bg-surface-container-low text-on-surface-variant"
                 }`}
               >
-                <span className="material-symbols-outlined">savings</span>
+                <Icon name="savings" size={20} />
                 <span className="font-medium">Poupança</span>
               </button>
               <button
@@ -172,7 +173,7 @@ const [name, setName] = useState("");
                     : "bg-surface-container-low text-on-surface-variant"
                 }`}
               >
-                <span className="material-symbols-outlined">payments</span>
+                <Icon name="payments" size={20} />
                 <span className="font-medium">Despesa</span>
               </button>
             </div>
@@ -193,7 +194,7 @@ const [name, setName] = useState("");
                     icon === ic ? "bg-primary text-on-primary" : "bg-surface-container-low text-on-surface-variant"
                   }`}
                 >
-                  <span className="material-symbols-outlined">{ic}</span>
+                  <Icon name={ic} size={20} />
                 </button>
               ))}
             </div>
@@ -247,7 +248,7 @@ const [name, setName] = useState("");
               
               {goal.deadline && (
                 <div className="text-xs text-on-surface-variant mb-3 flex items-center gap-1">
-                  <span className="material-symbols-outlined">event</span>
+                  <Icon name="event" size={20} />
                   <span>Prazo: {new Date(goal.deadline).toLocaleDateString('pt-PT')}</span>
                 </div>
               )}
@@ -260,18 +261,18 @@ const [name, setName] = useState("");
               
               {isCompleted && (
                 <p className="text-sm text-green-500 mb-4 flex items-center gap-1">
-                  <span className="material-symbols-outlined">check_circle</span>
+                  <Icon name="check_circle" size={20} />
                   Meta alcançada!
                 </p>
               )}
               
               <div className="flex gap-2 mt-auto">
                 <button onClick={() => handleEdit(goal)} className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary/20 hover:text-primary transition-colors text-xs font-medium">
-                  <span className="material-symbols-outlined text-base">edit</span>
+                  <Icon name="edit" size={16} className="text-base" />
                   Editar
                 </button>
                 <button onClick={() => handleDelete(goal.id)} className="px-3 py-2 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-error/20 hover:text-error transition-colors text-xs font-medium">
-                  <span className="material-symbols-outlined text-base">delete</span>
+                  <Icon name="delete" size={16} className="text-base" />
                 </button>
               </div>
             </div>

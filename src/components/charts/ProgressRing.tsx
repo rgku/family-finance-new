@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useEffect, useState } from "react";
+import { Icon } from "@/components/Icon";
 
 interface ProgressRingProps {
   progress: number;
@@ -62,8 +63,8 @@ export const ProgressRing = memo(function ProgressRing({
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           {icon && (
-            <span className="material-symbols-outlined text-2xl" style={{ color }}>
-              {icon}
+            <span style={{ color }}>
+              <Icon name={icon || "folder"} size={24} className="text-2xl" />
             </span>
           )}
           {showPercentage && (

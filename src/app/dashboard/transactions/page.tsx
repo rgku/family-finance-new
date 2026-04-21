@@ -5,6 +5,7 @@ import { useData } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/constants";
+import { Icon } from "@/components/Icon";
 
 const allCategories = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES]
   .map(c => c.value)
@@ -159,9 +160,7 @@ export default function TransactionsPage() {
               ) : (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-on-surface-variant">
-                      {trans.type === "income" ? "payments" : "shopping_bag"}
-                    </span>
+                    <Icon name={trans.type === "income" ? "payments" : "shopping_bag"} size={20} className="text-on-surface-variant" />
                     <div>
                       <p className="font-medium text-on-surface">{trans.description}</p>
                       <p className="text-xs text-on-surface-variant">{trans.category} • {new Date(trans.date).toLocaleDateString("pt-PT")}</p>
@@ -173,10 +172,10 @@ export default function TransactionsPage() {
                     </span>
                     <div className="flex gap-1">
                       <button onClick={() => handleEdit(trans)} className="p-2 rounded-lg text-on-surface-variant hover:bg-primary/20 hover:text-primary transition-colors" aria-label="Editar">
-                        <span className="material-symbols-outlined text-base">edit</span>
+                        <Icon name="edit" size={16} className="text-base" />
                       </button>
                       <button onClick={() => handleDelete(trans.id)} className="p-2 rounded-lg text-on-surface-variant hover:bg-error/20 hover:text-error transition-colors" aria-label="Apagar">
-                        <span className="material-symbols-outlined text-base">delete</span>
+                        <Icon name="delete" size={16} className="text-base" />
                       </button>
                     </div>
                   </div>
@@ -251,9 +250,7 @@ export default function TransactionsPage() {
                     <>
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          <span className="material-symbols-outlined text-on-surface-variant">
-                            {trans.type === "income" ? "payments" : "shopping_bag"}
-                          </span>
+                          <Icon name={trans.type === "income" ? "payments" : "shopping_bag"} size={20} className="text-on-surface-variant" />
                           <span className="font-medium">{trans.description}</span>
                         </div>
                       </td>
@@ -266,11 +263,11 @@ export default function TransactionsPage() {
                       </td>
                       <td className="p-4 text-right whitespace-nowrap">
                         <button onClick={() => handleEdit(trans)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary/20 hover:text-primary transition-colors text-xs font-medium" aria-label={`Editar ${trans.description}`}>
-                          <span className="material-symbols-outlined text-base">edit</span>
+                          <Icon name="edit" size={16} className="text-base" />
                           Editar
                         </button>
                         <button onClick={() => handleDelete(trans.id)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-error/20 hover:text-error transition-colors text-xs font-medium ml-2" aria-label={`Apagar ${trans.description}`}>
-                          <span className="material-symbols-outlined text-base">delete</span>
+                          <Icon name="delete" size={16} className="text-base" />
                           Apagar
                         </button>
                       </td>

@@ -6,6 +6,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import { formatCustomMonth } from "@/lib/dateUtils";
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
+import { Icon } from "@/components/Icon";
 
 const categories = EXPENSE_CATEGORIES.filter(c => c.value !== "Outros");
 
@@ -123,7 +124,7 @@ export default function BudgetsPage() {
                   }`}
                   aria-label={`Selecionar ${cat.value}`}
                 >
-                  <span className="material-symbols-outlined">{cat.icon}</span>
+                  <Icon name={cat.icon} size={20} />
                   <span className="text-[10px] font-medium">{cat.value}</span>
                 </button>
               ))}
@@ -194,9 +195,7 @@ export default function BudgetsPage() {
             >
               <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-3">
-                  <span className={`material-symbols-outlined ${isOver ? "text-error" : isWarning ? "text-tertiary" : "text-primary"}`}>
-                    {categoryIcon}
-                  </span>
+                  <Icon name={categoryIcon} size={20} className={isOver ? "text-error" : isWarning ? "text-tertiary" : "text-primary"} />
                   <div>
                     <p className="font-semibold">{budget.category}</p>
                     <p className="text-xs text-on-surface-variant">
@@ -206,11 +205,11 @@ export default function BudgetsPage() {
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => handleEdit(budget)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary/20 hover:text-primary transition-colors text-xs font-medium">
-                    <span className="material-symbols-outlined text-base">edit</span>
+                    <Icon name="edit" size={16} className="text-base" />
                     Editar
                   </button>
                   <button onClick={() => handleDelete(budget.id)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-error/20 hover:text-error transition-colors text-xs font-medium">
-                    <span className="material-symbols-outlined text-base">delete</span>
+                    <Icon name="delete" size={16} className="text-base" />
                     Apagar
                   </button>
                 </div>
