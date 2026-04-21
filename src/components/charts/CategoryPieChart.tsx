@@ -51,13 +51,13 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
     );
   };
 
-  const basePieHeight = isMobile ? 180 : 220;
-  const legendHeight = isMobile ? 80 : 70;
+  const basePieHeight = isMobile ? 220 : 260;
+  const legendHeight = isMobile ? 70 : 70;
   
   const height = basePieHeight + legendHeight;
   const centerY = basePieHeight / 2;
-  const chartInnerRadius = isMobile ? 20 : 30;
-  const chartOuterRadius = isMobile ? 45 : 70;
+  const chartInnerRadius = isMobile ? 22 : 32;
+  const chartOuterRadius = isMobile ? 55 : 80;
   const showLabel = false;
   const showLegend = true;
 
