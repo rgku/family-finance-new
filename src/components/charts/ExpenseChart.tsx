@@ -37,10 +37,10 @@ export const ExpenseChart = memo(function ExpenseChart({ data }: ExpenseChartPro
   const chartData = useMemo(() => {
     return data
       .filter((d) => d.amount > 0)
-      .map((d) => ({
+      .map((d, idx) => ({
         name: d.category,
         value: d.amount,
-        fill: categoryColors[d.category] || COLORS[0],
+        fill: categoryColors[d.category] || COLORS[idx % COLORS.length],
       }))
       .sort((a, b) => b.value - a.value);
   }, [data]);
