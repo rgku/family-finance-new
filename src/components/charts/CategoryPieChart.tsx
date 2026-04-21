@@ -52,29 +52,13 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
   };
 
   const basePieHeight = isMobile ? 180 : 220;
-  let legendHeight = 0;
-  
-  if (isMobile) {
-    if (chartData.length <= 3) {
-      // Mobile: show labels inside pie + legend below
-      legendHeight = 70;
-    } else if (chartData.length <= 5) {
-      // Mobile: hide labels, show legend below
-      legendHeight = 100;
-    } else {
-      // Mobile: hide labels, hide legend (rely on tooltips)
-      legendHeight = 0;
-    }
-  } else {
-    // Desktop: always show legend
-    legendHeight = 70;
-  }
+  const legendHeight = isMobile ? 80 : 70; // Always show legend on mobile with enough space
   
   const height = basePieHeight + legendHeight;
-  const chartInnerRadius = isMobile ? 25 : 40;
-  const chartOuterRadius = isMobile ? 50 : 80;
-  const showLabel = !isMobile || chartData.length <= 3;
-  const showLegend = !isMobile || chartData.length <= 6; // Show legend for up to 6 items on mobile
+  const chartInnerRadius = isMobile ? 20 : 30; // Smaller pie on mobile to make room
+  const chartOuterRadius = isMobile ? 45 : 70; // Smaller pie on mobile to make room
+  const showLabel = false; // Never show labels on mobile to avoid overlap
+  const showLegend = true; // Always show legend on mobile
 
   return (
     <div className="relative">
