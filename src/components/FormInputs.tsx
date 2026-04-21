@@ -1,6 +1,6 @@
 "use client";
 
-import { InputHTMLAttributes, forwardRef } from "react";
+import { InputHTMLAttributes, forwardRef, memo } from "react";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -43,7 +43,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "ghost";
 }
 
-export function Button({
+export const Button = memo(function Button({
   variant = "primary",
   className = "",
   children,
@@ -63,11 +63,11 @@ export function Button({
       {children}
     </button>
   );
-}
+});
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {}
 
-export function Card({ className = "", children, ...props }: CardProps) {
+export const Card = memo(function Card({ className = "", children, ...props }: CardProps) {
   return (
     <div
       className={`bg-surface-container rounded-lg p-6 ${className}`}
@@ -76,4 +76,4 @@ export function Card({ className = "", children, ...props }: CardProps) {
       {children}
     </div>
   );
-}
+});

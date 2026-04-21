@@ -3,6 +3,7 @@ import { Manrope, Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import { DataProvider } from "@/hooks/DataProvider";
+import { SWRegistration } from "@/components/SWRegistration";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -63,6 +64,7 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,0" rel="stylesheet" />
       </head>
       <body className="bg-surface text-on-surface min-h-screen antialiased font-sans">
+        <SWRegistration />
         <AuthProvider>
           <DataProvider>
             {children}
