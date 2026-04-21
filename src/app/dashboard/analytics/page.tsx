@@ -1,26 +1,47 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
+import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
+import { isDateInCustomMonth, formatCustomMonth, getCustomMonthRange } from "@/lib/dateUtils";
+import { MonthlyTrendChart } from "@/components/charts/MonthlyTrendChart";
+import { ExpenseChart } from "@/components/charts/ExpenseChart";
+import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
 
 export default function AnalyticsPage() {
   const { transactions } = useData();
+  const { profile, signOut } = useAuth();
+  const isMobile = useDeviceType();
+  const billingDay = profile?.billing_cycle_day || 1;
+  
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
+    if (billingDay > 1) {
+      const { startDate } = getCustomMonthRange(billingDay, now);
+      return `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}`;
+    }
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
 
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const [year, month] = selectedMonth.split("-").map(Number);
-  const monthName = monthNames[month - 1];
+  
+  const monthName = profile?.billing_cycle_day && profile.billing_cycle_day > 1
+    ? formatCustomMonth(billingDay, new Date(year, month - 1, 25))
+    : monthNames[month - 1];
 
   const filteredTransactions = useMemo(() => {
+    if (!transactions.length) return [];
+    if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
+      return transactions.filter(t => isDateInCustomMonth(t.date, billingDay, year, month));
+    }
     return transactions.filter(t => {
       const transDate = new Date(t.date);
       return transDate.getFullYear() === year && transDate.getMonth() === month - 1;
     });
-  }, [transactions, year, month]);
+  }, [transactions, year, month, profile?.billing_cycle_day, billingDay]);
 
   const income = useMemo(() => filteredTransactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0), [filteredTransactions]);
   const expenses = useMemo(() => filteredTransactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0), [filteredTransactions]);
@@ -30,23 +51,41 @@ export default function AnalyticsPage() {
     filteredTransactions.filter(t => t.type === "expense").forEach(t => {
       categoryMap.set(t.category, (categoryMap.get(t.category) || 0) + t.amount);
     });
-
-    const categoryColors = ["#4edea3", "#d0bcff", "#ffb3ad", "#fde68a", "#67e8f9", "#fb7185"];
     
-    return Array.from(categoryMap.entries()).map(([name, value], idx) => ({
-      name,
-      value,
-      color: categoryColors[idx % categoryColors.length],
-    }));
+    return Array.from(categoryMap.entries()).map(([name, value]) => ({
+      category: name,
+      amount: value,
+    })).sort((a, b) => b.amount - a.amount);
   }, [filteredTransactions]);
+
+  const monthlyTrend = useMemo(() => {
+    const months: { month: string; income: number; expense: number }[] = [];
+    
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(year, month - 1 - i, 15);
+      const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const monthTransactions = transactions.filter(t => {
+        const transDate = new Date(t.date);
+        return transDate.getFullYear() === d.getFullYear() && transDate.getMonth() === d.getMonth();
+      });
+      
+      months.push({
+        month: m,
+        income: monthTransactions.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0),
+        expense: monthTransactions.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0),
+      });
+    }
+    
+    return months;
+  }, [transactions, year, month]);
 
   const prevMonth = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
   const nextMonth = month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 };
   const now = new Date();
   const canGoNext = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);
 
-  return (
-    <div className="p-8 space-y-6">
+  const content = (
+    <>
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-on-surface">Análise Financeira</h1>
@@ -54,11 +93,10 @@ export default function AnalyticsPage() {
         </div>
       </header>
 
-      {/* Month Navigation */}
-      <div className="flex items-center justify-center gap-4">
+      <div className="flex items-center justify-center gap-4 py-2 bg-surface-container rounded-lg">
         <button
           onClick={() => setSelectedMonth(`${prevMonth.year}-${String(prevMonth.month).padStart(2, "0")}`)}
-          className="p-2 rounded-full bg-surface-container hover:bg-surface-container-high text-on-surface-variant"
+          className="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant"
         >
           <span className="material-symbols-outlined">chevron_left</span>
         </button>
@@ -68,13 +106,12 @@ export default function AnalyticsPage() {
         <button
           onClick={() => setSelectedMonth(`${nextMonth.year}-${String(nextMonth.month).padStart(2, "0")}`)}
           disabled={!canGoNext}
-          className={`p-2 rounded-full bg-surface-container text-on-surface-variant ${canGoNext ? "hover:bg-surface-container-high cursor-pointer" : "opacity-50 cursor-not-allowed"}`}
+          className={`p-2 rounded-full text-on-surface-variant ${canGoNext ? "hover:bg-surface-container-high cursor-pointer" : "opacity-50 cursor-not-allowed"}`}
         >
           <span className="material-symbols-outlined">chevron_right</span>
         </button>
       </div>
 
-      {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-6">
         <div className="bg-gradient-to-br from-primary to-primary-container p-6 sm:p-8 rounded-lg text-on-primary min-w-0">
           <p className="text-sm opacity-80">Receitas</p>
@@ -86,74 +123,16 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Trend Comparison */}
       <div className="bg-surface-container rounded-lg p-6">
-        <h3 className="font-bold text-lg mb-4">Comparativo Mensal</h3>
-        <div className="space-y-3">
-          <div className="flex justify-between items-center min-w-0 gap-2">
-            <span className="text-on-surface-variant shrink-0">{monthName}</span>
-            <span className="font-bold text-right text-wrap">{formatCurrencyWithSymbol(expenses)}</span>
-          </div>
-          <div className="flex justify-between items-center min-w-0 gap-2">
-            <span className="text-on-surface-variant shrink-0">{monthNames[prevMonth.month - 1]}</span>
-            <span className="font-bold text-right text-wrap">{formatCurrencyWithSymbol(0)}</span>
-          </div>
-          <div className="flex justify-between items-center pt-3 border-t border-surface-container-high min-w-0 gap-2">
-            <span className="text-on-surface-variant shrink-0">Variação</span>
-            <span className="font-bold text-on-surface-variant">--</span>
-          </div>
-        </div>
+        <h3 className="font-bold text-lg mb-4">Tendência Mensal (6 meses)</h3>
+        <MonthlyTrendChart data={monthlyTrend} />
       </div>
 
-      {/* Category Breakdown */}
       <div className="bg-surface-container rounded-lg p-6">
-        <h3 className="font-bold text-lg mb-6">Gastos por Categoria</h3>
-        
-        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8 mb-6">
-          {/* Donut Chart */}
-          <div className="relative w-32 h-32 flex-shrink-0">
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-              <circle cx="18" cy="18" fill="transparent" r="15.915" stroke="#222a3d" strokeWidth="3"></circle>
-              {categoryBreakdown.map((cat, idx) => {
-                const total = categoryBreakdown.reduce((s, c) => s + c.value, 0);
-                const offsets = [0, -40, -65, -80, -95];
-                return (
-                  <circle 
-                    key={cat.name}
-                    cx="18" 
-                    cy="18" 
-                    fill="transparent" 
-                    r="15.915" 
-                    stroke={cat.color}
-                    strokeDasharray={`${total > 0 ? (cat.value / total) * 100 : 0} ${100 - (total > 0 ? (cat.value / total) * 100 : 0)}`}
-                    strokeDashoffset={offsets[idx]}
-                    strokeWidth="3"
-                  />
-                );
-              })}
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-[10px] text-on-surface-variant uppercase">Total</span>
-              <span className="font-bold text-sm min-w-0 truncate">{formatCurrencyWithSymbol(expenses)}</span>
-            </div>
-          </div>
-          
-          {/* Legend */}
-          <div className="flex-1 space-y-2 w-full min-w-0">
-            {categoryBreakdown.map((cat) => (
-              <div key={cat.name} className="flex items-center justify-between min-w-0 gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: cat.color }}></div>
-                  <span className="text-sm truncate">{cat.name}</span>
-                </div>
-                <span className="font-semibold flex-shrink-0 text-wrap">{formatCurrencyWithSymbol(cat.value)}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <h3 className="font-bold text-lg mb-6">Despesas por Categoria</h3>
+        <ExpenseChart data={categoryBreakdown} />
       </div>
 
-      {/* Insights */}
       <div className="bg-surface-container rounded-lg p-6">
         <h3 className="font-bold text-lg mb-4">Dicas de Poupança</h3>
         <div className="space-y-3">
@@ -170,12 +149,12 @@ export default function AnalyticsPage() {
           ) : (
             <>
               {categoryBreakdown.slice(0, 2).map((cat, idx) => (
-                <div key={cat.name} className="flex items-start gap-3 p-4 bg-primary/10 rounded-lg">
+                <div key={cat.category} className="flex items-start gap-3 p-4 bg-primary/10 rounded-lg">
                   <span className="material-symbols-outlined text-primary">{idx === 0 ? "lightbulb" : "trending_down"}</span>
                   <div>
-                    <p className="font-medium">Gastos com {cat.name}</p>
+                    <p className="font-medium">Gastos com {cat.category}</p>
                     <p className="text-sm text-on-surface-variant">
-                      Este mês: {formatCurrencyWithSymbol(cat.value)} - Considere otimizar gastos nesta categoria.
+                      Este mês: {formatCurrencyWithSymbol(cat.amount)} - Considere otimizar gastos nesta categoria.
                     </p>
                   </div>
                 </div>
@@ -184,6 +163,27 @@ export default function AnalyticsPage() {
           )}
         </div>
       </div>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-surface">
+        <MobileHeader onSignOut={signOut} />
+        <main className="pt-24 px-4 pb-24 space-y-6 max-w-2xl mx-auto">
+          {content}
+        </main>
+        <MobileNav />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-surface">
+      <DesktopSidebar onSignOut={signOut} />
+      <main className="ml-64 p-8 space-y-6">
+        {content}
+      </main>
     </div>
   );
 }

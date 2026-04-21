@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo, Suspense, lazy } from "react";
+import { useState, useEffect, Suspense, lazy } from "react";
+import { useAuth } from "@/components/AuthProvider";
+import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import Link from "next/link";
+import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
 
 const PDFDownloadLink = lazy(() => import("@react-pdf/renderer").then(mod => ({ default: mod.PDFDownloadLink })));
 const PDFReport = lazy(() => import("@/components/ReportPDF").then(mod => ({ default: mod.PDFReport })));
@@ -18,6 +21,8 @@ interface ReportData {
 }
 
 export default function ReportsPage() {
+  const { signOut } = useAuth();
+  const isMobile = useDeviceType();
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -52,32 +57,48 @@ export default function ReportsPage() {
     };
   }, [selectedMonth]);
 
-  const handlePrevMonth = () => {
-    const prevMonth = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
-    setSelectedMonth(`${prevMonth.year}-${String(prevMonth.month).padStart(2, "0")}`);
-  };
-
-  const handleNextMonth = () => {
-    const now = new Date();
-    const canGoNext = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);
-    if (!canGoNext) return;
-    
-    const nextMonth = month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 };
-    setSelectedMonth(`${nextMonth.year}-${String(nextMonth.month).padStart(2, "0")}`);
-  };
-
+  const prevMonth = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
+  const nextMonth = month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 };
   const now = new Date();
   const canGoNext = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);
 
-  if (loading) {
-    return (
-      <div className="p-8 flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
+  const handleCSVExport = () => {
+    if (!reportData) return;
+    
+    const escapeCSV = (str: string) => {
+      if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+    
+    const csvRows = [
+      ["Data", "Descrição", "Categoria", "Tipo", "Valor"],
+      ...reportData.transactions.map(t => [
+        t.date,
+        escapeCSV(t.description),
+        escapeCSV(t.category),
+        t.type,
+        t.type === "income" ? t.amount : -t.amount,
+      ]),
+    ];
+    
+    const csv = csvRows.map(row => row.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `famflow-dados-${selectedMonth}.csv`;
+    a.click();
+  };
 
-  return (
+  const handleShare = () => {
+    const shareUrl = `${window.location.origin}/dashboard/reports/shared?month=${selectedMonth}&token=${btoa(selectedMonth)}`;
+    navigator.clipboard.writeText(shareUrl);
+    alert("Link copiado para a área de transferência!");
+  };
+
+  const pageContent = (
     <div className="p-8">
       <div className="mb-8">
         <Link href="/dashboard" className="text-primary hover:underline text-sm">
@@ -90,10 +111,9 @@ export default function ReportsPage() {
         <p className="text-on-surface-variant">Gera e baixa relatórios financeiros</p>
       </header>
 
-      {/* Month Selector */}
       <div className="flex items-center justify-center gap-4 mb-8 bg-surface-container rounded-lg py-4">
         <button
-          onClick={handlePrevMonth}
+          onClick={() => setSelectedMonth(`${prevMonth.year}-${String(prevMonth.month).padStart(2, "0")}`)}
           className="p-2 rounded-full hover:bg-surface-container-high text-on-surface-variant"
         >
           <span className="material-symbols-outlined">chevron_left</span>
@@ -102,7 +122,7 @@ export default function ReportsPage() {
           {monthName} {year}
         </span>
         <button
-          onClick={handleNextMonth}
+          onClick={() => setSelectedMonth(`${nextMonth.year}-${String(nextMonth.month).padStart(2, "0")}`)}
           disabled={!canGoNext}
           className={`p-2 rounded-full ${canGoNext ? "hover:bg-surface-container-high text-on-surface-variant" : "opacity-50"}`}
         >
@@ -110,9 +130,12 @@ export default function ReportsPage() {
         </button>
       </div>
 
-      {reportData && (
+      {loading ? (
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+        </div>
+      ) : reportData ? (
         <>
-          {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
             <div className="bg-surface-container rounded-lg p-6">
               <p className="text-sm text-on-surface-variant mb-1">Receitas</p>
@@ -134,7 +157,6 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          {/* Budget Overview */}
           {reportData.budget && reportData.budget.length > 0 && (
             <div className="bg-surface-container rounded-lg p-6 mb-8">
               <h2 className="text-lg font-bold text-on-surface mb-4">Orçamentos</h2>
@@ -167,30 +189,38 @@ export default function ReportsPage() {
             </div>
           )}
 
-          {/* Download PDF */}
           <div className="bg-surface-container rounded-lg p-6 mb-8">
             <h2 className="text-lg font-bold text-on-surface mb-4">Exportar Relatório</h2>
             <p className="text-sm text-on-surface-variant mb-4">
               Baixa um relatório PDF completo com todas as transações do mês.
             </p>
             
-            <Suspense fallback={<button disabled className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary/50 text-on-primary rounded-full font-medium">A carregar...</button>}>
-              <PDFDownloadLink
-                document={<PDFReport data={reportData} />}
-                fileName={`famflow-relatorio-${selectedMonth}.pdf`}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full font-medium hover:brightness-110"
+            <div className="flex flex-wrap gap-4">
+              <Suspense fallback={<button disabled className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary/50 text-on-primary rounded-full font-medium">A carregar...</button>}>
+                <PDFDownloadLink
+                  document={<PDFReport data={reportData} />}
+                  fileName={`famflow-relatorio-${selectedMonth}.pdf`}
+                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full font-medium hover:brightness-110"
+                >
+                  {({ loading }) => (
+                    <>
+                      <span className="material-symbols-outlined">download</span>
+                      {loading ? "A gerar PDF..." : "Baixar PDF"}
+                    </>
+                  )}
+                </PDFDownloadLink>
+              </Suspense>
+              
+              <button
+                onClick={handleShare}
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-container-high text-on-surface rounded-full font-medium"
               >
-                {({ loading }) => (
-                  <>
-                    <span className="material-symbols-outlined">download</span>
-                    {loading ? "A gerar PDF..." : "Baixar PDF"}
-                  </>
-                )}
-              </PDFDownloadLink>
-            </Suspense>
+                <span className="material-symbols-outlined">share</span>
+                Compartilhar
+              </button>
+            </div>
           </div>
 
-          {/* Export CSV */}
           <div className="bg-surface-container rounded-lg p-6">
             <h2 className="text-lg font-bold text-on-surface mb-4">Exportar Dados</h2>
             <p className="text-sm text-on-surface-variant mb-4">
@@ -198,33 +228,7 @@ export default function ReportsPage() {
             </p>
             
             <button
-              onClick={() => {
-                const escapeCSV = (str: string) => {
-                  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-                    return `"${str.replace(/"/g, '""')}"`;
-                  }
-                  return str;
-                };
-                
-                const csvRows = [
-                  ["Data", "Descrição", "Categoria", "Tipo", "Valor"],
-                  ...reportData.transactions.map(t => [
-                    t.date,
-                    escapeCSV(t.description),
-                    escapeCSV(t.category),
-                    t.type,
-                    t.type === "income" ? t.amount : -t.amount,
-                  ]),
-                ];
-                
-                const csv = csvRows.map(row => row.join(",")).join("\n");
-                const blob = new Blob([csv], { type: "text/csv" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `famflow-dados-${selectedMonth}.csv`;
-                a.click();
-              }}
+              onClick={handleCSVExport}
               className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-container-high text-on-surface rounded-full font-medium"
             >
               <span className="material-symbols-outlined">table_chart</span>
@@ -232,7 +236,32 @@ export default function ReportsPage() {
             </button>
           </div>
         </>
+      ) : (
+        <div className="text-center py-12 text-on-surface-variant">
+          Sem dados para este mês
+        </div>
       )}
+    </div>
+  );
+
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-surface">
+        <MobileHeader onSignOut={signOut} />
+        <main className="pt-20 px-4 pb-24 max-w-4xl mx-auto">
+          {pageContent}
+        </main>
+        <MobileNav />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-surface">
+      <DesktopSidebar onSignOut={signOut} />
+      <main className="ml-64">
+        {pageContent}
+      </main>
     </div>
   );
 }

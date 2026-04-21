@@ -1,0 +1,112 @@
+"use client";
+
+import { memo, useMemo } from "react";
+import {
+  PieChart as RechartsPieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
+import { EXPENSE_CATEGORIES } from "@/lib/constants";
+
+interface CategoryPieChartProps {
+  data: { category: string; amount: number }[];
+}
+
+const COLORS = [
+  "#6366f1",
+  "#8b5cf6",
+  "#ec4899",
+  "#f43f5e",
+  "#f97316",
+  "#eab308",
+  "#22c55e",
+  "#14b8a6",
+  "#06b6d4",
+];
+
+const categoryColors: Record<string, string> = {};
+EXPENSE_CATEGORIES.forEach((cat, i) => {
+  categoryColors[cat.value] = COLORS[i % COLORS.length];
+});
+
+export const CategoryPieChart = memo(function CategoryPieChart({ data }: CategoryPieChartProps) {
+  const chartData = useMemo(() => {
+    return data
+      .filter((d) => d.amount > 0)
+      .map((d) => ({
+        name: d.category,
+        value: d.amount,
+        color: categoryColors[d.category] || COLORS[0],
+      }))
+      .sort((a, b) => b.value - a.value);
+  }, [data]);
+
+  const total = useMemo(() => chartData.reduce((sum, d) => sum + d.value, 0), [chartData]);
+
+  if (chartData.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-64 text-on-surface-variant">
+        Sem dados para afficher
+      </div>
+    );
+  }
+
+  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    if (percent < 0.05) return null;
+    const RAD = Math.PI / 180;
+    const x = cx + (innerRadius + outerRadius / 2) * Math.cos(-midAngle * RAD);
+    const y = cy + (innerRadius + outerRadius / 2) * Math.sin(-midAngle * RAD);
+    return (
+      <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={12} fontWeight={600}>
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
+
+  return (
+    <div className="relative">
+      <ResponsiveContainer width="100%" height={320}>
+        <RechartsPieChart>
+          <Pie
+            data={chartData}
+            cx="50%"
+            cy="45%"
+            innerRadius={60}
+            outerRadius={100}
+            paddingAngle={3}
+            dataKey="value"
+            labelLine={false}
+            label={renderCustomLabel}
+            animationDuration={800}
+          >
+            {chartData.map((entry, index) => (
+              <Cell key={`cell-${index}`} fill={entry.color} />
+            ))}
+          </Pie>
+          <Tooltip
+            contentStyle={{
+              backgroundColor: "#1e293b",
+              border: "none",
+              borderRadius: "12px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            }}
+            labelStyle={{ color: "#f8fafc", fontWeight: 600 }}
+            formatter={(value) => [`${Number(value).toFixed(2)} €`, "Valor"]}
+          />
+          <Legend
+            verticalAlign="bottom"
+            height={36}
+            formatter={(value) => <span className="text-xs text-on-surface-variant">{value}</span>}
+          />
+        </RechartsPieChart>
+      </ResponsiveContainer>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none" style={{ marginTop: "-20px" }}>
+        <div className="text-xs text-on-surface-variant">Total</div>
+        <div className="text-lg font-bold text-on-surface">{total.toFixed(0)}€</div>
+      </div>
+    </div>
+  );
+});

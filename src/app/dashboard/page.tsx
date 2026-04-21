@@ -9,6 +9,7 @@ import { isDateInCustomMonth, formatCustomMonth, getCustomMonthRange } from "@/l
 import Link from "next/link";
 
 import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
+import { CategoryPieChart } from "@/components/charts/CategoryPieChart";
 
 export default function Dashboard() {
   const { user, signOut, supabase, loading, profile } = useAuth();
@@ -49,7 +50,7 @@ export default function Dashboard() {
     });
   }, [transactions, year, month, profile?.billing_cycle_day, billingDay]);
 
-  const { totalIncome, totalExpenses, balance, savingsGoals, expenseGoals } = useMemo(() => {
+  const { totalIncome, totalExpenses, balance, savingsGoals, expenseGoals, expenseByCategory } = useMemo(() => {
     const inc = filteredTransactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
     const exp = filteredTransactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
     
@@ -58,12 +59,25 @@ export default function Dashboard() {
     
     const savingsAllocated = savings.reduce((sum, g) => sum + g.current_amount, 0);
     
+    const expenseByCat = filteredTransactions
+      .filter(t => t.type === "expense")
+      .reduce((acc, t) => {
+        acc[t.category] = (acc[t.category] || 0) + t.amount;
+        return acc;
+      }, {} as Record<string, number>);
+    
+    const expenseCategories = Object.entries(expenseByCat).map(([category, amount]) => ({
+      category,
+      amount,
+    }));
+    
     return { 
       totalIncome: inc, 
       totalExpenses: exp, 
       balance: { total: inc - exp - savingsAllocated, income: inc, expenses: exp },
       savingsGoals: savings,
-      expenseGoals: expenses
+      expenseGoals: expenses,
+      expenseByCategory: expenseCategories,
     };
   }, [filteredTransactions, dataGoals]);
 
@@ -227,6 +241,11 @@ export default function Dashboard() {
                   </div>
                 ))
               )}
+            </div>
+
+            <div className="bg-surface-container p-6 rounded-lg">
+              <h3 className="font-bold text-lg mb-4">Despesas por Categoria</h3>
+              <CategoryPieChart data={expenseByCategory} />
             </div>
             <div className="bg-surface-container p-6 rounded-lg">
               <h3 className="font-bold text-lg mb-4">Despesas Recentes</h3>

@@ -1,8 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
+import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
+import { ProgressRing } from "@/components/charts/ProgressRing";
+import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
 
 const defaultIcons = [
   "directions_car", "flight", "home", "school", "shopping_bag", 
@@ -11,6 +15,8 @@ const defaultIcons = [
 
 export default function GoalsPage() {
   const { goals, addGoal, updateGoal, deleteGoal } = useData();
+  const { signOut } = useAuth();
+  const isMobile = useDeviceType();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
@@ -75,8 +81,8 @@ const [name, setName] = useState("");
     }
   };
 
-  return (
-    <div className="p-8 space-y-6">
+  const pageContent = (
+    <>
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-on-surface">Metas de Poupança</h1>
@@ -213,45 +219,86 @@ const [name, setName] = useState("");
         </form>
       )}
 
-      <div className="grid gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {goals.map((goal) => {
           const progress = Math.min((goal.current_amount / goal.target_amount) * 100, 100);
+          const remaining = goal.target_amount - goal.current_amount;
+          const isCompleted = progress >= 100;
+          
           return (
-            <div key={goal.id} className="bg-surface-container rounded-lg p-6 space-y-4">
-              <div className="flex justify-between items-start">
+            <div key={goal.id} className="bg-surface-container rounded-lg p-6">
+              <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-secondary-container/20 flex items-center justify-center text-secondary">
-                    <span className="material-symbols-outlined">{goal.icon}</span>
-                  </div>
+                  <ProgressRing 
+                    progress={progress} 
+                    size={64} 
+                    strokeWidth={6}
+                    color={isCompleted ? "#22c55e" : goal.goal_type === 'savings' ? "#6366f1" : "#f43f5e"}
+                    icon={goal.icon}
+                  />
                   <div>
                     <p className="font-headline font-semibold text-lg">{goal.name}</p>
                     <p className="font-label text-xs text-on-surface-variant">
-                      {formatCurrencyWithSymbol(goal.current_amount)} de {formatCurrencyWithSymbol(goal.target_amount)}
+                      {formatCurrencyWithSymbol(goal.current_amount)} / {formatCurrencyWithSymbol(goal.target_amount)}
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => handleEdit(goal)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary/20 hover:text-primary transition-colors text-xs font-medium">
-                    <span className="material-symbols-outlined text-base">edit</span>
-                    Editar
-                  </button>
-                  <button onClick={() => handleDelete(goal.id)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-error/20 hover:text-error transition-colors text-xs font-medium">
-                    <span className="material-symbols-outlined text-base">delete</span>
-                    Apagar
-                  </button>
+              </div>
+              
+              {goal.deadline && (
+                <div className="text-xs text-on-surface-variant mb-3 flex items-center gap-1">
+                  <span className="material-symbols-outlined">event</span>
+                  <span>Prazo: {new Date(goal.deadline).toLocaleDateString('pt-PT')}</span>
                 </div>
+              )}
+              
+              {!isCompleted && remaining > 0 && (
+                <p className="text-xs text-on-surface-variant mb-4">
+                  Faltam {formatCurrencyWithSymbol(remaining)}
+                </p>
+              )}
+              
+              {isCompleted && (
+                <p className="text-sm text-green-500 mb-4 flex items-center gap-1">
+                  <span className="material-symbols-outlined">check_circle</span>
+                  Meta alcançada!
+                </p>
+              )}
+              
+              <div className="flex gap-2 mt-auto">
+                <button onClick={() => handleEdit(goal)} className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary/20 hover:text-primary transition-colors text-xs font-medium">
+                  <span className="material-symbols-outlined text-base">edit</span>
+                  Editar
+                </button>
+                <button onClick={() => handleDelete(goal.id)} className="px-3 py-2 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-error/20 hover:text-error transition-colors text-xs font-medium">
+                  <span className="material-symbols-outlined text-base">delete</span>
+                </button>
               </div>
-              <div className="w-full bg-surface-container-highest h-3 rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-gradient-to-r from-secondary to-on-secondary-container rounded-full transition-all" 
-                  style={{ width: `${progress}%` }}
-                ></div>
-              </div>
-              <p className="text-right text-sm text-on-surface-variant">{Math.round(progress)}%</p>
             </div>
-          );
-        })}
+);
+    })}
       </div>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-surface">
+        <MobileHeader onSignOut={signOut} />
+        <main className="pt-24 px-4 pb-24 space-y-6 max-w-4xl mx-auto">
+          {pageContent}
+        </main>
+        <MobileNav />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-surface">
+      <DesktopSidebar onSignOut={signOut} />
+      <main className="ml-64 p-8 space-y-6">
+        {pageContent}
+      </main>
     </div>
   );
 }
