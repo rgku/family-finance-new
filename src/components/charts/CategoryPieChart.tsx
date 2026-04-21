@@ -102,19 +102,16 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
       </ResponsiveContainer>
       {/* Texto do Total posicionado via HTML para evitar corte pelo SVG */}
       <div 
-        className="absolute pointer-events-none"
+        className="absolute pointer-events-none flex flex-col items-center justify-center"
         style={{ 
           top: `${centerY}px`, 
           left: '50%', 
           transform: 'translate(-50%, -50%)',
-          zIndex: 10,
-          textAlign: 'center',
-          width: '100px',
-          marginLeft: '-50px'
+          zIndex: 10
         }}
       >
-        <div className="text-xs text-on-surface-variant whitespace-nowrap" style={{textAlign: 'center'}}>Total</div>
-        <div className="text-sm font-bold text-on-surface whitespace-nowrap" style={{textAlign: 'center'}}>{total.toFixed(0)}€</div>
+        <span className="text-xs text-on-surface-variant whitespace-nowrap">Total</span>
+        <span className="text-sm font-bold text-on-surface whitespace-nowrap">{total.toFixed(0)}€</span>
       </div>
     </div>
   );
