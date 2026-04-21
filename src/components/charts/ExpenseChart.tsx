@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState, useEffect } from "react";
 import {
   BarChart as RechartsBarChart,
   Bar,
@@ -17,6 +17,14 @@ interface ExpenseChartProps {
 }
 
 export const ExpenseChart = memo(function ExpenseChart({ data }: ExpenseChartProps) {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
   const chartData = useMemo(() => {
     return data
       .filter((d) => d.amount > 0)
@@ -36,11 +44,15 @@ export const ExpenseChart = memo(function ExpenseChart({ data }: ExpenseChartPro
     );
   }
 
+  const height = isMobile ? 250 : 300;
+  const marginLeft = isMobile ? 60 : 80;
+  const yAxisWidth = isMobile ? 60 : 75;
+
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <RechartsBarChart data={chartData} layout="vertical" margin={{ left: 80 }}>
+    <ResponsiveContainer width="100%" height={height}>
+      <RechartsBarChart data={chartData} layout="vertical" margin={{ left: marginLeft }}>
         <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
-        <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} width={75} />
+        <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} width={yAxisWidth} />
         <Tooltip
           contentStyle={{
             backgroundColor: "#1e293b",

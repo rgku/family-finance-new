@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState, useEffect } from "react";
 import {
   PieChart as RechartsPieChart,
   Pie,
@@ -16,6 +16,14 @@ interface CategoryPieChartProps {
 }
 
 export const CategoryPieChart = memo(function CategoryPieChart({ data }: CategoryPieChartProps) {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
   const chartData = useMemo(() => {
     return data
       .filter((d) => d.amount > 0)
@@ -49,16 +57,20 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
     );
   };
 
+  const height = isMobile ? 280 : 320;
+  const innerRadius = isMobile ? 50 : 60;
+  const outerRadius = isMobile ? 85 : 100;
+
   return (
     <div className="relative">
-      <ResponsiveContainer width="100%" height={320}>
+      <ResponsiveContainer width="100%" height={height}>
         <RechartsPieChart>
           <Pie
             data={chartData}
             cx="50%"
             cy="45%"
-            innerRadius={60}
-            outerRadius={100}
+            innerRadius={innerRadius}
+            outerRadius={outerRadius}
             paddingAngle={3}
             dataKey="value"
             labelLine={false}
@@ -86,7 +98,7 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
           />
         </RechartsPieChart>
       </ResponsiveContainer>
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none" style={{ marginTop: "-20px" }}>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none" style={{ marginTop: isMobile ? "-10px" : "-20px" }}>
         <div className="text-xs text-on-surface-variant">Total</div>
         <div className="text-lg font-bold text-on-surface">{total.toFixed(0)}€</div>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState, useEffect } from "react";
 import {
   AreaChart as RechartsAreaChart,
   Area,
@@ -15,6 +15,15 @@ interface MonthlyTrendChartProps {
 }
 
 export const MonthlyTrendChart = memo(function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener('resize', check);
+    return () => window.removeEventListener('resize', check);
+  }, []);
+
   if (data.length === 0) {
     return (
       <div className="flex items-center justify-center h-64 text-on-surface-variant">
@@ -23,8 +32,10 @@ export const MonthlyTrendChart = memo(function MonthlyTrendChart({ data }: Month
     );
   }
 
+  const height = isMobile ? 220 : 280;
+
   return (
-    <ResponsiveContainer width="100%" height={280}>
+    <ResponsiveContainer width="100%" height={height}>
       <RechartsAreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
         <defs>
           <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
