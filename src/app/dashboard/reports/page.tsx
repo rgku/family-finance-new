@@ -5,7 +5,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import Link from "next/link";
-import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
+import { MobileHeader, MobileNav } from "@/components/Sidebar";
 
 const PDFDownloadLink = lazy(() => import("@react-pdf/renderer").then(mod => ({ default: mod.PDFDownloadLink })));
 const PDFReport = lazy(() => import("@/components/ReportPDF").then(mod => ({ default: mod.PDFReport })));
@@ -256,12 +256,5 @@ export default function ReportsPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-surface">
-      <DesktopSidebar onSignOut={signOut} />
-      <main className="ml-64 p-8 space-y-6">
-        {pageContent}
-      </main>
-    </div>
-  );
+  return <div className="p-8 space-y-8">{pageContent}</div>;
 }

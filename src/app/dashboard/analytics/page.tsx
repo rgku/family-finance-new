@@ -8,7 +8,7 @@ import { formatCurrencyWithSymbol } from "@/lib/currency";
 import { isDateInCustomMonth, formatCustomMonth, getCustomMonthRange } from "@/lib/dateUtils";
 import { MonthlyTrendChart } from "@/components/charts/MonthlyTrendChart";
 import { ExpenseChart } from "@/components/charts/ExpenseChart";
-import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
+import { MobileHeader, MobileNav } from "@/components/Sidebar";
 
 export default function AnalyticsPage() {
   const { transactions } = useData();
@@ -84,7 +84,7 @@ export default function AnalyticsPage() {
   const now = new Date();
   const canGoNext = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);
 
-  const content = (
+  const pageContent = (
     <>
       <header className="flex justify-between items-center">
         <div>
@@ -171,19 +171,12 @@ export default function AnalyticsPage() {
       <div className="min-h-screen bg-surface">
         <MobileHeader onSignOut={signOut} />
         <main className="pt-24 px-4 pb-24 space-y-6 max-w-2xl mx-auto">
-          {content}
+          {pageContent}
         </main>
         <MobileNav />
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-surface">
-      <DesktopSidebar onSignOut={signOut} />
-      <main className="ml-64 p-8 space-y-6">
-        {content}
-      </main>
-    </div>
-  );
+  return <div className="p-8 space-y-8">{pageContent}</div>;
 }

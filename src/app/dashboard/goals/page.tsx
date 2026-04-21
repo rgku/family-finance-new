@@ -6,7 +6,7 @@ import { useData } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import { ProgressRing } from "@/components/charts/ProgressRing";
-import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
+import { MobileHeader, MobileNav } from "@/components/Sidebar";
 
 const defaultIcons = [
   "directions_car", "flight", "home", "school", "shopping_bag", 
@@ -293,12 +293,5 @@ const [name, setName] = useState("");
     );
   }
 
-  return (
-    <div className="min-h-screen bg-surface">
-      <DesktopSidebar onSignOut={signOut} />
-      <main className="ml-64 p-8 space-y-6">
-        {pageContent}
-      </main>
-    </div>
-  );
+  return <div className="p-8 space-y-8">{pageContent}</div>;
 }
