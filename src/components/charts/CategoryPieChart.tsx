@@ -55,6 +55,7 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
   const legendHeight = isMobile ? 80 : 70;
   
   const height = basePieHeight + legendHeight;
+  const centerY = basePieHeight / 2;
   const chartInnerRadius = isMobile ? 20 : 30;
   const chartOuterRadius = isMobile ? 45 : 70;
   const showLabel = false;
@@ -67,7 +68,7 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
           <Pie
             data={chartData}
             cx="50%"
-            cy="50%"
+            cy={centerY}
             innerRadius={chartInnerRadius}
             outerRadius={chartOuterRadius}
             paddingAngle={3}
@@ -82,7 +83,7 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
           </Pie>
           <text
             x="50%"
-            y="50%"
+            y={centerY}
             textAnchor="middle"
             dominantBaseline="central"
             className="pointer-events-none"
