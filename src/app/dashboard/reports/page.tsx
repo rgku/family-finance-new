@@ -259,7 +259,7 @@ export default function ReportsPage() {
   return (
     <div className="min-h-screen bg-surface">
       <DesktopSidebar onSignOut={signOut} />
-      <main className="ml-64">
+      <main className="ml-64 p-8 space-y-6">
         {pageContent}
       </main>
     </div>
