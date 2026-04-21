@@ -51,12 +51,30 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
     );
   };
 
-  const baseHeight = isMobile ? 280 : 320;
-  const height = baseHeight + (isMobile && chartData.length > 4 ? 40 : 0);
-  const legendHeight = chartData.length > 4 ? 60 : 36;
-  const innerRadius = isMobile ? 50 : 60;
-  const outerRadius = isMobile ? 85 : 100;
-  const showLabel = !isMobile || chartData.length <= 4;
+  const basePieHeight = isMobile ? 180 : 220;
+  let legendHeight = 0;
+  
+  if (isMobile) {
+    if (chartData.length <= 3) {
+      // Mobile: show labels inside pie + legend below
+      legendHeight = 70;
+    } else if (chartData.length <= 5) {
+      // Mobile: hide labels, show legend below
+      legendHeight = 100;
+    } else {
+      // Mobile: hide labels, hide legend (rely on tooltips)
+      legendHeight = 0;
+    }
+  } else {
+    // Desktop: always show legend
+    legendHeight = 70;
+  }
+  
+  const height = basePieHeight + legendHeight;
+  const chartInnerRadius = isMobile ? 25 : 40;
+  const chartOuterRadius = isMobile ? 50 : 80;
+  const showLabel = !isMobile || chartData.length <= 3;
+  const showLegend = !isMobile || chartData.length <= 6; // Show legend for up to 6 items on mobile
 
   return (
     <div className="relative">
@@ -66,8 +84,8 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
             data={chartData}
             cx="50%"
             cy="45%"
-            innerRadius={innerRadius}
-            outerRadius={outerRadius}
+            innerRadius={chartInnerRadius}
+            outerRadius={chartOuterRadius}
             paddingAngle={3}
             dataKey="value"
             labelLine={false}
@@ -88,11 +106,13 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
             labelStyle={{ color: "#f8fafc", fontWeight: 600 }}
             formatter={(value) => [`${Number(value).toFixed(2)} €`, "Valor"]}
           />
-          <Legend
-            verticalAlign="bottom"
-            height={legendHeight}
-            formatter={(value) => <span className="text-xs text-on-surface-variant">{value}</span>}
-          />
+          {showLegend && (
+            <Legend
+              verticalAlign="bottom"
+              height={legendHeight}
+              formatter={(value) => <span className="text-xs text-on-surface-variant">{value}</span>}
+            />
+          )}
         </RechartsPieChart>
       </ResponsiveContainer>
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none" style={{ marginTop: isMobile ? "-10px" : "-20px" }}>
