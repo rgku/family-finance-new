@@ -5,12 +5,18 @@ import { DataProvider } from "@/hooks/DataProvider";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://famflow.app'),
-title: {
+  title: {
     default: "FamFlow - Family Financial Management",
     template: "%s | FamFlow"
   },
   description: "Family finance management app. Track expenses, set budgets, monitor goals and analyze your family finances in real-time.",
   robots: { index: true, follow: true },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'FamFlow',
+  },
   openGraph: {
     type: 'website',
     locale: 'pt_PT',
