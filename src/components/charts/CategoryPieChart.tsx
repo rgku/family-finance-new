@@ -8,6 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  Label,
 } from "recharts";
 import { getCategoryColor } from "@/lib/categoryColors";
 import { useDeviceType } from "@/hooks/useDeviceType";
@@ -52,16 +53,16 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
   };
 
   const basePieHeight = isMobile ? 180 : 220;
-  const legendHeight = isMobile ? 80 : 70; // Always show legend on mobile with enough space
+  const legendHeight = isMobile ? 80 : 70;
   
   const height = basePieHeight + legendHeight;
-  const chartInnerRadius = isMobile ? 20 : 30; // Smaller pie on mobile to make room
-  const chartOuterRadius = isMobile ? 45 : 70; // Smaller pie on mobile to make room
-  const showLabel = false; // Never show labels on mobile to avoid overlap
-  const showLegend = true; // Always show legend on mobile
+  const chartInnerRadius = isMobile ? 20 : 30;
+  const chartOuterRadius = isMobile ? 45 : 70;
+  const showLabel = false;
+  const showLegend = true;
 
   return (
-    <div className="relative">
+    <div>
       <ResponsiveContainer width="100%" height={height}>
         <RechartsPieChart>
           <Pie
@@ -76,6 +77,40 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
             label={showLabel ? renderCustomLabel : false}
             animationDuration={800}
           >
+            <Label
+              position="center"
+              content={({ viewBox }) => {
+                if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                  return (
+                    <text
+                      x={viewBox.cx}
+                      y={viewBox.cy}
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                    >
+                      <tspan
+                        x={viewBox.cx}
+                        y={(viewBox.cy || 0) - 8}
+                        className="fill-on-surface-variant"
+                        fontSize="12"
+                      >
+                        Total
+                      </tspan>
+                      <tspan
+                        x={viewBox.cx}
+                        y={(viewBox.cy || 0) + 10}
+                        className="fill-on-surface"
+                        fontSize="14"
+                        fontWeight="bold"
+                      >
+                        {total.toFixed(0)}€
+                      </tspan>
+                    </text>
+                  );
+                }
+                return null;
+              }}
+            />
             {chartData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
@@ -99,10 +134,6 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
           )}
         </RechartsPieChart>
       </ResponsiveContainer>
-<div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-        <div className="text-xs text-on-surface-variant">Total</div>
-        <div className="text-xs font-bold text-on-surface">{total.toFixed(0)}€</div>
-      </div>
     </div>
   );
 });
