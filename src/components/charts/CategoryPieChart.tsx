@@ -51,13 +51,13 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
     );
   };
 
-  const basePieHeight = isMobile ? 220 : 260;
+  const basePieHeight = isMobile ? 240 : 280;
   const legendHeight = isMobile ? 70 : 70;
   
   const height = basePieHeight + legendHeight;
   const centerY = basePieHeight / 2;
-  const chartInnerRadius = isMobile ? 22 : 32;
-  const chartOuterRadius = isMobile ? 55 : 80;
+  const chartInnerRadius = isMobile ? 30 : 40;
+  const chartOuterRadius = isMobile ? 70 : 95;
   const showLabel = false;
   const showLegend = true;
 
@@ -81,33 +81,6 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Pie>
-          <text
-            x="50%"
-            y={centerY}
-            textAnchor="middle"
-            dominantBaseline="central"
-            className="pointer-events-none"
-          >
-            <tspan
-              x="50%"
-              dy="-8"
-              className="fill-on-surface-variant"
-              fontSize="12"
-              textAnchor="middle"
-            >
-              Total
-            </tspan>
-            <tspan
-              x="50%"
-              dy="18"
-              className="fill-on-surface"
-              fontSize="14"
-              fontWeight="bold"
-              textAnchor="middle"
-            >
-              {total.toFixed(0)}€
-            </tspan>
-          </text>
           <Tooltip
             contentStyle={{
               backgroundColor: "#1e293b",
@@ -127,6 +100,14 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
           )}
         </RechartsPieChart>
       </ResponsiveContainer>
+      {/* Texto do Total posicionado via HTML para evitar corte pelo SVG */}
+      <div 
+        className="absolute left-1/2 -translate-x-1/2 pointer-events-none text-center"
+        style={{ top: `${centerY}px`, transform: 'translate(-50%, -50%)' }}
+      >
+        <div className="text-xs text-on-surface-variant">Total</div>
+        <div className="text-sm font-bold text-on-surface">{total.toFixed(0)}€</div>
+      </div>
     </div>
   );
 });
