@@ -3,15 +3,14 @@
 import { useState, useEffect } from "react";
 
 export function useDeviceType() {
-  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
-  const [isClient, setIsClient] = useState(false);
+  const [isMobile, setIsMobile] = useState<boolean>(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
+    setMounted(true);
     
     const checkDevice = () => {
-      const width = window.innerWidth;
-      setIsMobile(width < 768);
+      setIsMobile(window.innerWidth < 768);
     };
     
     checkDevice();
@@ -19,9 +18,5 @@ export function useDeviceType() {
     return () => window.removeEventListener('resize', checkDevice);
   }, []);
 
-  if (!isClient || isMobile === undefined) {
-    return false;
-  }
-
-  return isMobile;
+  return mounted ? isMobile : false;
 }
