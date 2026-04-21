@@ -99,9 +99,9 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
           )}
         </RechartsPieChart>
       </ResponsiveContainer>
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+<div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
         <div className="text-xs text-on-surface-variant">Total</div>
-        <div className="text-base font-bold text-on-surface">{total.toFixed(0)}€</div>
+        <div className="text-xs font-bold text-on-surface">{total.toFixed(0)}€</div>
       </div>
     </div>
   );
