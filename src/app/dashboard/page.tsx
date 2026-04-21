@@ -160,6 +160,11 @@ export default function Dashboard() {
               )}
             </section>
 
+            <section className="bg-surface-container rounded-lg p-4">
+              <h3 className="font-headline text-lg font-bold text-on-surface mb-4">Despesas por Categoria</h3>
+              <CategoryPieChart data={expenseByCategory} />
+            </section>
+
             <Link href="/dashboard/budgets" className="block bg-surface-container rounded-lg p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <span className="material-symbols-outlined text-tertiary">pie_chart</span>
