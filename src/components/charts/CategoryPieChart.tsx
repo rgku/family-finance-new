@@ -8,6 +8,7 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
+  Label,
 } from "recharts";
 import { getCategoryColor } from "@/lib/categoryColors";
 import { useDeviceType } from "@/hooks/useDeviceType";
@@ -77,6 +78,16 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
             label={showLabel ? renderCustomLabel : false}
             animationDuration={800}
           >
+            <Label
+              value={`Total\n${total.toFixed(0)}€`}
+              position="center"
+              fill="#dae2fd"
+              style={{
+                fontSize: '14px',
+                fontWeight: 'bold',
+                textAnchor: 'middle',
+              }}
+            />
             {chartData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
@@ -100,19 +111,7 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
           )}
         </RechartsPieChart>
       </ResponsiveContainer>
-      {/* Texto do Total posicionado via HTML para evitar corte pelo SVG */}
-      <div 
-        className="absolute pointer-events-none flex flex-col items-center justify-center"
-        style={{ 
-          top: `${centerY}px`, 
-          left: '50%', 
-          transform: 'translate(-50%, -50%)',
-          zIndex: 10
-        }}
-      >
-        <span className="text-xs text-on-surface-variant whitespace-nowrap">Total</span>
-        <span className="text-sm font-bold text-on-surface whitespace-nowrap">{total.toFixed(0)}€</span>
-      </div>
+
     </div>
   );
 });
