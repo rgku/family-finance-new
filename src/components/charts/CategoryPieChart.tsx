@@ -51,13 +51,13 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
     );
   };
 
-  const basePieHeight = isMobile ? 240 : 280;
-  const legendHeight = isMobile ? 70 : 70;
+  const basePieHeight = isMobile ? 280 : 320;
+  const legendHeight = isMobile ? 80 : 80;
   
   const height = basePieHeight + legendHeight;
   const centerY = basePieHeight / 2;
-  const chartInnerRadius = isMobile ? 30 : 40;
-  const chartOuterRadius = isMobile ? 70 : 95;
+  const chartInnerRadius = isMobile ? 45 : 55;
+  const chartOuterRadius = isMobile ? 90 : 110;
   const showLabel = false;
   const showLegend = true;
 
@@ -102,11 +102,19 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
       </ResponsiveContainer>
       {/* Texto do Total posicionado via HTML para evitar corte pelo SVG */}
       <div 
-        className="absolute left-1/2 -translate-x-1/2 pointer-events-none text-center"
-        style={{ top: `${centerY}px`, transform: 'translate(-50%, -50%)' }}
+        className="absolute pointer-events-none"
+        style={{ 
+          top: `${centerY}px`, 
+          left: '50%', 
+          transform: 'translate(-50%, -50%)',
+          zIndex: 10,
+          textAlign: 'center',
+          width: '100px',
+          marginLeft: '-50px'
+        }}
       >
-        <div className="text-xs text-on-surface-variant">Total</div>
-        <div className="text-sm font-bold text-on-surface">{total.toFixed(0)}€</div>
+        <div className="text-xs text-on-surface-variant whitespace-nowrap" style={{textAlign: 'center'}}>Total</div>
+        <div className="text-sm font-bold text-on-surface whitespace-nowrap" style={{textAlign: 'center'}}>{total.toFixed(0)}€</div>
       </div>
     </div>
   );
