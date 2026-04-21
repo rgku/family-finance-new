@@ -8,7 +8,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-  Label,
 } from "recharts";
 import { getCategoryColor } from "@/lib/categoryColors";
 import { useDeviceType } from "@/hooks/useDeviceType";
@@ -62,7 +61,7 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
   const showLegend = true;
 
   return (
-    <div>
+    <div className="relative">
       <ResponsiveContainer width="100%" height={height}>
         <RechartsPieChart>
           <Pie
@@ -77,44 +76,37 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
             label={showLabel ? renderCustomLabel : false}
             animationDuration={800}
           >
-            <Label
-              position="center"
-              content={({ viewBox }) => {
-                if (viewBox && "cx" in viewBox && "cy" in viewBox) {
-                  return (
-                    <text
-                      x={viewBox.cx}
-                      y={viewBox.cy}
-                      textAnchor="middle"
-                      dominantBaseline="central"
-                    >
-                      <tspan
-                        x={viewBox.cx}
-                        y={(viewBox.cy || 0) - 8}
-                        className="fill-on-surface-variant"
-                        fontSize="12"
-                      >
-                        Total
-                      </tspan>
-                      <tspan
-                        x={viewBox.cx}
-                        y={(viewBox.cy || 0) + 10}
-                        className="fill-on-surface"
-                        fontSize="14"
-                        fontWeight="bold"
-                      >
-                        {total.toFixed(0)}€
-                      </tspan>
-                    </text>
-                  );
-                }
-                return null;
-              }}
-            />
             {chartData.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Pie>
+          <text
+            x="50%"
+            y="50%"
+            textAnchor="middle"
+            dominantBaseline="central"
+            className="pointer-events-none"
+          >
+            <tspan
+              x="50%"
+              dy="-8"
+              className="fill-on-surface-variant"
+              fontSize="12"
+              textAnchor="middle"
+            >
+              Total
+            </tspan>
+            <tspan
+              x="50%"
+              dy="18"
+              className="fill-on-surface"
+              fontSize="14"
+              fontWeight="bold"
+              textAnchor="middle"
+            >
+              {total.toFixed(0)}€
+            </tspan>
+          </text>
           <Tooltip
             contentStyle={{
               backgroundColor: "#1e293b",
