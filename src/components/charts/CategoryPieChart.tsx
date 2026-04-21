@@ -67,7 +67,7 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
           <Pie
             data={chartData}
             cx="50%"
-            cy="45%"
+            cy="50%"
             innerRadius={chartInnerRadius}
             outerRadius={chartOuterRadius}
             paddingAngle={3}
@@ -99,9 +99,9 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
           )}
         </RechartsPieChart>
       </ResponsiveContainer>
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none" style={{ marginTop: isMobile ? "-10px" : "-20px" }}>
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
         <div className="text-xs text-on-surface-variant">Total</div>
-        <div className="text-lg font-bold text-on-surface">{total.toFixed(0)}€</div>
+        <div className="text-base font-bold text-on-surface">{total.toFixed(0)}€</div>
       </div>
     </div>
   );
