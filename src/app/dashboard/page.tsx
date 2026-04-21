@@ -106,7 +106,9 @@ export default function Dashboard() {
                 <Icon name="chevron_left" size={20} />
               </button>
               <span className="text-sm font-bold text-on-surface min-w-[120px] text-center">
-                {monthName} {year}
+                {profile?.billing_cycle_day && profile.billing_cycle_day > 1
+                  ? monthName
+                  : `${monthName} ${year}`}
               </span>
               <button
                 onClick={() => setSelectedMonth(`${nextMonth.year}-${String(nextMonth.month).padStart(2, "0")}`)}
@@ -198,7 +200,9 @@ export default function Dashboard() {
               <Icon name="chevron_left" size={20} />
             </button>
             <span className="text-lg font-bold text-on-surface min-w-[160px] text-center">
-              {monthName} {year}
+              {profile?.billing_cycle_day && profile.billing_cycle_day > 1
+                ? monthName
+                : `${monthName} ${year}`}
             </span>
             <button
               onClick={() => setSelectedMonth(`${nextMonth.year}-${String(nextMonth.month).padStart(2, "0")}`)}
