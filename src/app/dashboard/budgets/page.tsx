@@ -3,16 +3,20 @@
 import { useState } from "react";
 import { useData } from "@/hooks/DataProvider";
 import { useAuth } from "@/components/AuthProvider";
+import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import { formatCustomMonth } from "@/lib/dateUtils";
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
 import { Icon } from "@/components/Icon";
+import { MobileHeader, MobileNav } from "@/components/Sidebar";
+import { AIBudgetSuggestion } from "@/lib/ai/types";
 
 const categories = EXPENSE_CATEGORIES.filter(c => c.value !== "Outros");
 
 export default function BudgetsPage() {
   const { budgets, setCurrentBudgetMonth, addBudget, updateBudget, deleteBudget } = useData();
-  const { profile } = useAuth();
+  const { profile, signOut } = useAuth();
+  const isMobile = useDeviceType();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
@@ -75,22 +79,68 @@ export default function BudgetsPage() {
     setShowForm(false);
   };
 
+  const handleAIOptimize = async (forceRefresh = false) => {
+    setAiLoading(true);
+    setShowAiPanel(true);
+    try {
+      const res = await fetch("/api/ai/optimize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ forceRefresh }),
+      });
+      if (!res.ok) throw new Error("Erro ao gerar sugestões");
+      const data = await res.json();
+      setAiSuggestions(data.suggestions || []);
+      setAiSummary(data.summary || "");
+    } catch {
+      setAiSuggestions([]);
+      setAiSummary("Erro ao gerar sugestões. Tenta novamente.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleApplySuggestion = (suggestion: AIBudgetSuggestion) => {
+    const existingBudget = budgets.find(b => b.category === suggestion.category);
+    if (existingBudget) {
+      updateBudget(existingBudget.id, { limit: suggestion.suggestedLimit });
+    } else {
+      addBudget({ category: suggestion.category, limit: suggestion.suggestedLimit });
+    }
+    setAiSuggestions(prev => prev.filter(s => s !== suggestion));
+  };
+
   const totalBudget = budgets.reduce((sum, b) => sum + b.limit, 0);
   const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
 
-  return (
-    <div className="p-8 space-y-6">
+  const [aiSuggestions, setAiSuggestions] = useState<AIBudgetSuggestion[]>([]);
+  const [aiSummary, setAiSummary] = useState<string>("");
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const pageContent = (
+    <>
       <header className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-on-surface">Orçamentos Mensais</h1>
           <p className="text-on-surface-variant">Controle os seus gastos por categoria</p>
         </div>
-        <button 
-          onClick={() => { resetForm(); setShowForm(!showForm); }}
-          className="px-6 py-3 bg-primary text-on-primary rounded-full font-bold hover:brightness-110"
-        >
-          {showForm ? "Cancelar" : "+ Novo Orçamento"}
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => handleAIOptimize(false)}
+            className="px-4 py-3 bg-secondary text-on-secondary rounded-full font-bold hover:brightness-110 flex items-center gap-2 transition-all"
+          >
+            <Icon name="sparkles" size={18} />
+            <span className="hidden sm:inline">Otimizar com IA</span>
+            <span className="sm:hidden">IA</span>
+          </button>
+          <button
+            onClick={() => { resetForm(); setShowForm(!showForm); }}
+            className="px-6 py-3 bg-primary text-on-primary rounded-full font-bold hover:brightness-110"
+          >
+            {showForm ? "Cancelar" : "+ Novo Orçamento"}
+          </button>
+        </div>
       </header>
 
       <div className="flex items-center gap-4 py-3 bg-surface-container rounded-lg px-4">
@@ -179,6 +229,83 @@ export default function BudgetsPage() {
         </div>
       </div>
 
+      {/* AI Suggestions Panel */}
+      {showAiPanel && (
+        <div className="bg-gradient-to-br from-secondary/10 to-secondary-container/20 rounded-lg p-6 border border-secondary/30 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-bold text-lg flex items-center gap-2">
+              <Icon name="sparkles" size={20} className="text-secondary" />
+              Sugestões da IA
+            </h3>
+            <button
+              onClick={() => setShowAiPanel(false)}
+              className="p-1.5 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors"
+            >
+              <Icon name="close" size={18} />
+            </button>
+          </div>
+
+          {aiLoading ? (
+            <div className="flex items-center justify-center py-6 gap-3">
+              <div className="w-5 h-5 border-2 border-secondary border-t-transparent rounded-full animate-spin" />
+              <span className="text-on-surface-variant text-sm">A analisar os teus orçamentos...</span>
+            </div>
+          ) : aiSuggestions.length > 0 ? (
+            <>
+              {aiSummary && (
+                <p className="text-sm text-on-surface-variant italic border-l-2 border-secondary pl-3">{aiSummary}</p>
+              )}
+              <div className="space-y-3">
+                {aiSuggestions.map((suggestion, idx) => (
+                  <div key={idx} className="bg-surface-container rounded-lg p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-semibold">{suggestion.category}</span>
+                          <span className="text-xs text-on-surface-variant">
+                            {formatCurrencyWithSymbol(suggestion.currentLimit)} → {formatCurrencyWithSymbol(suggestion.suggestedLimit)}
+                          </span>
+                        </div>
+                        <p className="text-sm text-on-surface-variant">{suggestion.reason}</p>
+                        {suggestion.impactOnGoals && (
+                          <p className="text-xs text-secondary mt-1">Impacto: {suggestion.impactOnGoals}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleApplySuggestion(suggestion)}
+                        className="px-3 py-1.5 bg-secondary text-on-secondary font-bold rounded-full text-sm hover:brightness-110 shrink-0 transition-all"
+                      >
+                        Aplicar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => handleAIOptimize(true)}
+                  className="text-xs text-on-surface-variant hover:text-secondary transition-colors flex items-center gap-1"
+                >
+                  <Icon name="refresh" size={14} />
+                  Regenerar
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-on-surface-variant">{aiSummary || "Sem sugestões disponíveis."}</p>
+              <button
+                onClick={() => handleAIOptimize(true)}
+                className="mt-2 text-xs text-secondary hover:underline flex items-center gap-1 mx-auto"
+              >
+                <Icon name="refresh" size={14} />
+                Regenerar
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Budget List */}
       <div className="space-y-3">
         {budgets.map((budget) => {
@@ -229,6 +356,20 @@ export default function BudgetsPage() {
           );
         })}
       </div>
-    </div>
+    </>
   );
+
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-surface">
+        <MobileHeader onSignOut={signOut} />
+        <main className="pt-24 px-4 pb-24 space-y-6 max-w-2xl mx-auto">
+          {pageContent}
+        </main>
+        <MobileNav />
+      </div>
+    );
+  }
+
+  return <div className="p-8 space-y-6">{pageContent}</div>;
 }
