@@ -21,6 +21,7 @@ export interface Goal {
   deadline?: string;
   icon: string;
   goal_type: 'savings' | 'expense';
+  created_at?: string;
 }
 
 export interface Budget {
@@ -100,6 +101,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           deadline: g.deadline,
           icon: g.icon || 'savings',
           goal_type: g.goal_type || 'savings',
+          created_at: g.created_at,
         })));
       }
 
