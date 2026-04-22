@@ -8,6 +8,7 @@ import { useAIInsights } from "@/hooks/useAIInsights";
 import { useAIForecast } from "@/hooks/useAIForecast";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import { isDateInCustomMonth, formatCustomMonth, getCustomMonthRange } from "@/lib/dateUtils";
+import { EXPENSE_CATEGORIES } from "@/lib/constants";
 import { MonthlyTrendChart } from "@/components/charts/MonthlyTrendChart";
 import { ExpenseChart } from "@/components/charts/ExpenseChart";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
@@ -267,8 +268,10 @@ const pageContent = (
               {aiForecasts.slice(0, 6).map((forecast) => {
                 const trendIcon = forecast.trend === "up" ? "trending_up" : forecast.trend === "down" ? "trending_down" : "trending_flat";
                 const trendColor = forecast.trend === "up" ? "text-error" : forecast.trend === "down" ? "text-green-500" : "text-on-surface-variant";
+                const catIcon = EXPENSE_CATEGORIES.find(c => c.value === forecast.category)?.icon || "folder";
                 return (
                   <div key={forecast.category} className="flex items-center gap-3">
+                    <Icon name={catIcon} size={20} className="text-secondary shrink-0" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-medium text-sm truncate">{forecast.category}</span>
