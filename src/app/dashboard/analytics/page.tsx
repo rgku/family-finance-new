@@ -15,7 +15,7 @@ import { Icon } from "@/components/Icon";
 import { AIInsightItem } from "@/lib/ai/types";
 
 export default function AnalyticsPage() {
-  const { transactions } = useData();
+  const { transactions, goals: dataGoals } = useData();
   const { profile, signOut } = useAuth();
   const isMobile = useDeviceType();
   const billingDay = profile?.billing_cycle_day || 1;
@@ -57,7 +57,12 @@ export default function AnalyticsPage() {
   }, [transactions, year, month, profile?.billing_cycle_day, billingDay]);
 
   const income = useMemo(() => filteredTransactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0), [filteredTransactions]);
-  const expenses = useMemo(() => filteredTransactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0), [filteredTransactions]);
+  const expenses = useMemo(() => filteredTransactions.filter(t => t.type === "expense" && t.category !== "Investimentos").reduce((sum, t) => sum + t.amount, 0), [filteredTransactions]);
+  const pouparanca = useMemo(() => {
+    const investmentExpenses = filteredTransactions.filter(t => t.type === "expense" && t.category === "Investimentos").reduce((sum, t) => sum + t.amount, 0);
+    const savingsAllocated = dataGoals.filter(g => g.goal_type === 'savings').reduce((sum, g) => sum + g.current_amount, 0);
+    return investmentExpenses + savingsAllocated;
+  }, [filteredTransactions, dataGoals]);
 
   const categoryBreakdown = useMemo(() => {
     const categoryMap = new Map<string, number>();
@@ -72,7 +77,7 @@ export default function AnalyticsPage() {
   }, [filteredTransactions]);
 
   const monthlyTrend = useMemo(() => {
-    const months: { month: string; income: number; expense: number }[] = [];
+    const months: { month: string; income: number; expense: number; pouparanca: number }[] = [];
     
     for (let i = 5; i >= 0; i--) {
       const d = new Date(year, month - 1 - i, 15);
@@ -82,15 +87,24 @@ export default function AnalyticsPage() {
         return transDate.getFullYear() === d.getFullYear() && transDate.getMonth() === d.getMonth();
       });
       
+      const monthSavings = dataGoals.filter(g => g.goal_type === 'savings');
+      const totalSavings = monthSavings.reduce((s, g) => s + g.current_amount, 0);
+      const investmentExpenses = monthTransactions
+        .filter(t => t.type === "expense" && t.category === "Investimentos")
+        .reduce((s, t) => s + t.amount, 0);
+      
+      const pouparanca = totalSavings + investmentExpenses;
+      
       months.push({
         month: m,
         income: monthTransactions.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0),
-        expense: monthTransactions.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0),
+        expense: monthTransactions.filter(t => t.type === "expense" && t.category !== "Investimentos").reduce((s, t) => s + t.amount, 0),
+        pouparanca,
       });
     }
     
     return months;
-  }, [transactions, year, month]);
+  }, [transactions, dataGoals, year, month]);
 
   const prevMonth = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
   const nextMonth = month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 };
@@ -147,14 +161,18 @@ const pageContent = (
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-        <div className="bg-gradient-to-br from-primary to-primary-container p-6 sm:p-8 rounded-lg text-on-primary min-w-0">
-          <p className="text-sm opacity-80">Receitas</p>
-          <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mt-2 text-wrap">{formatCurrencyWithSymbol(income)}</p>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-gradient-to-br from-primary to-primary-container p-5 sm:p-6 rounded-lg text-on-primary min-w-0">
+          <p className="text-xs sm:text-sm opacity-80">Receitas</p>
+          <p className="text-lg sm:text-xl md:text-2xl font-bold mt-1 text-wrap">{formatCurrencyWithSymbol(income)}</p>
         </div>
-        <div className="bg-surface-container p-6 sm:p-8 rounded-lg min-w-0">
-          <p className="text-sm text-on-surface-variant">Despesas</p>
-          <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-tertiary mt-2 text-wrap">{formatCurrencyWithSymbol(expenses)}</p>
+        <div className="bg-surface-container p-5 sm:p-6 rounded-lg min-w-0">
+          <p className="text-xs sm:text-sm text-on-surface-variant">Despesas</p>
+          <p className="text-lg sm:text-xl md:text-2xl font-bold text-tertiary mt-1 text-wrap">{formatCurrencyWithSymbol(expenses)}</p>
+        </div>
+        <div className="bg-surface-container p-5 sm:p-6 rounded-lg min-w-0">
+          <p className="text-xs sm:text-sm text-on-surface-variant">Poupança</p>
+          <p className="text-lg sm:text-xl md:text-2xl font-bold text-secondary mt-1 text-wrap">{formatCurrencyWithSymbol(pouparanca)}</p>
         </div>
       </div>
 

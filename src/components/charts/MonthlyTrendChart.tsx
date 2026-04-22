@@ -12,7 +12,7 @@ import {
 import { useDeviceType } from "@/hooks/useDeviceType";
 
 interface MonthlyTrendChartProps {
-  data: { month: string; income: number; expense: number }[];
+  data: { month: string; income: number; expense: number; pouparanca: number }[];
 }
 
 export const MonthlyTrendChart = memo(function MonthlyTrendChart({ data }: MonthlyTrendChartProps) {
@@ -39,6 +39,10 @@ export const MonthlyTrendChart = memo(function MonthlyTrendChart({ data }: Month
           <linearGradient id="expenseGradient" x1="0" y1="0" x2="0" y2="1">
             <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
             <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+          </linearGradient>
+          <linearGradient id="pouparancaGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#eab308" stopOpacity={0.3} />
+            <stop offset="95%" stopColor="#eab308" stopOpacity={0} />
           </linearGradient>
         </defs>
         <XAxis 
@@ -81,6 +85,14 @@ export const MonthlyTrendChart = memo(function MonthlyTrendChart({ data }: Month
           stroke="#f43f5e" 
           strokeWidth={2}
           fill="url(#expenseGradient)" 
+          animationDuration={1000}
+        />
+        <Area 
+          type="monotone" 
+          dataKey="pouparanca" 
+          stroke="#eab308" 
+          strokeWidth={2}
+          fill="url(#pouparancaGradient)" 
           animationDuration={1000}
         />
       </RechartsAreaChart>
