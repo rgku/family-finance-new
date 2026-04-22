@@ -147,31 +147,33 @@ export default function Dashboard() {
               </div>
             </div>
 
+            <section className="bg-surface-container rounded-lg p-4">
+              <h3 className="font-headline text-lg font-bold text-on-surface mb-4">Despesas por Categoria</h3>
+              <CategoryPieChart data={expenseByCategory} />
+            </section>
+
             <section className="space-y-4">
               <h3 className="font-headline text-xl font-bold text-on-surface">Metas de Poupança</h3>
               {savingsGoals.length === 0 ? (
                 <p className="text-on-surface-variant text-center py-4">Sem metas de poupança</p>
               ) : (
-                savingsGoals.map(goal => (
-                  <div key={goal.id} className="bg-surface-container-low rounded-lg p-6">
-                    <div className="flex justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <Icon name={goal.icon} size={20} className="text-secondary" />
-                        <span className="font-semibold">{goal.name}</span>
+                <div className="grid grid-cols-2 gap-3">
+                  {savingsGoals.map(goal => (
+                    <div key={goal.id} className="bg-surface-container-low rounded-lg p-4">
+                      <div className="flex justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Icon name={goal.icon} size={16} className="text-secondary" />
+                          <span className="font-medium text-sm truncate">{goal.name}</span>
+                        </div>
+                        <span className="font-bold text-secondary text-sm">{Math.round(goal.current_amount / goal.target_amount * 100)}%</span>
                       </div>
-                      <span className="font-bold text-secondary">{Math.round(goal.current_amount / goal.target_amount * 100)}%</span>
+                      <div className="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-secondary to-on-secondary-container" style={{ width: `${(goal.current_amount / goal.target_amount) * 100}%` }}></div>
+                      </div>
                     </div>
-                    <div className="w-full bg-surface-container-highest h-3 rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-secondary to-on-secondary-container" style={{ width: `${(goal.current_amount / goal.target_amount) * 100}%` }}></div>
-                    </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
-            </section>
-
-            <section className="bg-surface-container rounded-lg p-4">
-              <h3 className="font-headline text-lg font-bold text-on-surface mb-4">Despesas por Categoria</h3>
-              <CategoryPieChart data={expenseByCategory} />
             </section>
 
             <Link href="/dashboard/budgets" className="block bg-surface-container rounded-lg p-4 flex items-center justify-between">
@@ -239,27 +241,8 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-6">
-            <div className="bg-surface-container p-6 rounded-lg">
-              <h3 className="font-bold text-lg mb-4">Metas de Poupança</h3>
-              {savingsGoals.length === 0 ? (
-                <p className="text-on-surface-variant text-center py-4">Sem metas de poupança</p>
-              ) : (
-                savingsGoals.map(goal => (
-                  <div key={goal.id} className="mb-4">
-                    <div className="flex justify-between mb-2">
-                      <span>{goal.name}</span>
-                      <span className="text-secondary">{Math.round(goal.current_amount / goal.target_amount * 100)}%</span>
-                    </div>
-                    <div className="h-2 bg-surface-container-highest rounded-full">
-                      <div className="h-full bg-secondary rounded-full" style={{ width: `${(goal.current_amount / goal.target_amount) * 100}%` }}></div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="space-y-6">
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 gap-6">
               <div className="bg-surface-container p-6 rounded-lg">
                 <h3 className="font-bold text-lg mb-4">Despesas por Categoria</h3>
                 <CategoryPieChart data={expenseByCategory} />
@@ -285,6 +268,30 @@ export default function Dashboard() {
                   ))
                 )}
               </div>
+            </div>
+
+            <div className="bg-surface-container p-6 rounded-lg">
+              <h3 className="font-bold text-lg mb-4">Metas de Poupança</h3>
+              {savingsGoals.length === 0 ? (
+                <p className="text-on-surface-variant text-center py-4">Sem metas de poupança</p>
+              ) : (
+                <div className="grid grid-cols-2 gap-4">
+                  {savingsGoals.map(goal => (
+                    <div key={goal.id} className="bg-surface-container-low rounded-lg p-4">
+                      <div className="flex justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <Icon name={goal.icon} size={18} className="text-secondary" />
+                          <span className="font-medium text-sm">{goal.name}</span>
+                        </div>
+                        <span className="text-secondary text-sm font-bold">{Math.round(goal.current_amount / goal.target_amount * 100)}%</span>
+                      </div>
+                      <div className="h-2 bg-surface-container-highest rounded-full">
+                        <div className="h-full bg-secondary rounded-full" style={{ width: `${(goal.current_amount / goal.target_amount) * 100}%` }}></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </main>
