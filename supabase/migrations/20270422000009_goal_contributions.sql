@@ -7,12 +7,11 @@
 ALTER TABLE goals 
 ADD COLUMN IF NOT EXISTS last_contribution_date TIMESTAMPTZ;
 
--- 2. Create goal_contributions table
+-- 2. Create goal_contributions table (without family_id to avoid dependency issues)
 CREATE TABLE IF NOT EXISTS goal_contributions (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   goal_id UUID REFERENCES goals(id) ON DELETE CASCADE NOT NULL,
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  family_id UUID REFERENCES families(id) ON DELETE SET NULL,
   amount DECIMAL(12, 2) NOT NULL,
   contribution_date DATE NOT NULL DEFAULT CURRENT_DATE,
   month DATE NOT NULL,  -- First day of month for easy filtering
@@ -28,7 +27,7 @@ CREATE POLICY "Users can access own goal contributions" ON goal_contributions
   FOR SELECT USING (user_id = auth.uid());
 
 DROP POLICY IF EXISTS "Users can insert own goal contributions" ON goal_contributions;
-CREATE POLICY "Users can insert own goal goal_contributions" ON goal_contributions
+CREATE POLICY "Users can insert own goal contributions" ON goal_contributions
   FOR INSERT WITH CHECK (user_id = auth.uid());
 
 DROP POLICY IF EXISTS "Users can delete own goal contributions" ON goal_contributions;
@@ -47,12 +46,11 @@ CREATE OR REPLACE FUNCTION add_goal_contribution(
 ) RETURNS VOID AS $$
 DECLARE
   v_user_id UUID;
-  v_family_id UUID;
   v_current DECIMAL;
 BEGIN
-  -- Get current goal info
-  SELECT user_id, family_id, decrypt_amount(encrypted_current_amount)::DECIMAL
-  INTO v_user_id, v_family_id, v_current
+  -- Get current goal info (only user_id and current_amount)
+  SELECT user_id, decrypt_amount(encrypted_current_amount)::DECIMAL
+  INTO v_user_id, v_current
   FROM goals 
   WHERE id = p_goal_id;
   
@@ -61,11 +59,10 @@ BEGIN
   END IF;
   
   -- Insert contribution record
-  INSERT INTO goal_contributions (goal_id, user_id, family_id, amount, contribution_date, month)
+  INSERT INTO goal_contributions (goal_id, user_id, amount, contribution_date, month)
   VALUES (
     p_goal_id, 
     v_user_id, 
-    v_family_id,
     p_amount, 
     CURRENT_DATE, 
     DATE_TRUNC('month', CURRENT_DATE)
@@ -81,12 +78,12 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 6. Create view for monthly goal progress
-DROP VIEW IF EXISTS goal_monthly_progress;
+DROP VIEW IF EXISTS goal_cumulative_progress CASCADE;
+DROP VIEW IF EXISTS goal_monthly_progress CASCADE;
 CREATE VIEW goal_monthly_progress AS
 SELECT 
   g.id AS goal_id,
   g.user_id,
-  g.family_id,
   g.name,
   DATE_TRUNC('month', gc.contribution_date)::DATE AS month,
   g.goal_type,
@@ -97,7 +94,7 @@ SELECT
   COUNT(gc.id) AS num_contributions
 FROM goals g
 LEFT JOIN goal_contributions gc ON g.id = gc.goal_id
-GROUP BY g.id, g.user_id, g.family_id, g.name, DATE_TRUNC('month', gc.contribution_date), g.goal_type, g.icon, g.deadline, g.encrypted_target_amount
+GROUP BY g.id, g.user_id, g.name, DATE_TRUNC('month', gc.contribution_date), g.goal_type, g.icon, g.deadline, g.encrypted_target_amount
 ORDER BY g.id, month;
 
 -- 7. Create view for cumulative goal progress per month
@@ -106,7 +103,6 @@ CREATE VIEW goal_cumulative_progress AS
 SELECT 
   goal_id,
   user_id,
-  family_id,
   name,
   month,
   target_amount,
@@ -127,10 +123,6 @@ SELECT
 FROM goal_monthly_progress
 WHERE monthly_contribution > 0 OR month IS NOT NULL
 ORDER BY goal_id, month;
-
--- 8. Test the views
--- SELECT * FROM goal_monthly_progress LIMIT 10;
--- SELECT * FROM goal_cumulative_progress LIMIT 10;
 
 -- ============================================
 -- NOTE: Update DataProvider to use goal_contributions
