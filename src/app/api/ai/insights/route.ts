@@ -180,13 +180,13 @@ function generateFallbackInsights(data: AIInsightsPayload): AIInsightItem[] {
     insights.push({
       type: "success",
       title: "Saldo positivo este mês",
-      description: `€${data.balance.toFixed(2)} = Receitas €${data.income.toFixed(0)} - Despesas €${data.expenses.toFixed(0)} - Poupança €${data.pouparanca.toFixed(0)}`,
+      description: `Conseguiste poupar €${data.balance.toFixed(2)} este mês. Continua assim!`,
     });
   } else {
     insights.push({
       type: "warning",
       title: "Saldo negativo este mês",
-      description: `€${data.balance.toFixed(2)} = Receitas €${data.income.toFixed(0)} - Despesas €${data.expenses.toFixed(0)} - Poupança €${data.pouparanca.toFixed(0)}`,
+      description: `Gastaste €${Math.abs(data.balance).toFixed(2)} a mais do que tinhas disponível.`,
     });
   }
 
