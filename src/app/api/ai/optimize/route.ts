@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
     const [profileResult, budgetsResult, goalsResult, transResult] = await Promise.all([
       supabase.from("profiles").select("family_id").eq("id", user.id).single(),
       supabase.from("budgets").select("category, limit_amount").eq("user_id", user.id),
-      supabase.from("goals").select("name, target_amount, current_amount, deadline").eq("user_id", user.id),
-      supabase.from("transactions").select("amount, type, category, date").eq("user_id", user.id).order("date", { ascending: false }).limit(500),
+      supabase.from("goals_decrypted").select("name, target_amount, current_amount, deadline").eq("user_id", user.id),
+      supabase.from("transactions_decrypted").select("amount, type, category, date").eq("user_id", user.id).order("date", { ascending: false }).limit(500),
     ]);
 
     if (!profileResult.data) {
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     }));
 
     const incomeResult = await supabase
-      .from("transactions")
+      .from("transactions_decrypted")
       .select("amount")
       .eq("user_id", user.id)
       .eq("type", "income")
