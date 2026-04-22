@@ -15,36 +15,61 @@ const defaultIcons = [
 ];
 
 export default function GoalsPage() {
-  const { goals, addGoal, updateGoal, deleteGoal } = useData();
+  const { goals, addGoal, updateGoal, deleteGoal, addGoalContribution } = useData();
   const { signOut } = useAuth();
   const isMobile = useDeviceType();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
-const [name, setName] = useState("");
+  const [name, setName] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
   const [currentAmount, setCurrentAmount] = useState("0");
   const [deadline, setDeadline] = useState("");
   const [icon, setIcon] = useState("savings");
   const [goalType, setGoalType] = useState<'savings' | 'expense'>('savings');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingId) {
-      updateGoal(editingId, {
+    const newCurrentAmount = parseFloat(currentAmount) || 0;
+    const newTargetAmount = parseFloat(targetAmount) || 0;
+    
+    if (editingId && goalType === 'savings') {
+      // Find existing goal to calculate difference
+      const existingGoal = goals.find(g => g.id === editingId);
+      if (existingGoal) {
+        const previousAmount = existingGoal.current_amount || 0;
+        const difference = newCurrentAmount - previousAmount;
+        
+        if (difference > 0) {
+          await addGoalContribution(editingId, difference);
+        }
+        
+        // Update other fields
+        await updateGoal(editingId, {
+          name,
+          target_amount: newTargetAmount,
+          deadline: deadline || undefined,
+          icon,
+          goal_type: goalType,
+        });
+      }
+    } else if (editingId) {
+      // For expense goals, update directly
+      await updateGoal(editingId, {
         name,
-        target_amount: parseFloat(targetAmount),
-        current_amount: parseFloat(currentAmount) || 0,
+        target_amount: newTargetAmount,
+        current_amount: newCurrentAmount,
         deadline: deadline || undefined,
         icon,
         goal_type: goalType,
       });
     } else {
-      addGoal({
+      // New goal
+      await addGoal({
         name,
-        target_amount: parseFloat(targetAmount),
-        current_amount: parseFloat(currentAmount) || 0,
+        target_amount: newTargetAmount,
+        current_amount: newCurrentAmount,
         deadline: deadline || undefined,
         icon,
         goal_type: goalType,
