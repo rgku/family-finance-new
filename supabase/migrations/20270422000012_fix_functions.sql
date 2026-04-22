@@ -2,8 +2,8 @@
 -- FIX: Recreate missing functions
 -- ============================================
 
--- 1. Create encrypt_amount function (returns TEXT, takes DECIMAL)
-CREATE OR REPLACE FUNCTION encrypt_amount(value DECIMAL)
+-- 1. Create encrypt_amount function (accepts TEXT, returns TEXT)
+CREATE OR REPLACE FUNCTION encrypt_amount(value TEXT)
 RETURNS TEXT AS $$
 DECLARE
   key_value TEXT;
@@ -18,7 +18,7 @@ BEGIN
   RETURN replace(
     encode(
       pgp_sym_encrypt(
-        value::TEXT,
+        value,
         key_value
       ),
       'base64'
