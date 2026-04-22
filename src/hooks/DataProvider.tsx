@@ -41,6 +41,7 @@ interface DataContextType {
   addGoal: (g: Omit<Goal, "id">) => Promise<void>;
   updateGoal: (id: string, g: Partial<Goal>) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
+  addGoalContribution: (goalId: string, amount: number) => Promise<void>;
   
   budgets: Budget[];
   setCurrentBudgetMonth: (month: string) => void;
@@ -242,6 +243,35 @@ export function DataProvider({ children }: { children: ReactNode }) {
     ));
   };
 
+  const addGoalContribution = async (goalId: string, amount: number) => {
+    if (!user) throw new Error("Must be logged in");
+    if (amount <= 0) throw new Error("Amount must be positive");
+    
+    const { error } = await supabase.rpc('add_goal_contribution', {
+      p_goal_id: goalId,
+      p_amount: amount
+    });
+
+    if (error) throw error;
+    
+    // Refresh goals to get updated current_amount
+    const { data: updatedGoal } = await supabase
+      .from('goals_decrypted')
+      .select('*')
+      .eq('id', goalId)
+      .single();
+    
+    if (updatedGoal) {
+      setGoals(prev => prev.map(goal => 
+        goal.id === goalId ? { 
+          ...goal, 
+          current_amount: parseFloat(updatedGoal.current_amount) || 0,
+          last_contribution_date: new Date().toISOString()
+        } : goal
+      ));
+    }
+  };
+
   const deleteGoal = async (id: string) => {
     if (!user) throw new Error("Must be logged in");
     
@@ -315,7 +345,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const contextValue = useMemo(() => ({
     transactions, addTransaction, updateTransaction, deleteTransaction,
-    goals, addGoal, updateGoal, deleteGoal,
+    goals, addGoal, updateGoal, deleteGoal, addGoalContribution,
     budgets, setCurrentBudgetMonth, addBudget, updateBudget, deleteBudget,
     loading,
   }), [transactions, goals, budgetsRaw, currentMonth, loading]);
