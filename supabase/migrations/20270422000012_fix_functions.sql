@@ -1,0 +1,152 @@
+-- ============================================
+-- FIX: Recreate missing functions
+-- ============================================
+
+-- 1. Create encrypt_amount function (returns TEXT, takes DECIMAL)
+CREATE OR REPLACE FUNCTION encrypt_amount(value DECIMAL)
+RETURNS TEXT AS $$
+DECLARE
+  key_value TEXT;
+BEGIN
+  IF value IS NULL THEN RETURN NULL; END IF;
+  
+  key_value := COALESCE(
+    NULLIF(current_setting('app.encryption_key', true), ''),
+    'famflow-dev-encryption-key-2024-change-in-production!!'
+  );
+  
+  RETURN replace(
+    encode(
+      pgp_sym_encrypt(
+        value::TEXT,
+        key_value
+      ),
+      'base64'
+    ),
+    E'\n', ''
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 2. Create decrypt_amount function (returns DECIMAL, takes TEXT)
+CREATE OR REPLACE FUNCTION decrypt_amount(value TEXT)
+RETURNS DECIMAL AS $$
+DECLARE
+  clean_value TEXT;
+  key_value TEXT;
+BEGIN
+  IF value IS NULL THEN RETURN NULL; END IF;
+  
+  key_value := COALESCE(
+    NULLIF(current_setting('app.encryption_key', true), ''),
+    'famflow-dev-encryption-key-2024-change-in-production!!'
+  );
+  
+  clean_value := replace(replace(value, E'\n', ''), E'\r', '');
+  RETURN pgp_sym_decrypt(
+    decode(clean_value, 'base64'),
+    key_value
+  )::DECIMAL;
+EXCEPTION WHEN OTHERS THEN
+  RETURN 0;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 3. Create encrypt_text function
+CREATE OR REPLACE FUNCTION encrypt_text(value TEXT)
+RETURNS TEXT AS $$
+DECLARE
+  key_value TEXT;
+BEGIN
+  IF value IS NULL THEN RETURN NULL; END IF;
+  
+  key_value := COALESCE(
+    NULLIF(current_setting('app.encryption_key', true), ''),
+    'famflow-dev-encryption-key-2024-change-in-production!!'
+  );
+  
+  RETURN replace(
+    encode(
+      pgp_sym_encrypt(
+        value,
+        key_value
+      ),
+      'base64'
+    ),
+    E'\n', ''
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 4. Create decrypt_text function
+CREATE OR REPLACE FUNCTION decrypt_text(value TEXT)
+RETURNS TEXT AS $$
+DECLARE
+  clean_value TEXT;
+  key_value TEXT;
+BEGIN
+  IF value IS NULL THEN RETURN NULL; END IF;
+  
+  key_value := COALESCE(
+    NULLIF(current_setting('app.encryption_key', true), ''),
+    'famflow-dev-encryption-key-2024-change-in-production!!'
+  );
+  
+  clean_value := replace(replace(value, E'\n', ''), E'\r', '');
+  RETURN pgp_sym_decrypt(
+    decode(clean_value, 'base64'),
+    key_value
+  );
+EXCEPTION WHEN OTHERS THEN
+  RETURN '';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 5. Create add_goal_contribution function
+CREATE OR REPLACE FUNCTION add_goal_contribution(
+  p_goal_id UUID,
+  p_amount DECIMAL
+) RETURNS VOID AS $$
+DECLARE
+  v_user_id UUID;
+  v_current DECIMAL;
+BEGIN
+  IF p_amount IS NULL OR p_amount <= 0 THEN
+    RAISE EXCEPTION 'Amount must be a positive number';
+  END IF;
+  
+  -- Get current goal info
+  SELECT user_id, decrypt_amount(encrypted_current_amount)::DECIMAL
+  INTO v_user_id, v_current
+  FROM goals 
+  WHERE id = p_goal_id;
+  
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Goal not found';
+  END IF;
+  
+  -- Insert contribution record
+  INSERT INTO goal_contributions (goal_id, user_id, amount, contribution_date, month)
+  VALUES (
+    p_goal_id, 
+    v_user_id, 
+    p_amount, 
+    CURRENT_DATE, 
+    DATE_TRUNC('month', CURRENT_DATE)
+  );
+  
+  -- Update goal current_amount and last_contribution_date
+  UPDATE goals 
+  SET 
+    encrypted_current_amount = encrypt_amount((v_current + p_amount)::TEXT),
+    last_contribution_date = NOW()
+  WHERE id = p_goal_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 6. Test functions
+SELECT 
+  'encrypt_amount(100)=' || encrypt_amount(100) AS test1,
+  'decrypt_amount=' || decrypt_amount(encrypt_amount(100)) AS test2,
+  'encrypt_text=test=' || encrypt_text('hello') AS test3,
+  'decrypt_text=' || decrypt_text(encrypt_text('hello')) AS test4;
