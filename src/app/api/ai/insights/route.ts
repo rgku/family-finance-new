@@ -174,16 +174,18 @@ function generateFallbackInsights(data: AIInsightsPayload): AIInsightItem[] {
   const insights: AIInsightItem[] = [];
 
   if (data.balance >= 0) {
+    const pouparancaAmount = data.income - data.expenses - data.balance;
     insights.push({
       type: "success",
       title: "Saldo positivo este mês",
-      description: `Saldo: €${data.balance.toFixed(2)} = Receitas €${data.income.toFixed(0)} - Despesas €${data.expenses.toFixed(0)} - Poupança €${data.pouparanca.toFixed(0)}`,
+      description: `€${data.balance.toFixed(2)} = Receitas €${data.income.toFixed(0)} - Despesas €${data.expenses.toFixed(0)} - Poupança €${pouparancaAmount.toFixed(0)}`,
     });
   } else {
+    const pouparancaAmount = data.income - data.expenses - data.balance;
     insights.push({
       type: "warning",
       title: "Saldo negativo este mês",
-      description: `Saldo: €${data.balance.toFixed(2)} = Receitas €${data.income.toFixed(0)} - Despesas €${data.expenses.toFixed(0)} - Poupança €${data.pouparanca.toFixed(0)}`,
+      description: `€${data.balance.toFixed(2)} = Receitas €${data.income.toFixed(0)} - Despesas €${data.expenses.toFixed(0)} - Poupança €${pouparancaAmount.toFixed(0)}`,
     });
   }
 
