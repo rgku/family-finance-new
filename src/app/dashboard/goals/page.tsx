@@ -184,19 +184,19 @@ const [name, setName] = useState("");
 
           <div>
             <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Ícone</label>
-            <div className="grid grid-cols-5 gap-2">
+            <div className="grid grid-cols-5 gap-1">
               {defaultIcons.map((ic) => (
                 <button
                   key={ic}
                   type="button"
                   onClick={() => setIcon(ic)}
-                  className={`aspect-square p-2 rounded-lg transition-all border-2 flex items-center justify-center ${
+                  className={`aspect-square p-1 rounded-lg transition-all border-2 flex items-center justify-center ${
                     icon === ic
                       ? "border-primary bg-primary/20 text-primary"
                       : "border-transparent bg-surface-container-low text-on-surface-variant hover:bg-surface-container"
                   }`}
                 >
-                  <Icon name={ic} size={18} />
+                  <Icon name={ic} size={16} />
                 </button>
               ))}
             </div>
