@@ -43,6 +43,7 @@ export interface AIInsightsPayload {
   month: string;
   income: number;
   expenses: number;
+  pouparanca: number;
   balance: number;
   categorySpending: Record<string, number>;
   budgets: { category: string; limit: number; spent: number }[];

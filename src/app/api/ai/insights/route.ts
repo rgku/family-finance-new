@@ -78,7 +78,22 @@ export async function GET(request: NextRequest) {
 
     const monthTransactions = transResult.data?.filter(t => isInMonth(t.date)) || [];
     const income = monthTransactions.filter(t => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
-    const expenses = monthTransactions.filter(t => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
+    
+    const investmentExpenses = monthTransactions
+      .filter(t => t.type === "expense" && t.category === "Investimentos")
+      .reduce((s, t) => s + Number(t.amount), 0);
+    
+    const normalExpenses = monthTransactions
+      .filter(t => t.type === "expense" && t.category !== "Investimentos")
+      .reduce((s, t) => s + Number(t.amount), 0);
+    
+    const savingsAllocated = (goalsResult.data || [])
+      .filter((g: any) => g.goal_type === "savings")
+      .reduce((s, g) => s + Number(g.current_amount), 0);
+    
+    const pouparanca = savingsAllocated + investmentExpenses;
+    const expenses = normalExpenses;
+    const balance = income - normalExpenses - pouparanca;
 
     const categorySpending: Record<string, number> = {};
     monthTransactions.filter(t => t.type === "expense").forEach(t => {
@@ -120,7 +135,8 @@ export async function GET(request: NextRequest) {
       month: monthParam,
       income,
       expenses,
-      balance: income - expenses,
+      pouparanca,
+      balance,
       categorySpending,
       budgets,
       goals,
@@ -161,13 +177,13 @@ function generateFallbackInsights(data: AIInsightsPayload): AIInsightItem[] {
     insights.push({
       type: "success",
       title: "Saldo positivo este mês",
-      description: `Conseguiste poupar €${Math.abs(data.balance).toFixed(2)} este mês. Continua assim!`,
+      description: `Saldo: €${data.balance.toFixed(2)} = Receitas €${data.income.toFixed(0)} - Despesas €${data.expenses.toFixed(0)} - Poupança €${data.pouparanca.toFixed(0)}`,
     });
   } else {
     insights.push({
       type: "warning",
-      title: "Gastaste mais do que recebeste",
-      description: `As tuas despesas ultrapassaram as receitas em €${Math.abs(data.balance).toFixed(2)}. Considera rever gastos.`,
+      title: "Saldo negativo este mês",
+      description: `Saldo: €${data.balance.toFixed(2)} = Receitas €${data.income.toFixed(0)} - Despesas €${data.expenses.toFixed(0)} - Poupança €${data.pouparanca.toFixed(0)}`,
     });
   }
 

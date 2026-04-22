@@ -3,7 +3,7 @@ import { AIInsightsPayload, AIForecastPayload, AIBudgetOptimizePayload } from ".
 const SYSTEM_PROMPT = `Eres un asistente de finanzas personales para famílias portuguesas. Analisas datos financieros y generas insights útiles, previsões e sugestões em português de Portugal.`;
 
 export function buildInsightsPrompt(data: AIInsightsPayload): string {
-  const { month, income, expenses, balance, categorySpending, budgets, goals, transactionsCount, previousMonthSpending } = data;
+  const { month, income, expenses, pouparanca, balance, categorySpending, budgets, goals, transactionsCount, previousMonthSpending } = data;
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const [year, monthNum] = month.split("-").map(Number);
   const monthName = monthNames[monthNum - 1];
@@ -32,14 +32,15 @@ export function buildInsightsPrompt(data: AIInsightsPayload): string {
 ${prevEntries}`;
   }
 
-  return `${SYSTEM_PROMPT}
+return `${SYSTEM_PROMPT}
 
 ## Dados do Mês: ${monthName} ${year}
 - Total de transações: ${transactionsCount}
 - Receitas: €${income.toFixed(2)}
 - Despesas: €${expenses.toFixed(2)}
-- Saldo: €${balance.toFixed(2)}
-${balance >= 0 ? "Estado: POSITIVO ✅" : "Estado: NEGATIVO ⚠️"}
+- Poupança: €${pouparanca.toFixed(2)} (metas de poupança + investimentos)
+- Saldo: €${balance.toFixed(2)} = Receitas - Despesas - Poupança
+ ${balance >= 0 ? "Estado: POSITIVO ✅" : "Estado: NEGATIVO ⚠️"}
 
 ## Despesas por Categoria
 ${catEntries}
