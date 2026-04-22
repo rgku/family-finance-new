@@ -68,8 +68,18 @@ export default function Dashboard() {
       .filter(t => t.type === "expense" && t.category !== "Investimentos")
       .reduce((sum, t) => sum + t.amount, 0);
     
-    const savings = dataGoals.filter(g => g.goal_type === 'savings');
-    const expenses = dataGoals.filter(g => g.goal_type === 'expense');
+    // Filter goals by creation date to current month only
+    const filteredGoals = dataGoals.filter(g => {
+      if (!g.created_at) return true;
+      const createdAt = new Date(g.created_at);
+      if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
+        return isDateInCustomMonth(createdAt.toISOString(), billingDay, year, month);
+      }
+      return createdAt.getFullYear() === year && createdAt.getMonth() === month - 1;
+    });
+    
+    const savings = filteredGoals.filter(g => g.goal_type === 'savings');
+    const expenses = filteredGoals.filter(g => g.goal_type === 'expense');
     
     const savingsAllocated = savings.reduce((sum, g) => sum + g.current_amount, 0);
     const totalPoupanca = savingsAllocated + investmentExpenses;
