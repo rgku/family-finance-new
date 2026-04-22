@@ -4,6 +4,8 @@ import "./globals.css";
 import { AuthProvider } from "@/components/AuthProvider";
 import { DataProvider } from "@/hooks/DataProvider";
 import { SWRegistration } from "@/components/SWRegistration";
+import { TanStackProvider } from "@/components/TanStackProvider";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -63,11 +65,15 @@ export default function RootLayout({
       </head>
       <body className="bg-surface text-on-surface min-h-screen antialiased font-sans">
         <SWRegistration />
-        <AuthProvider>
-          <DataProvider>
-            {children}
-          </DataProvider>
-        </AuthProvider>
+        <ErrorBoundary>
+          <TanStackProvider>
+            <AuthProvider>
+              <DataProvider>
+                {children}
+              </DataProvider>
+            </AuthProvider>
+          </TanStackProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

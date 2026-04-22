@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Suspense } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
@@ -10,7 +10,7 @@ import Link from "next/link";
 
 import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
 import { Icon } from "@/components/Icon";
-import { CategoryPieChart } from "@/components/charts/CategoryPieChart";
+import { CategoryPieChart } from "@/components/charts";
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
 
 function getCategoryIcon(category: string): string {
@@ -175,7 +175,9 @@ export default function Dashboard() {
 
             <section className="bg-surface-container rounded-lg p-4">
               <h3 className="font-headline text-lg font-bold text-on-surface mb-4">Despesas por Categoria</h3>
-              <CategoryPieChart data={expenseByCategory} />
+              <Suspense fallback={<div className="h-64 flex items-center justify-center text-on-surface-variant">A carregar gráfico...</div>}>
+                <CategoryPieChart data={expenseByCategory} />
+              </Suspense>
             </section>
 
             <section className="bg-surface-container rounded-lg p-4">
@@ -298,7 +300,9 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 gap-6">
               <div className="bg-surface-container p-6 rounded-lg">
                 <h3 className="font-bold text-lg mb-4">Despesas por Categoria</h3>
-                <CategoryPieChart data={expenseByCategory} />
+                <Suspense fallback={<div className="h-64 flex items-center justify-center text-on-surface-variant">A carregar gráfico...</div>}>
+                  <CategoryPieChart data={expenseByCategory} />
+                </Suspense>
               </div>
               <div className="bg-surface-container p-6 rounded-lg">
                 <h3 className="font-bold text-lg mb-4">Despesas Recentes</h3>
