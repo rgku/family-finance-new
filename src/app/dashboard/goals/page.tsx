@@ -220,64 +220,62 @@ const [name, setName] = useState("");
         </form>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {goals.map((goal) => {
           const progress = Math.min((goal.current_amount / goal.target_amount) * 100, 100);
           const remaining = goal.target_amount - goal.current_amount;
           const isCompleted = progress >= 100;
           
           return (
-            <div key={goal.id} className="bg-surface-container rounded-lg p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-3">
-                  <ProgressRing 
-                    progress={progress} 
-                    size={64} 
-                    strokeWidth={6}
-                    color={isCompleted ? "#22c55e" : goal.goal_type === 'savings' ? "#6366f1" : "#f43f5e"}
-                    icon={goal.icon}
-                  />
-                  <div>
-                    <p className="font-headline font-semibold text-lg">{goal.name}</p>
-                    <p className="font-label text-xs text-on-surface-variant">
-                      {formatCurrencyWithSymbol(goal.current_amount)} / {formatCurrencyWithSymbol(goal.target_amount)}
-                    </p>
-                  </div>
+            <div key={goal.id} className="bg-surface-container rounded-lg p-4 flex flex-col gap-3 min-h-0">
+              <div className="flex items-center gap-3">
+                <ProgressRing 
+                  progress={progress} 
+                  size={48} 
+                  strokeWidth={4}
+                  color={isCompleted ? "#22c55e" : goal.goal_type === 'savings' ? "#6366f1" : "#f43f5e"}
+                  icon={goal.icon}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="font-headline font-semibold text-sm truncate">{goal.name}</p>
+                  <p className="font-label text-xs text-on-surface-variant">
+                    {formatCurrencyWithSymbol(goal.current_amount)} / {formatCurrencyWithSymbol(goal.target_amount)}
+                  </p>
                 </div>
               </div>
               
-              {goal.deadline && (
-                <div className="text-xs text-on-surface-variant mb-3 flex items-center gap-1">
-                  <Icon name="event" size={20} />
-                  <span>Prazo: {new Date(goal.deadline).toLocaleDateString('pt-PT')}</span>
-                </div>
-              )}
-              
-              {!isCompleted && remaining > 0 && (
-                <p className="text-xs text-on-surface-variant mb-4">
-                  Faltam {formatCurrencyWithSymbol(remaining)}
-                </p>
-              )}
-              
-              {isCompleted && (
-                <p className="text-sm text-green-500 mb-4 flex items-center gap-1">
-                  <Icon name="check_circle" size={20} />
-                  Meta alcançada!
-                </p>
-              )}
+              <div className="flex items-center justify-between">
+                {goal.deadline && (
+                  <div className="text-xs text-on-surface-variant flex items-center gap-1">
+                    <Icon name="event" size={12} />
+                    <span>{new Date(goal.deadline).toLocaleDateString('pt-PT')}</span>
+                  </div>
+                )}
+                {!isCompleted && remaining > 0 && (
+                  <p className="text-xs text-on-surface-variant ml-auto">
+                    Faltam {formatCurrencyWithSymbol(remaining)}
+                  </p>
+                )}
+                {isCompleted && (
+                  <p className="text-xs text-green-500 ml-auto flex items-center gap-1">
+                    <Icon name="check_circle" size={12} />
+                    Atingida
+                  </p>
+                )}
+              </div>
               
               <div className="flex gap-2 mt-auto">
-                <button onClick={() => handleEdit(goal)} className="flex-1 inline-flex items-center justify-center gap-1 px-3 py-2 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary/20 hover:text-primary transition-colors text-xs font-medium">
-                  <Icon name="edit" size={16} className="text-base" />
+                <button onClick={() => handleEdit(goal)} className="flex-1 inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary/20 hover:text-primary transition-colors text-xs font-medium">
+                  <Icon name="edit" size={14} />
                   Editar
                 </button>
-                <button onClick={() => handleDelete(goal.id)} className="px-3 py-2 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-error/20 hover:text-error transition-colors text-xs font-medium">
-                  <Icon name="delete" size={16} className="text-base" />
+                <button onClick={() => handleDelete(goal.id)} className="px-2 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-error/20 hover:text-error transition-colors text-xs font-medium">
+                  <Icon name="delete" size={14} />
                 </button>
               </div>
             </div>
-);
-    })}
+          );
+        })}
       </div>
     </>
   );

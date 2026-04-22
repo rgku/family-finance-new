@@ -48,6 +48,11 @@ import {
   AlertTriangle,
   Check,
   Minus,
+  Plane,
+  Gem,
+  PartyPopper,
+  Gamepad2,
+  RefreshCw,
   type LucideProps,
 } from 'lucide-react';
 
@@ -115,6 +120,11 @@ const iconMap: Record<string, React.FC<LucideProps>> = {
   eye: Eye,
   eye_off: EyeOff,
   help: Info,
+  flight: Plane,
+  diamond: Gem,
+  celebration: PartyPopper,
+  sports_esports: Gamepad2,
+  refresh: RefreshCw,
 };
 
 interface IconProps {

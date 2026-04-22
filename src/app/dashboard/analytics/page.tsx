@@ -213,7 +213,7 @@ const pageContent = (
         <div className="bg-surface-container rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-lg flex items-center gap-2">
-              <Icon name="timeline" size={20} className="text-secondary" />
+              <Icon name="trending_up" size={20} className="text-secondary" />
               Previsão para Próximo Mês
             </h3>
             {forecastSummary && (
