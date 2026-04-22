@@ -11,6 +11,12 @@ import Link from "next/link";
 import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
 import { Icon } from "@/components/Icon";
 import { CategoryPieChart } from "@/components/charts/CategoryPieChart";
+import { EXPENSE_CATEGORIES } from "@/lib/constants";
+
+function getCategoryIcon(category: string): string {
+  const found = EXPENSE_CATEGORIES.find(c => c.value === category);
+  return found?.icon || "credit_card";
+}
 
 export default function Dashboard() {
   const { user, signOut, supabase, loading, profile } = useAuth();
@@ -253,30 +259,32 @@ export default function Dashboard() {
               )}
             </div>
 
-            <div className="bg-surface-container p-6 rounded-lg">
-              <h3 className="font-bold text-lg mb-4">Despesas por Categoria</h3>
-              <CategoryPieChart data={expenseByCategory} />
-            </div>
-            <div className="bg-surface-container p-6 rounded-lg">
-              <h3 className="font-bold text-lg mb-4">Despesas Recentes</h3>
-              {filteredTransactions.filter(t => t.type === 'expense').length === 0 ? (
-                <p className="text-on-surface-variant text-center py-4">Sem despesas este mês</p>
-              ) : (
-                filteredTransactions.filter(t => t.type === 'expense').slice(0, 5).map(trans => (
-                  <div key={trans.id} className="flex justify-between py-3 border-b border-surface-container-highest">
-                    <div className="flex items-center gap-3">
-                      <Icon name="shopping_bag" size={20} className="text-slate-400" />
-                      <div>
-                        <p className="font-medium">{trans.description}</p>
-                        <p className="text-xs text-on-surface-variant">{trans.category}</p>
+            <div className="space-y-6">
+              <div className="bg-surface-container p-6 rounded-lg">
+                <h3 className="font-bold text-lg mb-4">Despesas por Categoria</h3>
+                <CategoryPieChart data={expenseByCategory} />
+              </div>
+              <div className="bg-surface-container p-6 rounded-lg">
+                <h3 className="font-bold text-lg mb-4">Despesas Recentes</h3>
+                {filteredTransactions.filter(t => t.type === 'expense').length === 0 ? (
+                  <p className="text-on-surface-variant text-center py-4">Sem despesas este mês</p>
+                ) : (
+                  filteredTransactions.filter(t => t.type === 'expense').slice(0, 5).map(trans => (
+                    <div key={trans.id} className="flex justify-between py-3 border-b border-surface-container-highest last:border-0">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <Icon name={getCategoryIcon(trans.category)} size={20} className="text-slate-400 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{trans.description}</p>
+                          <p className="text-xs text-on-surface-variant">{trans.category}</p>
+                        </div>
                       </div>
+                      <span className="font-bold text-tertiary shrink-0 ml-2">
+                        -{formatCurrencyWithSymbol(trans.amount)}
+                      </span>
                     </div>
-                    <span className="font-bold text-tertiary">
-                      -{formatCurrencyWithSymbol(trans.amount)}
-                    </span>
-                  </div>
-                ))
-              )}
+                  ))
+                )}
+              </div>
             </div>
           </div>
         </main>
