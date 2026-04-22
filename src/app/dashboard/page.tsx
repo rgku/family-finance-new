@@ -259,24 +259,27 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div className="grid grid-cols-4 gap-6">
-            <div className="bg-surface-container p-5 rounded-lg min-w-0">
-              <p className="text-xs text-on-surface-variant">Receitas</p>
-              <p className="text-xl sm:text-2xl font-bold text-primary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.income)}</p>
-            </div>
-            <div className="bg-surface-container p-5 rounded-lg min-w-0">
-              <p className="text-xs text-on-surface-variant">Despesas</p>
-              <p className="text-xl sm:text-2xl font-bold text-tertiary min-w-0 truncate">-{formatCurrencyWithSymbol(balance.expenses)}</p>
-            </div>
-            <div className="bg-surface-container p-5 rounded-lg min-w-0">
-              <p className="text-xs text-on-surface-variant">Poupança</p>
-              <p className="text-xl sm:text-2xl font-bold text-secondary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.poupar)}</p>
-            </div>
+          <div className="space-y-4">
             <div className={`p-6 rounded-lg min-w-0 ${isPositive ? "bg-gradient-to-br from-primary to-primary-container text-on-primary" : "bg-gradient-to-br from-tertiary to-tertiary-container text-on-tertiary"}`}>
-              <p className="text-xs opacity-80">Saldo</p>
-              <h2 className="text-2xl sm:text-3xl font-bold mt-1 min-w-0 truncate">{formatCurrencyWithSymbol(balance.total)}</h2>
+              <p className="text-sm opacity-80">Saldo</p>
+              <h2 className="text-3xl sm:text-4xl font-bold mt-1 min-w-0 truncate">{formatCurrencyWithSymbol(balance.total)}</h2>
               <div className="mt-4 flex gap-2">
-                <span className="bg-white/10 px-3 py-1 rounded-full text-xs">{isPositive ? `+${monthChange}%` : "Negativo"}</span>
+                <span className="bg-white/10 px-3 py-1 rounded-full text-sm">{isPositive ? `+${monthChange}% este mês` : "Negativo"}</span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-surface-container p-4 rounded-lg min-w-0">
+                <p className="text-xs text-on-surface-variant">Receitas</p>
+                <p className="text-lg sm:text-xl font-bold text-primary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.income)}</p>
+              </div>
+              <div className="bg-surface-container p-4 rounded-lg min-w-0">
+                <p className="text-xs text-on-surface-variant">Despesas</p>
+                <p className="text-lg sm:text-xl font-bold text-tertiary min-w-0 truncate">-{formatCurrencyWithSymbol(balance.expenses)}</p>
+              </div>
+              <div className="bg-surface-container p-4 rounded-lg min-w-0">
+                <p className="text-xs text-on-surface-variant">Poupança</p>
+                <p className="text-lg sm:text-xl font-bold text-secondary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.poupar)}</p>
               </div>
             </div>
           </div>
