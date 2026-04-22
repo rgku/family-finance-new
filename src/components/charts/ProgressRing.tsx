@@ -26,6 +26,7 @@ export const ProgressRing = memo(function ProgressRing({
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
   const offset = circumference - (animatedProgress / 100) * circumference;
+  const isSmall = size <= 64;
 
   useEffect(() => {
     const timer = setTimeout(() => setAnimatedProgress(progress), 100);
@@ -33,8 +34,8 @@ export const ProgressRing = memo(function ProgressRing({
   }, [progress]);
 
   return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="relative" style={{ width: size, height: size }}>
+    <div className={`flex ${isSmall ? "flex-row items-center gap-3" : "flex-col items-center gap-2"}`}>
+      <div className="relative shrink-0" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="transform -rotate-90">
           <circle
             cx={size / 2}
@@ -56,24 +57,30 @@ export const ProgressRing = memo(function ProgressRing({
             strokeDashoffset={offset}
             strokeLinecap="round"
             className="transition-all duration-1000 ease-out"
-            style={{
-              transformOrigin: "center",
-            }}
+            style={{ transformOrigin: "center" }}
           />
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          {icon && (
-            <span style={{ color }}>
-              <Icon name={icon || "folder"} size={24} className="text-2xl" />
-            </span>
-          )}
-          {showPercentage && (
-            <span className="text-xl font-bold" style={{ color }}>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Icon name={icon || "folder"} size={Math.max(size * 0.35, 10)} />
+        </div>
+        {showPercentage && !isSmall && (
+          <div className="absolute inset-0 flex items-center justify-center pt-4">
+            <span className="font-bold" style={{ color, fontSize: Math.max(size * 0.18, 10) }}>
               {Math.round(animatedProgress)}%
             </span>
-          )}
-        </div>
+          </div>
+        )}
+        {showPercentage && isSmall && (
+          <span className="absolute bottom-0 right-0 font-bold bg-surface rounded-full px-1" style={{ color, fontSize: Math.max(size * 0.22, 8) }}>
+            {Math.round(animatedProgress)}%
+          </span>
+        )}
       </div>
+      {isSmall && showPercentage && (
+        <span className="font-bold" style={{ color, fontSize: 14 }}>
+          {Math.round(animatedProgress)}%
+        </span>
+      )}
       {label && (
         <span className="text-xs text-on-surface-variant text-center max-w-[100px] truncate">
           {label}
