@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     // Run both queries in parallel
     const [transactionsRes, budgetsRes] = await Promise.all([
       supabase
-        .from("transactions")
+        .from("transactions_decrypted")
         .select("id, description, amount, type, category, date")
         .eq("user_id", user.id)
         .gte("date", startDate)

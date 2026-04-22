@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
 
     const [profileResult, transResult] = await Promise.all([
       supabase.from("profiles").select("family_id, billing_cycle_day").eq("id", user.id).single(),
-      supabase.from("transactions").select("description, amount, type, category, date").eq("user_id", user.id).order("date", { ascending: false }),
+      supabase.from("transactions_decrypted").select("description, amount, type, category, date").eq("user_id", user.id).order("date", { ascending: false }),
     ]);
 
     if (!profileResult.data) {

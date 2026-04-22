@@ -75,16 +75,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       
       const [transResult, goalsResult, budgetsResult] = await Promise.all([
-        supabase.from('transactions').select('*').eq('user_id', user.id).order('date', { ascending: false }),
-        supabase.from('goals').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+        supabase.from('transactions_decrypted').select('*').eq('user_id', user.id).order('date', { ascending: false }),
+        supabase.from('goals_decrypted').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
         supabase.from('budgets').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
       ]);
       
       if (transResult.data) {
         setTransactions(transResult.data.map(t => ({
           id: t.id,
-          description: t.description,
-          amount: Number(t.amount),
+          description: t.description || '',
+          amount: parseFloat(t.amount) || 0,
           type: t.type,
           category: t.category,
           date: t.date,
@@ -95,8 +95,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setGoals(goalsResult.data.map(g => ({
           id: g.id,
           name: g.name,
-          target_amount: Number(g.target_amount),
-          current_amount: Number(g.current_amount),
+          target_amount: parseFloat(g.target_amount) || 0,
+          current_amount: parseFloat(g.current_amount) || 0,
           deadline: g.deadline,
           icon: g.icon || 'savings',
           goal_type: g.goal_type || 'savings',
@@ -153,8 +153,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (data) {
       setTransactions(prev => [{
         id: data.id,
-        description: data.description,
-        amount: Number(data.amount),
+        description: data.description || '',
+        amount: parseFloat(data.amount) || 0,
         type: data.type,
         category: data.category,
         date: data.date,
@@ -215,8 +215,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setGoals(prev => [...prev, {
         id: data.id,
         name: data.name,
-        target_amount: Number(data.target_amount),
-        current_amount: Number(data.current_amount),
+        target_amount: parseFloat(data.target_amount) || 0,
+        current_amount: parseFloat(data.current_amount) || 0,
         deadline: data.deadline,
         icon: data.icon || 'savings',
         goal_type: data.goal_type || 'savings',
