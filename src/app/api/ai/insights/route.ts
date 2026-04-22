@@ -53,6 +53,15 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    if (refresh) {
+      await admin
+        .from("ai_insights")
+        .delete()
+        .eq("user_id", user.id)
+        .eq("month", monthParam)
+        .eq("type", "anomalies");
+    }
+
     const [profileResult, transResult, budgetsResult, goalsResult] = await Promise.all([
       supabase.from("profiles").select("family_id, billing_cycle_day").eq("id", user.id).single(),
       supabase.from("transactions").select("amount, type, category, date").eq("user_id", user.id),
