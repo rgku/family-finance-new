@@ -190,13 +190,13 @@ const [name, setName] = useState("");
                   key={ic}
                   type="button"
                   onClick={() => setIcon(ic)}
-                  className={`p-3 rounded-xl transition-all border-2 ${
+                  className={`p-2 rounded-lg transition-all border-2 ${
                     icon === ic
-                      ? "border-primary bg-primary/20 text-primary scale-105"
-                      : "border-transparent bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:scale-105"
+                      ? "border-primary bg-primary/20 text-primary"
+                      : "border-transparent bg-surface-container-low text-on-surface-variant hover:bg-surface-container"
                   }`}
                 >
-                  <Icon name={ic} size={22} />
+                  <Icon name={ic} size={18} />
                 </button>
               ))}
             </div>
