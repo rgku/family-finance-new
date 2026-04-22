@@ -230,13 +230,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updateGoal = async (id: string, g: Partial<Goal>) => {
     if (!user) throw new Error("Must be logged in");
     
-    const { error } = await supabase
-      .from('goals')
-      .update(g)
-      .eq('id', id)
-      .eq('user_id', user.id);
+    // Only update fields that exist in the database (not target_amount or current_amount which are encrypted)
+    const updateData: Record<string, unknown> = {};
+    if (g.name !== undefined) updateData.name = g.name;
+    if (g.deadline !== undefined) updateData.deadline = g.deadline;
+    if (g.icon !== undefined) updateData.icon = g.icon;
+    if (g.goal_type !== undefined) updateData.goal_type = g.goal_type;
+    
+    if (Object.keys(updateData).length > 0) {
+      const { error } = await supabase
+        .from('goals')
+        .update(updateData)
+        .eq('id', id)
+        .eq('user_id', user.id);
 
-    if (error) throw error;
+      if (error) throw error;
+    }
     
     setGoals(prev => prev.map(goal => 
       goal.id === id ? { ...goal, ...g } : goal
