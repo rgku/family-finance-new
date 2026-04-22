@@ -70,11 +70,6 @@ export const ProgressRing = memo(function ProgressRing({
             </span>
           </div>
         )}
-        {showPercentage && isSmall && (
-          <span className="absolute bottom-0 right-0 font-bold bg-surface rounded-full px-1" style={{ color, fontSize: Math.max(size * 0.22, 8) }}>
-            {Math.round(animatedProgress)}%
-          </span>
-        )}
       </div>
       {isSmall && showPercentage && (
         <span className="font-bold" style={{ color, fontSize: 14 }}>
