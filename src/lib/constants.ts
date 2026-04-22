@@ -7,6 +7,7 @@ export const EXPENSE_CATEGORIES = [
   { value: "Educação", icon: "school" },
   { value: "Bem estar", icon: "spa" },
   { value: "Restauração", icon: "local_cafe" },
+  { value: "Investimentos", icon: "trending_up" },
   { value: "Outros", icon: "more_horiz" },
 ] as const;
 

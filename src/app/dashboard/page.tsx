@@ -57,14 +57,22 @@ export default function Dashboard() {
     });
   }, [transactions, year, month, profile?.billing_cycle_day, billingDay]);
 
-  const { totalIncome, totalExpenses, balance, savingsGoals, expenseGoals, expenseByCategory } = useMemo(() => {
-    const inc = filteredTransactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
-    const exp = filteredTransactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0);
+  const { totalIncome, totalExpenses, totalPoupanca, balance, savingsGoals, expenseGoals, expenseByCategory } = useMemo(() => {
+    const income = filteredTransactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
+    
+    const investmentExpenses = filteredTransactions
+      .filter(t => t.type === "expense" && t.category === "Investimentos")
+      .reduce((sum, t) => sum + t.amount, 0);
+    
+    const normalExpenses = filteredTransactions
+      .filter(t => t.type === "expense" && t.category !== "Investimentos")
+      .reduce((sum, t) => sum + t.amount, 0);
     
     const savings = dataGoals.filter(g => g.goal_type === 'savings');
     const expenses = dataGoals.filter(g => g.goal_type === 'expense');
     
     const savingsAllocated = savings.reduce((sum, g) => sum + g.current_amount, 0);
+    const totalPoupanca = savingsAllocated + investmentExpenses;
     
     const expenseByCat = filteredTransactions
       .filter(t => t.type === "expense")
@@ -78,10 +86,14 @@ export default function Dashboard() {
       amount,
     }));
     
+    const totalExpenses = normalExpenses;
+    const balance = income - normalExpenses - totalPoupanca;
+    
     return { 
-      totalIncome: inc, 
-      totalExpenses: exp, 
-      balance: { total: inc - exp - savingsAllocated, income: inc, expenses: exp },
+      totalIncome: income,
+      totalExpenses,
+      totalPoupanca,
+      balance: { total: balance, income, expenses: normalExpenses, poupar: totalPoupanca },
       savingsGoals: savings,
       expenseGoals: expenses,
       expenseByCategory: expenseCategories,
@@ -136,14 +148,18 @@ export default function Dashboard() {
               </div>
             </section>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-surface-container rounded-lg p-5 min-w-0">
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-surface-container rounded-lg p-4 min-w-0">
                 <p className="font-label text-xs text-on-surface-variant">Receitas</p>
-                <p className="font-headline text-xl font-bold text-primary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.income)}</p>
+                <p className="font-headline text-lg font-bold text-primary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.income)}</p>
               </div>
-              <div className="bg-surface-container rounded-lg p-5 min-w-0">
+              <div className="bg-surface-container rounded-lg p-4 min-w-0">
                 <p className="font-label text-xs text-on-surface-variant">Despesas</p>
-                <p className="font-headline text-xl font-bold text-tertiary min-w-0 truncate">-{formatCurrencyWithSymbol(balance.expenses)}</p>
+                <p className="font-headline text-lg font-bold text-tertiary min-w-0 truncate">-{formatCurrencyWithSymbol(balance.expenses)}</p>
+              </div>
+              <div className="bg-surface-container rounded-lg p-4 min-w-0">
+                <p className="font-label text-xs text-on-surface-variant">Poupança</p>
+                <p className="font-headline text-lg font-bold text-secondary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.poupar)}</p>
               </div>
             </div>
 
@@ -243,22 +259,24 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-6">
-            <div className={`col-span-2 p-8 rounded-lg min-w-0 ${isPositive ? "bg-gradient-to-br from-primary to-primary-container text-on-primary" : "bg-gradient-to-br from-tertiary to-tertiary-container text-on-tertiary"}`}>
-              <p className="text-sm opacity-80">Saldo Total</p>
-              <h2 className="text-4xl sm:text-5xl font-bold mt-2 min-w-0 truncate">{formatCurrencyWithSymbol(balance.total)}</h2>
-              <div className="mt-6 flex gap-4">
-                <span className="bg-white/10 px-4 py-2 rounded-full text-sm">{isPositive ? `+${monthChange}% este mês` : "Despesas superiores"}</span>
-              </div>
+          <div className="grid grid-cols-4 gap-6">
+            <div className="bg-surface-container p-5 rounded-lg min-w-0">
+              <p className="text-xs text-on-surface-variant">Receitas</p>
+              <p className="text-xl sm:text-2xl font-bold text-primary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.income)}</p>
             </div>
-            <div className="space-y-4">
-              <div className="bg-surface-container p-5 rounded-lg min-w-0">
-                <p className="text-xs text-on-surface-variant">Receitas</p>
-                <p className="text-xl sm:text-2xl font-bold text-primary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.income)}</p>
-              </div>
-              <div className="bg-surface-container p-5 rounded-lg min-w-0">
-                <p className="text-xs text-on-surface-variant">Despesas</p>
-                <p className="text-xl sm:text-2xl font-bold text-tertiary min-w-0 truncate">-{formatCurrencyWithSymbol(balance.expenses)}</p>
+            <div className="bg-surface-container p-5 rounded-lg min-w-0">
+              <p className="text-xs text-on-surface-variant">Despesas</p>
+              <p className="text-xl sm:text-2xl font-bold text-tertiary min-w-0 truncate">-{formatCurrencyWithSymbol(balance.expenses)}</p>
+            </div>
+            <div className="bg-surface-container p-5 rounded-lg min-w-0">
+              <p className="text-xs text-on-surface-variant">Poupança</p>
+              <p className="text-xl sm:text-2xl font-bold text-secondary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.poupar)}</p>
+            </div>
+            <div className={`p-6 rounded-lg min-w-0 ${isPositive ? "bg-gradient-to-br from-primary to-primary-container text-on-primary" : "bg-gradient-to-br from-tertiary to-tertiary-container text-on-tertiary"}`}>
+              <p className="text-xs opacity-80">Saldo</p>
+              <h2 className="text-2xl sm:text-3xl font-bold mt-1 min-w-0 truncate">{formatCurrencyWithSymbol(balance.total)}</h2>
+              <div className="mt-4 flex gap-2">
+                <span className="bg-white/10 px-3 py-1 rounded-full text-xs">{isPositive ? `+${monthChange}%` : "Negativo"}</span>
               </div>
             </div>
           </div>
