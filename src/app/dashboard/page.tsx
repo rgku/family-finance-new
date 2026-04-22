@@ -152,6 +152,28 @@ export default function Dashboard() {
               <CategoryPieChart data={expenseByCategory} />
             </section>
 
+            <section className="bg-surface-container rounded-lg p-4">
+              <h3 className="font-headline text-lg font-bold text-on-surface mb-4">Despesas Recentes</h3>
+              {filteredTransactions.filter(t => t.type === 'expense').length === 0 ? (
+                <p className="text-on-surface-variant text-center py-4">Sem despesas este mês</p>
+              ) : (
+                filteredTransactions.filter(t => t.type === 'expense').slice(0, 5).map(trans => (
+                  <div key={trans.id} className="flex justify-between py-3 border-b border-surface-container-highest last:border-0">
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <Icon name={getCategoryIcon(trans.category)} size={18} className="text-slate-400 shrink-0" />
+                      <div className="min-w-0">
+                        <p className="font-medium text-sm truncate">{trans.description}</p>
+                        <p className="text-xs text-on-surface-variant">{trans.category}</p>
+                      </div>
+                    </div>
+                    <span className="font-bold text-tertiary text-sm shrink-0 ml-2">
+                      -{formatCurrencyWithSymbol(trans.amount)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </section>
+
             <section className="space-y-4">
               <h3 className="font-headline text-xl font-bold text-on-surface">Metas de Poupança</h3>
               {savingsGoals.length === 0 ? (
