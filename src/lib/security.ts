@@ -1,4 +1,4 @@
-import { supabase } from './supabase/client';
+import { createClient } from './supabase/client';
 
 export function maskEmail(email: string | null): string {
   if (!email || email === '') return '';
@@ -55,6 +55,7 @@ export interface AuditLogEntry {
 
 export async function logAuditEvent(entry: AuditLogEntry): Promise<void> {
   try {
+    const supabase = createClient();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) return;
 
@@ -104,6 +105,7 @@ export interface DecryptedTransaction {
 }
 
 export async function fetchDecryptedTransactions(familyId: string): Promise<DecryptedTransaction[]> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('transactions_decrypted')
     .select('id, description, amount')
@@ -127,6 +129,7 @@ export interface SafeFamilyMember {
 }
 
 export async function fetchSafeFamilyMembers(familyId: string): Promise<SafeFamilyMember[]> {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('family_members_safe')
     .select('id, family_id, name, email, role, status')
@@ -160,6 +163,7 @@ export interface AuditLogEntryDB {
 }
 
 export async function fetchAuditLogs(query: AuditLogQuery): Promise<AuditLogEntryDB[]> {
+  const supabase = createClient();
   let q = supabase
     .from('audit_log')
     .select('*')
