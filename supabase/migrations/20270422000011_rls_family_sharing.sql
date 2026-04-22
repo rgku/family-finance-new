@@ -95,6 +95,7 @@ CREATE POLICY "Users can delete budget alerts" ON budget_alerts
 
 -- ============================================
 -- 5. Update goal_contributions RLS for family sharing (if table exists)
+-- Note: goal_contributions doesn't have family_id, so only user-based RLS
 -- ============================================
 
 DO $$
@@ -102,10 +103,7 @@ BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'goal_contributions') THEN
     DROP POLICY IF EXISTS "Users can access own goal contributions" ON goal_contributions;
     CREATE POLICY "Users can access own goal contributions" ON goal_contributions
-      FOR SELECT USING (
-        user_id = auth.uid() 
-        OR family_id IN (SELECT family_id FROM profiles WHERE id = auth.uid())
-      );
+      FOR SELECT USING (user_id = auth.uid());
     
     DROP POLICY IF EXISTS "Users can insert goal contributions" ON goal_contributions;
     CREATE POLICY "Users can insert goal contributions" ON goal_contributions
