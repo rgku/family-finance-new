@@ -10,7 +10,7 @@ export interface AIInsightsState {
   error: string | null;
   generatedAt: string | null;
   cached: boolean;
-  refetch: (month?: string) => Promise<void>;
+  refetch: (month?: string, forceRefresh?: boolean) => Promise<void>;
 }
 
 export function useAIInsights(month: string): AIInsightsState {
@@ -21,12 +21,13 @@ export function useAIInsights(month: string): AIInsightsState {
   const [generatedAt, setGeneratedAt] = useState<string | null>(null);
   const [cached, setCached] = useState(false);
 
-  const fetchInsights = useCallback(async (m: string) => {
+  const fetchInsights = useCallback(async (m: string, forceRefresh = false) => {
     if (!m) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/ai/insights?month=${m}`);
+      const url = `/api/ai/insights?month=${m}${forceRefresh ? "&refresh=1" : ""}`;
+      const res = await fetch(url);
       if (!res.ok) throw new Error("Erro ao carregar insights");
       const data = await res.json();
       setInsights(data.insights || []);
@@ -50,6 +51,6 @@ export function useAIInsights(month: string): AIInsightsState {
     error,
     generatedAt,
     cached,
-    refetch: (month?: string) => fetchInsights(month || ""),
+    refetch: (month?: string, forceRefresh?: boolean) => fetchInsights(month || "", forceRefresh),
   };
 }

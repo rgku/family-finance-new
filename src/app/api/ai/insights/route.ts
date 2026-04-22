@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const monthParam = searchParams.get("month");
+    const refresh = searchParams.get("refresh") === "1";
 
     if (!monthParam || !/^\d{4}-\d{2}$/.test(monthParam)) {
       return NextResponse.json({ error: "Parâmetro month é obrigatório (YYYY-MM)" }, { status: 400 });
@@ -35,18 +36,20 @@ export async function GET(request: NextRequest) {
 
     const admin = await createAdminSupabase();
 
-    const cached = await admin
-      .from("ai_insights")
-      .select("*")
-      .eq("user_id", user.id)
-      .eq("month", monthParam)
-      .eq("type", "anomalies")
-      .single();
+    if (!refresh) {
+      const cached = await admin
+        .from("ai_insights")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("month", monthParam)
+        .eq("type", "anomalies")
+        .single();
 
-    if (cached.data && cached.data.generated_at) {
-      const cacheAge = Date.now() - new Date(cached.data.generated_at).getTime();
-      if (cacheAge < CACHE_TTL_HOURS * 60 * 60 * 1000) {
-        return NextResponse.json({ insights: cached.data.content, cached: true, generated_at: cached.data.generated_at });
+      if (cached.data && cached.data.generated_at) {
+        const cacheAge = Date.now() - new Date(cached.data.generated_at).getTime();
+        if (cacheAge < CACHE_TTL_HOURS * 60 * 60 * 1000) {
+          return NextResponse.json({ insights: cached.data.content, cached: true, generated_at: cached.data.generated_at });
+        }
       }
     }
 
@@ -54,7 +57,7 @@ export async function GET(request: NextRequest) {
       supabase.from("profiles").select("family_id, billing_cycle_day").eq("id", user.id).single(),
       supabase.from("transactions").select("amount, type, category, date").eq("user_id", user.id),
       supabase.from("budgets").select("category, limit_amount").eq("user_id", user.id),
-      supabase.from("goals").select("name, target_amount, current_amount, deadline").eq("user_id", user.id),
+      supabase.from("goals").select("name, target_amount, current_amount, deadline, goal_type").eq("user_id", user.id),
     ]);
 
     if (!profileResult.data) {
@@ -78,19 +81,19 @@ export async function GET(request: NextRequest) {
 
     const monthTransactions = transResult.data?.filter(t => isInMonth(t.date)) || [];
     const income = monthTransactions.filter(t => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
-    
+
     const investmentExpenses = monthTransactions
       .filter(t => t.type === "expense" && t.category === "Investimentos")
       .reduce((s, t) => s + Number(t.amount), 0);
-    
+
     const normalExpenses = monthTransactions
       .filter(t => t.type === "expense" && t.category !== "Investimentos")
       .reduce((s, t) => s + Number(t.amount), 0);
-    
+
     const savingsAllocated = (goalsResult.data || [])
       .filter((g: any) => g.goal_type === "savings")
       .reduce((s, g) => s + Number(g.current_amount), 0);
-    
+
     const pouparanca = savingsAllocated + investmentExpenses;
     const expenses = normalExpenses;
     const balance = income - normalExpenses - pouparanca;
@@ -106,12 +109,12 @@ export async function GET(request: NextRequest) {
       spent: monthTransactions.filter(t => t.category === b.category && t.type === "expense").reduce((s, t) => s + Number(t.amount), 0),
     })) || [];
 
-    const goals = goalsResult.data?.map(g => ({
+    const goals = (goalsResult.data || []).map((g: any) => ({
       name: g.name,
       target: Number(g.target_amount),
       current: Number(g.current_amount),
       deadline: g.deadline,
-    })) || [];
+    }));
 
     const prevMonth = monthNum === 1 ? { year: year - 1, month: 12 } : { year, month: monthNum - 1 };
     const prevTransactions = transResult.data?.filter(t => {
@@ -174,18 +177,16 @@ function generateFallbackInsights(data: AIInsightsPayload): AIInsightItem[] {
   const insights: AIInsightItem[] = [];
 
   if (data.balance >= 0) {
-    const pouparancaAmount = data.income - data.expenses - data.balance;
     insights.push({
       type: "success",
       title: "Saldo positivo este mês",
-      description: `€${data.balance.toFixed(2)} = Receitas €${data.income.toFixed(0)} - Despesas €${data.expenses.toFixed(0)} - Poupança €${pouparancaAmount.toFixed(0)}`,
+      description: `€${data.balance.toFixed(2)} = Receitas €${data.income.toFixed(0)} - Despesas €${data.expenses.toFixed(0)} - Poupança €${data.pouparanca.toFixed(0)}`,
     });
   } else {
-    const pouparancaAmount = data.income - data.expenses - data.balance;
     insights.push({
       type: "warning",
       title: "Saldo negativo este mês",
-      description: `€${data.balance.toFixed(2)} = Receitas €${data.income.toFixed(0)} - Despesas €${data.expenses.toFixed(0)} - Poupança €${pouparancaAmount.toFixed(0)}`,
+      description: `€${data.balance.toFixed(2)} = Receitas €${data.income.toFixed(0)} - Despesas €${data.expenses.toFixed(0)} - Poupança €${data.pouparanca.toFixed(0)}`,
     });
   }
 

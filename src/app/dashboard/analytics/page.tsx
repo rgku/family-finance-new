@@ -176,7 +176,7 @@ const pageContent = (
           </h3>
           {!aiLoading && (
             <button
-              onClick={() => refetch(selectedMonth)}
+              onClick={() => refetch(selectedMonth, true)}
               className="p-1.5 rounded-lg hover:bg-surface-container-high text-on-surface-variant transition-colors"
               title="Gerar novos insights"
             >
