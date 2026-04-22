@@ -3,6 +3,12 @@
 -- Fixes: Goals and transactions visible only to owner, not family
 -- ============================================
 
+-- 0. Add family_id column to tables if not exists (defensive)
+ALTER TABLE goals ADD COLUMN IF NOT EXISTS family_id UUID REFERENCES families(id) ON DELETE SET NULL;
+ALTER TABLE transactions ADD COLUMN IF NOT EXISTS family_id UUID REFERENCES families(id) ON DELETE SET NULL;
+ALTER TABLE budgets ADD COLUMN IF NOT EXISTS family_id UUID REFERENCES families(id) ON DELETE SET NULL;
+ALTER TABLE budget_alerts ADD COLUMN IF NOT EXISTS family_id UUID REFERENCES families(id) ON DELETE SET NULL;
+
 -- ============================================
 -- 1. Update Goals RLS for family sharing
 -- ============================================
