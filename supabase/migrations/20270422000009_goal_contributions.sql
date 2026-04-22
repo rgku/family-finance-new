@@ -3,9 +3,9 @@
 -- Fixes: current_amount cumulative without history
 -- ============================================
 
--- 1. Add last_contribution_date to goals table
-ALTER TABLE goals 
-ADD COLUMN IF NOT EXISTS last_contribution_date TIMESTAMPTZ;
+-- 1. Add missing columns to goals table if they don't exist
+ALTER TABLE goals ADD COLUMN IF NOT EXISTS last_contribution_date TIMESTAMPTZ;
+ALTER TABLE goals ADD COLUMN IF NOT EXISTS family_id UUID REFERENCES families(id) ON DELETE SET NULL;
 
 -- 2. Create goal_contributions table (without family_id to avoid dependency issues)
 CREATE TABLE IF NOT EXISTS goal_contributions (
