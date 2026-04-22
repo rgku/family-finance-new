@@ -4,17 +4,8 @@ import { useState, useMemo } from "react";
 import { useData } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
-import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/constants";
 import { Icon } from "@/components/Icon";
-
-const allCategories = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES]
-  .map(c => c.value)
-  .filter((v, i, a) => a.indexOf(v) === i)
-  .sort((a, b) => {
-    if (a === "Outros") return 1;
-    if (b === "Outros") return -1;
-    return a.localeCompare(b);
-  });
+import { TransactionItem, allCategories } from "@/components/TransactionItem";
 
 export default function TransactionsPage() {
   const { transactions, updateTransaction, deleteTransaction } = useData();
@@ -41,7 +32,10 @@ export default function TransactionsPage() {
     setDateRange(null);
   };
 
-  const handleEdit = (trans: any) => {
+  const handleEdit = (id: string) => {
+    const trans = transactions.find(t => t.id === id);
+    if (!trans) return;
+    
     setEditForm({
       description: trans.description,
       amount: trans.amount.toString(),
@@ -49,7 +43,7 @@ export default function TransactionsPage() {
       category: trans.category,
       date: trans.date,
     });
-    setEditingId(trans.id);
+    setEditingId(id);
   };
 
   const handleSave = (id: string) => {
@@ -118,69 +112,16 @@ export default function TransactionsPage() {
         <div className="space-y-3">
           {filteredTransactions.map((trans) => (
             <div key={trans.id} className="bg-surface-container rounded-lg p-4">
-              {editingId === trans.id ? (
-                <div className="space-y-3">
-                  <input
-                    type="text"
-                    value={editForm.description}
-                    onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                    className="bg-surface-container-low border-none rounded px-3 py-2 text-on-surface w-full text-sm"
-                    placeholder="Descrição"
-                  />
-                  <div className="flex flex-col gap-2">
-                    <input
-                      type="date"
-                      value={editForm.date}
-                      onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
-                      className="bg-surface-container-low border-none rounded px-3 py-2 text-on-surface text-sm w-full"
-                    />
-                    <select
-                      value={editForm.category}
-                      onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                      className="bg-surface-container-low border-none rounded px-3 py-2 text-on-surface text-sm w-full"
-                    >
-                      <option value="">Selecionar categoria</option>
-                      {allCategories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      value={editForm.amount}
-                      onChange={(e) => setEditForm({ ...editForm, amount: e.target.value })}
-                      className="bg-surface-container-low border-none rounded px-3 py-2 text-on-surface text-sm w-full"
-                      placeholder="Valor"
-                    />
-                  </div>
-                  <div className="flex gap-2 justify-end pt-2">
-                    <button onClick={handleCancel} className="text-on-surface-variant text-sm px-3 py-1.5">Cancelar</button>
-                    <button onClick={() => handleSave(trans.id)} className="text-primary text-sm font-medium px-3 py-1.5">Guardar</button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Icon name={trans.type === "income" ? "payments" : "shopping_bag"} size={20} className="text-on-surface-variant" />
-                    <div>
-                      <p className="font-medium text-on-surface">{trans.description}</p>
-                      <p className="text-xs text-on-surface-variant">{trans.category} • {new Date(trans.date).toLocaleDateString("pt-PT")}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`font-bold ${trans.type === "income" ? "text-primary" : "text-tertiary"}`}>
-                      {trans.type === "income" ? "+" : "-"}{formatCurrencyWithSymbol(trans.amount)}
-                    </span>
-                    <div className="flex gap-1">
-                      <button onClick={() => handleEdit(trans)} className="p-2 rounded-lg text-on-surface-variant hover:bg-primary/20 hover:text-primary transition-colors" aria-label="Editar">
-                        <Icon name="edit" size={16} className="text-base" />
-                      </button>
-                      <button onClick={() => handleDelete(trans.id)} className="p-2 rounded-lg text-on-surface-variant hover:bg-error/20 hover:text-error transition-colors" aria-label="Apagar">
-                        <Icon name="delete" size={16} className="text-base" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+              <TransactionItem
+                transaction={trans}
+                isEditing={editingId === trans.id}
+                editForm={editForm}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onFormChange={(field, value) => setEditForm({ ...editForm, [field]: value })}
+                onSave={handleSave}
+                onCancel={handleCancel}
+              />
             </div>
           ))}
         </div>
@@ -262,7 +203,7 @@ export default function TransactionsPage() {
                         {trans.type === "income" ? "+" : "-"}{formatCurrencyWithSymbol(trans.amount)}
                       </td>
                       <td className="p-4 text-right whitespace-nowrap">
-                        <button onClick={() => handleEdit(trans)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary/20 hover:text-primary transition-colors text-xs font-medium" aria-label={`Editar ${trans.description}`}>
+                        <button onClick={() => handleEdit(trans.id)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary/20 hover:text-primary transition-colors text-xs font-medium" aria-label={`Editar ${trans.description}`}>
                           <Icon name="edit" size={16} className="text-base" />
                           Editar
                         </button>

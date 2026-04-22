@@ -3,12 +3,17 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   experimental: {
     optimizeCss: true,
+    staleTimes: {
+      dynamic: 30,
+      static: 60,
+    },
   },
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       { protocol: 'https', hostname: '*.supabase.co' },
       { protocol: 'https', hostname: '*.cohere.ai' },
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
     ],
   },
   async headers() {
@@ -34,6 +39,18 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/og-image.svg',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=86400' },
+        ],
+      },
+      {
+        source: '/:path*.(js|css|woff|woff2)',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+        ],
+      },
+      {
+        source: '/:path*.(jpg|jpeg|png|svg|ico|webp|avif)',
         headers: [
           { key: 'Cache-Control', value: 'public, max-age=86400' },
         ],
