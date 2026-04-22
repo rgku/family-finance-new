@@ -60,9 +60,17 @@ export default function AnalyticsPage() {
   const expenses = useMemo(() => filteredTransactions.filter(t => t.type === "expense" && t.category !== "Investimentos").reduce((sum, t) => sum + t.amount, 0), [filteredTransactions]);
   const pouparanca = useMemo(() => {
     const investmentExpenses = filteredTransactions.filter(t => t.type === "expense" && t.category === "Investimentos").reduce((sum, t) => sum + t.amount, 0);
-    const savingsAllocated = dataGoals.filter(g => g.goal_type === 'savings').reduce((sum, g) => sum + g.current_amount, 0);
+    const filteredGoals = dataGoals.filter(g => {
+      if (!g.created_at) return false;
+      const createdAt = new Date(g.created_at);
+      if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
+        return isDateInCustomMonth(createdAt.toISOString(), billingDay, year, month);
+      }
+      return createdAt.getFullYear() === year && createdAt.getMonth() === month - 1;
+    });
+    const savingsAllocated = filteredGoals.filter(g => g.goal_type === 'savings').reduce((sum, g) => sum + g.current_amount, 0);
     return investmentExpenses + savingsAllocated;
-  }, [filteredTransactions, dataGoals]);
+  }, [filteredTransactions, dataGoals, year, month, profile?.billing_cycle_day, billingDay]);
 
   const categoryBreakdown = useMemo(() => {
     const categoryMap = new Map<string, number>();
@@ -87,7 +95,15 @@ export default function AnalyticsPage() {
         return transDate.getFullYear() === d.getFullYear() && transDate.getMonth() === d.getMonth();
       });
       
-      const monthSavings = dataGoals.filter(g => g.goal_type === 'savings');
+      // Filter goals by created_at to this specific month
+      const monthSavings = dataGoals.filter(g => {
+        if (!g.created_at || g.goal_type !== 'savings') return false;
+        const createdAt = new Date(g.created_at);
+        if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
+          return isDateInCustomMonth(createdAt.toISOString(), billingDay, d.getFullYear(), d.getMonth() + 1);
+        }
+        return createdAt.getFullYear() === d.getFullYear() && createdAt.getMonth() === d.getMonth();
+      });
       const totalSavings = monthSavings.reduce((s, g) => s + g.current_amount, 0);
       const investmentExpenses = monthTransactions
         .filter(t => t.type === "expense" && t.category === "Investimentos")
@@ -104,7 +120,7 @@ export default function AnalyticsPage() {
     }
     
     return months;
-  }, [transactions, dataGoals, year, month]);
+  }, [transactions, dataGoals, year, month, profile, billingDay]);
 
   const prevMonth = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
   const nextMonth = month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 };
