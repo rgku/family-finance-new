@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/components/AuthProvider';
@@ -19,15 +19,12 @@ export function useNotifications() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [unreadCount, setUnreadCount] = useState(0);
-  const channelRef = useRef<any>(null);
 
   // Fetch notifications with polling (every 5 seconds)
   const { data: notifications = [], isLoading, refetch } = useQuery({
     queryKey: ['notifications', user?.id],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
-      
-      console.log('[useNotifications] Fetching notifications for user:', user.id);
       
       const { data, error } = await supabase
         .from('notifications')
@@ -41,86 +38,17 @@ export function useNotifications() {
         throw error;
       }
       
-      console.log('[useNotifications] Fetched', data?.length, 'notifications');
       return data as Notification[];
     },
     enabled: !!user,
-    refetchInterval: 5000, // Poll every 5 seconds
-    refetchIntervalInBackground: true, // Also poll when tab is not focused
+    refetchInterval: 5000,
+    refetchIntervalInBackground: true,
   });
 
   // Count unread
   useEffect(() => {
     setUnreadCount(notifications.filter(n => !n.read).length);
   }, [notifications]);
-
-  // Realtime subscription for instant updates
-  useEffect(() => {
-    if (!user || !supabase) return;
-
-    console.log('[useNotifications] Setting up realtime subscription for user:', user.id);
-
-    // Cleanup existing channel if it exists
-    if (channelRef.current) {
-      console.log('[useNotifications] Removing existing channel...');
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-
-    const channelName = `notifications:${user.id}`;
-    const channel = supabase.channel(channelName);
-    
-    // Store channel reference
-    channelRef.current = channel;
-
-    // Add callback BEFORE subscribing
-    channel.on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'notifications',
-        filter: `user_id=eq.${user.id}`,
-      },
-      async (payload) => {
-        console.log('[useNotifications] Realtime INSERT detected:', payload);
-        
-        // Force immediate refetch
-        await refetch();
-        
-        // Show browser notification if new notification arrived
-        const newNotif = payload.new as Notification;
-        if (newNotif && !newNotif.read) {
-          console.log('[useNotifications] New unread notification:', newNotif.title);
-          
-          if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(newNotif.title, {
-              body: newNotif.body,
-              icon: '/favicon.ico',
-            });
-          }
-        }
-      }
-    );
-
-    // Subscribe after callback is added
-    channel.subscribe((status) => {
-      console.log('[useNotifications] Realtime subscription status:', status);
-      if (status === 'SUBSCRIBED') {
-        console.log('[useNotifications] ✅ Realtime subscription active');
-      } else if (status === 'CHANNEL_ERROR') {
-        console.error('[useNotifications] Realtime subscription error');
-      }
-    });
-
-    return () => {
-      console.log('[useNotifications] Cleaning up realtime subscription');
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
-    };
-  }, [user, supabase, refetch]);
 
   // Mark as read mutation
   const markAsReadMutation = useMutation({
@@ -199,7 +127,6 @@ export function useNotificationPreferences() {
         .single();
 
       if (error) {
-        // Table doesn't exist yet - return defaults
         if (error.code === '42P01') {
           return null;
         }
@@ -209,7 +136,6 @@ export function useNotificationPreferences() {
     },
     enabled: !!user,
     retry: (failureCount, error: any) => {
-      // Don't retry if table doesn't exist
       if (error.code === '42P01') return false;
       return failureCount < 3;
     },
