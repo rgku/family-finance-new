@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/components/AuthProvider';
@@ -19,6 +19,7 @@ export function useNotifications() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [unreadCount, setUnreadCount] = useState(0);
+  const channelRef = useRef<any>(null);
 
   // Fetch notifications with polling (every 5 seconds)
   const { data: notifications = [], isLoading, refetch } = useQuery({
@@ -59,49 +60,67 @@ export function useNotifications() {
 
     console.log('[useNotifications] Setting up realtime subscription for user:', user.id);
 
-    const channel = supabase
-      .channel(`notifications:${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT', // Only listen for INSERT events
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
-        },
-        async (payload) => {
-          console.log('[useNotifications] Realtime INSERT detected:', payload);
+    // Cleanup existing channel if it exists
+    if (channelRef.current) {
+      console.log('[useNotifications] Removing existing channel...');
+      supabase.removeChannel(channelRef.current);
+      channelRef.current = null;
+    }
+
+    const channelName = `notifications:${user.id}`;
+    const channel = supabase.channel(channelName);
+    
+    // Store channel reference
+    channelRef.current = channel;
+
+    // Add callback BEFORE subscribing
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${user.id}`,
+      },
+      async (payload) => {
+        console.log('[useNotifications] Realtime INSERT detected:', payload);
+        
+        // Force immediate refetch
+        await refetch();
+        
+        // Show browser notification if new notification arrived
+        const newNotif = payload.new as Notification;
+        if (newNotif && !newNotif.read) {
+          console.log('[useNotifications] New unread notification:', newNotif.title);
           
-          // Force immediate refetch
-          await refetch();
-          
-          // Also show browser notification if new notification arrived
-          const newNotif = payload.new as Notification;
-          if (newNotif && !newNotif.read) {
-            console.log('[useNotifications] New unread notification:', newNotif.title);
-            
-            // Show browser notification (if permission granted)
-            if ('Notification' in window && Notification.permission === 'granted') {
-              new Notification(newNotif.title, {
-                body: newNotif.body,
-                icon: '/favicon.ico',
-              });
-            }
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(newNotif.title, {
+              body: newNotif.body,
+              icon: '/favicon.ico',
+            });
           }
         }
-      )
-      .subscribe((status) => {
-        console.log('[useNotifications] Realtime subscription status:', status);
-        if (status === 'SUBSCRIBED') {
-          console.log('[useNotifications] ✅ Realtime subscription active');
-        }
-      });
+      }
+    );
+
+    // Subscribe after callback is added
+    channel.subscribe((status) => {
+      console.log('[useNotifications] Realtime subscription status:', status);
+      if (status === 'SUBSCRIBED') {
+        console.log('[useNotifications] ✅ Realtime subscription active');
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('[useNotifications] Realtime subscription error');
+      }
+    });
 
     return () => {
       console.log('[useNotifications] Cleaning up realtime subscription');
-      supabase.removeChannel(channel);
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
-  }, [user, supabase, queryClient, refetch]);
+  }, [user, supabase, refetch]);
 
   // Mark as read mutation
   const markAsReadMutation = useMutation({
