@@ -11,9 +11,6 @@ export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
 
-  // Debug logging
-  console.log('[NotificationBell] notifications:', notifications.length, 'unread:', unreadCount);
-
   const handleNotificationClick = async (notification: any) => {
     // 1. Mark as read
     if (!notification.read) {
@@ -163,34 +160,6 @@ export function NotificationBell() {
                 </Link>
               </div>
             )}
-
-            {/* Test Button (DEBUG) */}
-            <div className="p-4 border-t border-surface-container-highest">
-              <button
-                onClick={async () => {
-                  const res = await fetch('/api/test-notification', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      title: 'Teste ' + new Date().toLocaleTimeString(),
-                      body: 'Notificação de teste criada manualmente',
-                      url: '/dashboard',
-                      type: 'test',
-                    }),
-                  });
-                  const data = await res.json();
-                  console.log('[Test Notification] Result:', data);
-                  if (data.success) {
-                    alert('✅ Notificação criada!');
-                  } else {
-                    alert('❌ Erro: ' + data.error);
-                  }
-                }}
-                className="w-full py-2 bg-primary/10 text-primary rounded-lg text-xs font-medium hover:bg-primary/20 transition-colors"
-              >
-                🧪 Criar Notificação de Teste
-              </button>
-            </div>
           </div>
         </>
       )}
