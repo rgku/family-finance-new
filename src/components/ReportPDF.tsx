@@ -131,6 +131,19 @@ interface ReportData {
 const MAX_TRANSACTIONS_IN_PDF = 20;
 
 export function PDFReport({ data }: { data: ReportData }) {
+  if (!data || !data.month || !data.year) {
+    return (
+      <Document>
+        <Page size="A4" style={styles.page}>
+          <Text>Sem dados disponíveis para gerar o relatório</Text>
+        </Page>
+      </Document>
+    );
+  }
+  
+  const safeTransactions = data.transactions || [];
+  const safeBudget = data.budget || [];
+  
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("pt-PT", {
       style: "currency",
@@ -179,10 +192,10 @@ export function PDFReport({ data }: { data: ReportData }) {
           </View>
         </View>
 
-        {data.budget && data.budget.length > 0 && (
+        {safeBudget.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Orçamentos</Text>
-            {data.budget.map((b, index) => {
+            {safeBudget.map((b, index) => {
               const percentUsed = b.limit > 0 ? (b.spent / b.limit) * 100 : 0;
               return (
                 <View key={index} style={styles.row}>
@@ -207,7 +220,7 @@ export function PDFReport({ data }: { data: ReportData }) {
               <Text style={{ ...styles.tableHeaderText, ...styles.col3 }}>Data</Text>
               <Text style={{ ...styles.tableHeaderText, ...styles.col4 }}>Valor</Text>
             </View>
-            {data.transactions.slice(0, MAX_TRANSACTIONS_IN_PDF).map((t, index) => (
+            {safeTransactions.slice(0, MAX_TRANSACTIONS_IN_PDF).map((t, index) => (
               <View key={index} style={styles.tableRow}>
                 <Text style={{ ...styles.tableCell, ...styles.col1 }}>{t.description}</Text>
                 <Text style={{ ...styles.tableCell, ...styles.col2 }}>{t.category}</Text>
@@ -224,9 +237,9 @@ export function PDFReport({ data }: { data: ReportData }) {
                 </Text>
               </View>
             ))}
-            {data.transactions.length > 20 && (
+            {safeTransactions.length > 20 && (
               <Text style={{ ...styles.tableCell, padding: 8, textAlign: "center" }}>
-                ... e mais {data.transactions.length - MAX_TRANSACTIONS_IN_PDF} transações
+                ... e mais {safeTransactions.length - MAX_TRANSACTIONS_IN_PDF} transações
               </Text>
             )}
           </View>

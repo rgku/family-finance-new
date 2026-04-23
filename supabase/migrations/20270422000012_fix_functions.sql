@@ -29,13 +29,15 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 2. Create decrypt_amount function (returns DECIMAL, takes TEXT)
+-- Accepts both encrypted base64 OR plain text
 CREATE OR REPLACE FUNCTION decrypt_amount(value TEXT)
 RETURNS DECIMAL AS $$
 DECLARE
   clean_value TEXT;
   key_value TEXT;
+  result DECIMAL;
 BEGIN
-  IF value IS NULL THEN RETURN NULL; END IF;
+  IF value IS NULL OR value = '' THEN RETURN NULL; END IF;
   
   key_value := COALESCE(
     NULLIF(current_setting('app.encryption_key', true), ''),
@@ -43,12 +45,29 @@ BEGIN
   );
   
   clean_value := replace(replace(value, E'\n', ''), E'\r', '');
-  RETURN pgp_sym_decrypt(
-    decode(clean_value, 'base64'),
-    key_value
-  )::DECIMAL;
-EXCEPTION WHEN OTHERS THEN
-  RETURN 0;
+  
+  -- Check if it's a valid base64 encoded PGP message (starts with certain pattern)
+  IF clean_value ~* '^[a-zA-Z0-9+/=]+$' AND length(clean_value) > 20 THEN
+    -- Try to decrypt as encrypted
+    BEGIN
+      result := pgp_sym_decrypt(
+        decode(clean_value, 'base64'),
+        key_value
+      )::DECIMAL;
+      RETURN result;
+    EXCEPTION WHEN OTHERS THEN
+      -- Fall through to try as plain text
+      NULL;
+    END;
+  END IF;
+  
+  -- If not encrypted or decryption failed, try as plain number
+  BEGIN
+    result := clean_value::DECIMAL;
+    RETURN result;
+  EXCEPTION WHEN OTHERS THEN
+    RETURN 0;
+  END;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -79,13 +98,15 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 4. Create decrypt_text function
+-- Accepts both encrypted base64 OR plain text
 CREATE OR REPLACE FUNCTION decrypt_text(value TEXT)
 RETURNS TEXT AS $$
 DECLARE
   clean_value TEXT;
   key_value TEXT;
+  result TEXT;
 BEGIN
-  IF value IS NULL THEN RETURN NULL; END IF;
+  IF value IS NULL OR value = '' THEN RETURN NULL; END IF;
   
   key_value := COALESCE(
     NULLIF(current_setting('app.encryption_key', true), ''),
@@ -93,10 +114,22 @@ BEGIN
   );
   
   clean_value := replace(replace(value, E'\n', ''), E'\r', '');
-  RETURN pgp_sym_decrypt(
-    decode(clean_value, 'base64'),
-    key_value
-  );
+  
+  -- Check if it's a valid base64 encoded PGP message
+  IF clean_value ~* '^[a-zA-Z0-9+/=]+$' AND length(clean_value) > 20 THEN
+    BEGIN
+      result := pgp_sym_decrypt(
+        decode(clean_value, 'base64'),
+        key_value
+      );
+      RETURN result;
+    EXCEPTION WHEN OTHERS THEN
+      NULL;
+    END;
+  END IF;
+  
+  -- Return as plain text
+  RETURN clean_value;
 EXCEPTION WHEN OTHERS THEN
   RETURN '';
 END;

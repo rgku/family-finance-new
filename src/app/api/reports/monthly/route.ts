@@ -46,6 +46,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: transactionsRes.error.message }, { status: 400 });
     }
 
+    if (budgetsRes.error) {
+      console.error("Budgets query error:", budgetsRes.error.message);
+    }
+
     const transactions = transactionsRes.data || [];
     const budgets = budgetsRes.data || [];
 
@@ -92,8 +96,8 @@ export async function GET(request: NextRequest) {
     };
 
     return NextResponse.json(reportData);
-  } catch (error: any) {
-    console.error("Report API error:", error?.message || "Unknown error");
+  } catch (error) {
+    console.error("Report API error:", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }

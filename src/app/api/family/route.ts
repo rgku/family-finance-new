@@ -156,8 +156,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ error: "Ação inválida" }, { status: 400 });
-  } catch (error: any) {
-    console.error("Family API error:", error?.message || "Unknown error");
+  } catch (error) {
+    console.error("Family API error:", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }
@@ -189,8 +189,8 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ profile, family: profile?.families });
-  } catch (error: any) {
-    console.error("Family GET error:", error?.message || "Unknown error");
+  } catch (error) {
+    console.error("Family GET error:", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json(
       { error: "Erro interno do servidor" },
       { status: 500 }

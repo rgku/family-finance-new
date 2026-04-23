@@ -22,6 +22,7 @@ export const ProgressRing = memo(function ProgressRing({
   icon,
   label,
 }: ProgressRingProps) {
+  const safeProgress = Number.isNaN(progress) || progress == null ? 0 : Math.min(Math.max(progress, 0), 100);
   const [animatedProgress, setAnimatedProgress] = useState(0);
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -29,9 +30,9 @@ export const ProgressRing = memo(function ProgressRing({
   const isSmall = size <= 64;
 
   useEffect(() => {
-    const timer = setTimeout(() => setAnimatedProgress(progress), 100);
+    const timer = setTimeout(() => setAnimatedProgress(safeProgress), 100);
     return () => clearTimeout(timer);
-  }, [progress]);
+  }, [safeProgress]);
 
   return (
     <div className={`flex ${isSmall ? "flex-row items-center gap-3" : "flex-col items-center gap-2"}`}>
@@ -54,7 +55,7 @@ export const ProgressRing = memo(function ProgressRing({
             stroke={color}
             strokeWidth={strokeWidth}
             strokeDasharray={circumference}
-            strokeDashoffset={offset}
+            strokeDashoffset={Number.isNaN(offset) ? 0 : offset}
             strokeLinecap="round"
             className="transition-all duration-1000 ease-out"
             style={{ transformOrigin: "center" }}

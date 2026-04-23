@@ -7,6 +7,7 @@ interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: ReactNode;
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
+  includeResetButton?: boolean;
 }
 
 interface ErrorBoundaryState {
@@ -23,12 +24,22 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("ErrorBoundary caught an error:", error, errorInfo);
-    this.props.onError?.(error, errorInfo);
+    
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
+    }
+    
+    if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+      console.debug('Error boundary details:', errorInfo.componentStack);
+    }
   }
 
-  handleReset = () => {
-    this.setState({ hasError: false, error: undefined });
+  handleReload = () => {
     window.location.reload();
+  };
+
+  handleGoHome = () => {
+    window.location.href = '/';
   };
 
   render() {
@@ -49,7 +60,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 Algo correu mal
               </h2>
               <p className="text-on-surface-variant text-sm">
-                Ocorreu um erro inesperado. Tente recarregar a página.
+                Ocorreu um erro inesperado. Por favor, tenta recarregar a página.
               </p>
             </div>
 
@@ -62,18 +73,20 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             )}
 
             <button
-              onClick={this.handleReset}
+              onClick={this.handleReload}
               className="w-full py-3 bg-primary text-on-primary font-bold rounded-full hover:brightness-110 transition-all"
             >
               Recarregar Página
             </button>
 
-            <button
-              onClick={() => window.history.back()}
-              className="w-full py-3 bg-surface-container-high text-on-surface font-semibold rounded-full hover:bg-surface-container-highest transition-all"
-            >
-              Voltar
-            </button>
+            {this.props.includeResetButton !== false && (
+              <button
+                onClick={this.handleGoHome}
+                className="w-full py-3 bg-surface-container-high text-on-surface font-semibold rounded-full hover:bg-surface-container-highest transition-all"
+              >
+                Voltar ao Início
+              </button>
+            )}
           </div>
         </div>
       );

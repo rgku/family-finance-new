@@ -193,18 +193,26 @@ export async function GET(request: NextRequest) {
       .eq("user_id", user.id)
       .eq("target_month", monthParam);
 
-    for (const f of forecastResult.forecasts) {
-      await admin.from("expense_predictions").insert({
-        user_id: user.id,
-        target_month: monthParam,
-        category: f.category,
-        predicted_amount: f.predictedAmount,
-        confidence_low: f.confidenceLow,
-        confidence_high: f.confidenceHigh,
-        reasoning: f.reasoning,
-        trend: f.trend,
-        change_percent: f.changePercent,
-      });
+    try {
+      for (const f of forecastResult.forecasts) {
+        const { error: insertError } = await admin.from("expense_predictions").insert({
+          user_id: user.id,
+          target_month: monthParam,
+          category: f.category,
+          predicted_amount: f.predictedAmount,
+          confidence_low: f.confidenceLow,
+          confidence_high: f.confidenceHigh,
+          reasoning: f.reasoning,
+          trend: f.trend,
+          change_percent: f.changePercent,
+        });
+        
+        if (insertError) {
+          console.error("Failed to insert prediction for category", f.category, insertError);
+        }
+      }
+    } catch (insertErr) {
+      console.error("Error inserting predictions:", insertErr);
     }
 
     return NextResponse.json({ forecasts: forecastResult.forecasts, summary: forecastResult.summary, cached: false });

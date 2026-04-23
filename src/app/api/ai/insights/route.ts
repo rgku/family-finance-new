@@ -69,6 +69,22 @@ export async function GET(request: NextRequest) {
       supabase.from("goals_decrypted").select("name, target_amount, current_amount, deadline, goal_type").eq("user_id", user.id),
     ]);
 
+    if (profileResult.error) {
+      console.error("Profile query error:", profileResult.error.message);
+    }
+    
+    if (transResult.error) {
+      console.error("Transactions query error:", transResult.error.message);
+    }
+    
+    if (budgetsResult.error) {
+      console.error("Budgets query error:", budgetsResult.error.message);
+    }
+    
+    if (goalsResult.error) {
+      console.error("Goals query error:", goalsResult.error.message);
+    }
+
     if (!profileResult.data) {
       return NextResponse.json({ error: "Perfil não encontrado" }, { status: 404 });
     }
@@ -100,7 +116,7 @@ export async function GET(request: NextRequest) {
       .reduce((s, t) => s + Number(t.amount), 0);
 
     const savingsAllocated = (goalsResult.data || [])
-      .filter((g: any) => g.goal_type === "savings")
+      .filter((g) => g.goal_type === "savings")
       .reduce((s, g) => s + Number(g.current_amount), 0);
 
     const pouparanca = savingsAllocated + investmentExpenses;
@@ -118,7 +134,7 @@ export async function GET(request: NextRequest) {
       spent: monthTransactions.filter(t => t.category === b.category && t.type === "expense").reduce((s, t) => s + Number(t.amount), 0),
     })) || [];
 
-    const goals = (goalsResult.data || []).map((g: any) => ({
+    const goals = (goalsResult.data || []).map((g) => ({
       name: g.name,
       target: Number(g.target_amount),
       current: Number(g.current_amount),

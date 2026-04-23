@@ -1,4 +1,5 @@
 import { AIInsightsPayload, AIForecastPayload, AIBudgetOptimizePayload } from "./types";
+import { calculatePercentage } from "../currency";
 
 const SYSTEM_PROMPT = `Eres un asistente de finanzas personales para famílias portuguesas. Analisas datos financieros y generas insights útiles, previsões e sugestões em português de Portugal.`;
 
@@ -13,10 +14,10 @@ export function buildInsightsPrompt(data: AIInsightsPayload): string {
     .map(([cat, amt]) => `${cat}: €${amt.toFixed(2)}`)
     .join("\n");
 
-  const budgetEntries = budgets.map(b => `${b.category}: €${b.spent.toFixed(2)} de €${b.limit.toFixed(2)} (${b.limit > 0 ? Math.round((b.spent / b.limit) * 100) : 0}%)`).join("\n");
+  const budgetEntries = budgets.map(b => `${b.category}: €${b.spent.toFixed(2)} de €${b.limit.toFixed(2)} (${calculatePercentage(b.spent, b.limit)}%)`).join("\n");
 
   const goalsEntries = goals.length > 0
-    ? goals.map(g => `${g.name}: €${g.current.toFixed(2)} / €${g.target.toFixed(2)} (${Math.round((g.current / g.target) * 100)}%)`).join("\n")
+    ? goals.map(g => `${g.name}: €${g.current.toFixed(2)} / €${g.target.toFixed(2)} (${calculatePercentage(g.current, g.target)}%)`).join("\n")
     : "Sem metas definidas";
 
   const prevEntries = previousMonthSpending
@@ -140,7 +141,7 @@ Regras:
 
 export function buildOptimizePrompt(data: AIBudgetOptimizePayload): string {
   const budgetEntries = data.currentBudgets
-    .map(b => `${b.category}: €${b.spent.toFixed(2)} gastos de €${b.limit.toFixed(2)} budget (${b.limit > 0 ? Math.round((b.spent / b.limit) * 100) : 0}%)`)
+    .map(b => `${b.category}: €${b.spent.toFixed(2)} gastos de €${b.limit.toFixed(2)} budget (${calculatePercentage(b.spent, b.limit)}%)`)
     .join("\n");
 
   const goalsEntries = data.goals.map(g => `${g.name}: €${g.current.toFixed(2)} / €${g.target.toFixed(2)}`).join("\n");

@@ -38,6 +38,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
   const router = useRouter();
 
   const fetchProfile = async (userId: string) => {
@@ -60,7 +61,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
       }
     } catch (err) {
-      console.error('Error fetching profile:', err);
     }
   };
 
@@ -107,10 +107,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
       } finally {
         if (mounted) {
           setLoading(false);
+          setInitialized(true);
         }
       }
     };
@@ -118,8 +118,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializeAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      async (event, session) => {
         if (!mounted) return;
+        
+        if (!initialized && event === 'INITIAL_SESSION') {
+          setInitialized(true);
+          return;
+        }
         
         if (session?.user?.email_confirmed_at) {
           setUser(session.user);
@@ -145,7 +150,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       router.push('/');
     } catch (error) {
-      console.error('Sign out error:', error);
       router.push('/');
     }
   };

@@ -1,15 +1,64 @@
 "use client";
 
-import { useState, useEffect, Suspense, lazy } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import Link from "next/link";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
 import { Icon } from "@/components/Icon";
+import { pdf } from "@react-pdf/renderer";
+import { PDFReport } from "@/components/ReportPDF";
 
-const PDFDownloadLink = lazy(() => import("@react-pdf/renderer").then(mod => ({ default: mod.PDFDownloadLink })));
-const PDFReport = lazy(() => import("@/components/ReportPDF").then(mod => ({ default: mod.PDFReport })));
+interface PDFDocumentWithLinkProps {
+  data: ReportData;
+  selectedMonth: string;
+}
+
+async function generateAndDownloadPDF(data: ReportData, selectedMonth: string) {
+  try {
+    const blob = await pdf(<PDFReport data={data} />).toBlob();
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `famflow-relatorio-${selectedMonth}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Erro ao gerar PDF:", error);
+    alert("Erro ao gerar PDF. Tenta novamente.");
+  }
+}
+
+function PDFDocumentWithLink({ data, selectedMonth }: PDFDocumentWithLinkProps) {
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  if (!data) {
+    return (
+      <button disabled className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-container-high/50 text-on-surface/50 rounded-full font-medium">
+        <Icon name="download" size={20} />
+        Sem dados disponíveis
+      </button>
+    );
+  }
+
+  const handleClick = async () => {
+    setIsGenerating(true);
+    await generateAndDownloadPDF(data, selectedMonth);
+    setIsGenerating(false);
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      disabled={isGenerating}
+      className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full font-medium hover:brightness-110 disabled:opacity-50"
+    >
+      <Icon name="download" size={20} />
+      {isGenerating ? "A gerar PDF..." : "Baixar PDF"}
+    </button>
+  );
+}
 
 interface ReportData {
   month: string;
@@ -197,20 +246,14 @@ export default function ReportsPage() {
             </p>
             
             <div className="flex flex-wrap gap-4">
-              <Suspense fallback={<button disabled className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary/50 text-on-primary rounded-full font-medium">A carregar...</button>}>
-                <PDFDownloadLink
-                  document={<PDFReport data={reportData} />}
-                  fileName={`famflow-relatorio-${selectedMonth}.pdf`}
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-on-primary rounded-full font-medium hover:brightness-110"
-                >
-                  {({ loading }) => (
-                    <>
-                      <Icon name="download" size={20} />
-                      {loading ? "A gerar PDF..." : "Baixar PDF"}
-                    </>
-                  )}
-                </PDFDownloadLink>
-              </Suspense>
+              {reportData ? (
+                <PDFDocumentWithLink data={reportData} selectedMonth={selectedMonth} />
+              ) : (
+                <button disabled className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-container-high/50 text-on-surface/50 rounded-full font-medium">
+                  <Icon name="download" size={20} />
+                  Sem dados disponíveis
+                </button>
+              )}
               
               <button
                 onClick={handleShare}
@@ -257,5 +300,11 @@ export default function ReportsPage() {
     );
   }
 
-  return <div className="p-8 space-y-8">{pageContent}</div>;
+  return (
+    <div className="p-8">
+      <div className="max-w-4xl mx-auto">
+        {pageContent}
+      </div>
+    </div>
+  );
 }

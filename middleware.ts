@@ -10,53 +10,76 @@ function getRequiredEnv(key: string): string {
 }
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next()
+  const pathname = request.nextUrl.pathname;
+  
+  // Security headers
+  const response = NextResponse.next();
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+  
+  // Skip auth check for static files and API health checks
+  if (
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/api/health') ||
+    pathname.includes('.')
+  ) {
+    return response;
+  }
 
-  const supabase = createServerClient(
-    getRequiredEnv('NEXT_PUBLIC_SUPABASE_URL'),
-    getRequiredEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
+  try {
+    const supabase = createServerClient(
+      getRequiredEnv('NEXT_PUBLIC_SUPABASE_URL'),
+      getRequiredEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options);
+            });
+          },
         },
-        setAll(cookiesToSet) {
-          try {
-            for (const { name, value } of cookiesToSet) {
-              response.cookies.set(name, value)
-            }
-          } catch {
-            // Ignore errors
-          }
-        },
-      },
+      }
+    );
+
+    // Check authentication status
+    const { data: { user }, error } = await supabase.auth.getUser();
+
+    if (error) {
+      console.error('Auth error in middleware:', error.message);
     }
-  )
 
-  // Check if user is authenticated
-  const { data: { user } } = await supabase.auth.getUser()
+    // Define public routes that don't require authentication
+    const isPublicRoute = 
+      pathname === '/' ||
+      pathname.startsWith('/auth') ||
+      pathname.startsWith('/api/auth') ||
+      pathname === '/forgot-password' ||
+      pathname === '/dashboard/settings/reset-password';
 
-  // Define public routes that don't require authentication
-  const isPublicRoute = 
-    request.nextUrl.pathname === '/' || 
-    request.nextUrl.pathname.startsWith('/auth') ||
-    request.nextUrl.pathname.startsWith('/api/auth') ||
-    request.nextUrl.pathname === '/forgot-password' ||
-    request.nextUrl.pathname === '/dashboard/settings/reset-password'
+    // Redirect unauthenticated users trying to access protected routes
+    if (!user && !isPublicRoute && pathname.startsWith('/dashboard')) {
+      console.log('🔒 Unauthorized access to:', pathname);
+      const loginUrl = new URL('/', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
 
-  // If user is not authenticated and trying to access protected route, redirect to login
-  if (!user && !isPublicRoute && request.nextUrl.pathname.startsWith('/dashboard')) {
-    const loginUrl = new URL('/', request.url)
-    return NextResponse.redirect(loginUrl)
+    // For authenticated users accessing auth pages, redirect to dashboard
+    if (user && (pathname === '/' || pathname === '/forgot-password')) {
+      const dashboardUrl = new URL('/dashboard', request.url);
+      return NextResponse.redirect(dashboardUrl);
+    }
+
+    return response;
+  } catch (error) {
+    console.error('Middleware error:', error);
+    // On error, allow request to proceed (fail open for availability)
+    return response;
   }
-
-  // If user is authenticated and trying to access login page, redirect to dashboard
-  if (user && request.nextUrl.pathname === '/') {
-    const dashboardUrl = new URL('/dashboard', request.url)
-    return NextResponse.redirect(dashboardUrl)
-  }
-
-  return response
 }
 
 export const config = {

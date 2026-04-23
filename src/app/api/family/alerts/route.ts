@@ -39,8 +39,8 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ alerts: alerts || [] });
-  } catch (error: any) {
-    console.error("Budget alerts GET error:", error?.message || "Unknown error");
+  } catch (error) {
+    console.error("Budget alerts GET error:", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }
@@ -81,8 +81,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ alert, message: "Alerta criado com sucesso" });
-  } catch (error: any) {
-    console.error("Budget alerts POST error:", error?.message || "Unknown error");
+  } catch (error) {
+    console.error("Budget alerts POST error:", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }
@@ -115,8 +115,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json({ message: "Alerta atualizado" });
-  } catch (error: any) {
-    console.error("Budget alerts PATCH error:", error?.message || "Unknown error");
+  } catch (error) {
+    console.error("Budget alerts PATCH error:", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }
@@ -147,8 +147,8 @@ export async function DELETE(request: NextRequest) {
     }
 
     return NextResponse.json({ message: "Alerta eliminado" });
-  } catch (error: any) {
-    console.error("Budget alerts DELETE error:", error?.message || "Unknown error");
+  } catch (error) {
+    console.error("Budget alerts DELETE error:", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }
