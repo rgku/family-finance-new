@@ -54,6 +54,22 @@ export async function POST(request: NextRequest) {
       supabase.from("transactions_decrypted").select("amount, type, category, date").eq("user_id", user.id).order("date", { ascending: false }).limit(500),
     ]);
 
+    if (profileResult.error) {
+      console.error("Profile query error:", profileResult.error.message);
+    }
+    
+    if (budgetsResult.error) {
+      console.error("Budgets query error:", budgetsResult.error.message);
+    }
+    
+    if (goalsResult.error) {
+      console.error("Goals query error:", goalsResult.error.message);
+    }
+    
+    if (transResult.error) {
+      console.error("Transactions query error:", transResult.error.message);
+    }
+
     if (!profileResult.data) {
       return NextResponse.json({ error: "Perfil não encontrado" }, { status: 404 });
     }

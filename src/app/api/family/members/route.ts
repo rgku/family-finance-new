@@ -175,8 +175,8 @@ export async function POST(request: NextRequest) {
       inviteCode: inviteToken,
       message: `Convite criado. Código: ${inviteToken}`
     });
-  } catch (error: any) {
-    console.error("Family members POST error:", error?.message || "Unknown error");
+  } catch (error) {
+    console.error("Family members POST error:", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }
@@ -231,7 +231,7 @@ export async function PATCH(request: NextRequest) {
       }
 
       return NextResponse.json({ message: "Membro atualizado" });
-    } 
+    }
     
     if (action === "remove") {
       // Only owner can remove
@@ -253,8 +253,8 @@ export async function PATCH(request: NextRequest) {
     }
 
     return NextResponse.json({ error: "Ação inválida" }, { status: 400 });
-  } catch (error: any) {
-    console.error("Family members PATCH error:", error?.message || "Unknown error");
+  } catch (error) {
+    console.error("Family members PATCH error:", error instanceof Error ? error.message : "Unknown error");
     return NextResponse.json({ error: "Erro interno" }, { status: 500 });
   }
 }

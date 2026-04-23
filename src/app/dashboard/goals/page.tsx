@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { useData } from "@/hooks/DataProvider";
+import { useData, type Goal } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
-import { formatCurrencyWithSymbol } from "@/lib/currency";
+import { formatCurrencyWithSymbol, calculatePercentage } from "@/lib/currency";
 import { ProgressRing } from "@/components/charts/ProgressRing";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
 import { Icon } from "@/components/Icon";
+import { useToast } from "@/components/Toast";
 
 const defaultIcons = [
   "directions_car", "flight", "home", "school", "shopping_bag", 
@@ -18,8 +19,10 @@ export default function GoalsPage() {
   const { goals, addGoal, updateGoal, deleteGoal, addGoalContribution } = useData();
   const { signOut } = useAuth();
   const isMobile = useDeviceType();
+  const { showToast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   
   const [name, setName] = useState("");
   const [targetAmount, setTargetAmount] = useState("");
@@ -31,55 +34,71 @@ export default function GoalsPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const newCurrentAmount = parseFloat(currentAmount) || 0;
-    const newTargetAmount = parseFloat(targetAmount) || 0;
+    if (!name || name.trim().length < 2) {
+      showToast("O nome deve ter pelo menos 2 caracteres", "error");
+      return;
+    }
     
-    if (editingId && goalType === 'savings') {
-      // Find existing goal to calculate difference
-      const existingGoal = goals.find(g => g.id === editingId);
-      if (existingGoal) {
-        const previousAmount = existingGoal.current_amount || 0;
-        const difference = newCurrentAmount - previousAmount;
-        
-        if (difference > 0) {
-          await addGoalContribution(editingId, difference);
+    if (!targetAmount || parseFloat(targetAmount) <= 0) {
+      showToast("O valor meta deve ser maior que 0", "error");
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      const newCurrentAmount = parseFloat(currentAmount) || 0;
+      const newTargetAmount = parseFloat(targetAmount) || 0;
+      
+      if (editingId && goalType === 'savings') {
+        const existingGoal = goals.find(g => g.id === editingId);
+        if (existingGoal) {
+          const previousAmount = existingGoal.current_amount || 0;
+          const difference = newCurrentAmount - previousAmount;
+          
+          if (difference > 0) {
+            await addGoalContribution(editingId, difference);
+          }
+          
+          await updateGoal(editingId, {
+            name,
+            target_amount: newTargetAmount,
+            deadline: deadline || undefined,
+            icon,
+            goal_type: goalType,
+          });
         }
-        
-        // Update other fields
+      } else if (editingId) {
         await updateGoal(editingId, {
           name,
           target_amount: newTargetAmount,
+          current_amount: newCurrentAmount,
           deadline: deadline || undefined,
           icon,
           goal_type: goalType,
         });
+      } else {
+        await addGoal({
+          name,
+          target_amount: newTargetAmount,
+          current_amount: newCurrentAmount,
+          deadline: deadline || undefined,
+          icon,
+          goal_type: goalType,
+        });
+        showToast("Meta criada com sucesso!", "success");
       }
-    } else if (editingId) {
-      // For expense goals, update directly
-      await updateGoal(editingId, {
-        name,
-        target_amount: newTargetAmount,
-        current_amount: newCurrentAmount,
-        deadline: deadline || undefined,
-        icon,
-        goal_type: goalType,
-      });
-    } else {
-      // New goal
-      await addGoal({
-        name,
-        target_amount: newTargetAmount,
-        current_amount: newCurrentAmount,
-        deadline: deadline || undefined,
-        icon,
-        goal_type: goalType,
-      });
+      
+      resetForm();
+    } catch (error) {
+      console.error("Error saving goal:", error);
+      showToast("Erro ao guardar a meta. Tenta novamente.", "error");
+    } finally {
+      setLoading(false);
     }
-    
-    resetForm();
   };
 
-  const handleEdit = (goal: any) => {
+  const handleEdit = (goal: Goal) => {
     setName(goal.name);
     setTargetAmount(goal.target_amount.toString());
     setCurrentAmount(goal.current_amount.toString());
@@ -230,9 +249,10 @@ export default function GoalsPage() {
           <div className="flex gap-4">
             <button
               type="submit"
-              className="flex-1 py-4 bg-primary text-on-primary font-bold rounded-full hover:brightness-110 transition-all"
+              disabled={loading}
+              className="flex-1 py-4 bg-primary text-on-primary font-bold rounded-full hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {editingId ? "Guardar Alterações" : "Criar Meta"}
+              {loading ? "A guardar..." : editingId ? "Guardar Alterações" : "Criar Meta"}
             </button>
             {editingId && (
               <button
@@ -249,7 +269,7 @@ export default function GoalsPage() {
 
 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {goals.map((goal) => {
-          const progress = Math.min((goal.current_amount / goal.target_amount) * 100, 100);
+          const progress = calculatePercentage(goal.current_amount, goal.target_amount);
           const remaining = goal.target_amount - goal.current_amount;
           const isCompleted = progress >= 100;
           

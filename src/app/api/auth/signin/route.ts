@@ -3,54 +3,29 @@ import { createClient } from "@/lib/supabase/server";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-const rateLimitMap = new Map<string, { count: number; timestamp: number }>();
-const RATE_LIMIT_WINDOW = 15 * 60 * 1000;
-const RATE_LIMIT_MAX = 5;
-
-function cleanupRateLimitMap() {
-  const now = Date.now();
-  for (const [ip, record] of rateLimitMap) {
-    if (now - record.timestamp > RATE_LIMIT_WINDOW) {
-      rateLimitMap.delete(ip);
-    }
-  }
-}
-
-if (typeof setInterval !== 'undefined') {
-  setInterval(cleanupRateLimitMap, 5 * 60 * 1000);
-}
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const record = rateLimitMap.get(ip);
-  
-  if (!record || now - record.timestamp > RATE_LIMIT_WINDOW) {
-    rateLimitMap.set(ip, { count: 1, timestamp: now });
-    return true;
-  }
-  
-  if (record.count >= RATE_LIMIT_MAX) {
-    return false;
-  }
-  
-  record.count++;
-  return true;
-}
-
 export async function POST(request: NextRequest) {
   try {
     const clientIP = request.headers.get("x-forwarded-for")?.split(",")[0] 
       || request.headers.get("x-real-ip") 
       || "unknown";
     
-    if (!checkRateLimit(clientIP)) {
+    const supabase = await createClient();
+    
+    // Check rate limit using database function
+    const { data: rateLimitData, error: rateLimitError } = await supabase.rpc(
+      'check_rate_limit',
+      { p_ip: clientIP }
+    );
+
+    if (rateLimitError) {
+      console.error('Rate limit check error:', rateLimitError);
+    } else if (rateLimitData && rateLimitData.length > 0 && !rateLimitData[0].allowed) {
       return NextResponse.json(
         { error: "Too many attempts. Please try again later." },
         { status: 429 }
       );
     }
     
-    const supabase = await createClient();
     const body = await request.json();
     const { email, password } = body;
 

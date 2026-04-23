@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, memo } from "react";
 import { Icon } from "./Icon";
+import { NotificationBell } from "./NotificationBell";
 
 const navItemsMobile = [
   { href: "/dashboard", icon: "home", label: "Home" },
@@ -20,6 +21,7 @@ const navItemsSecondary = [
 const navItemsDesktop = [
   { href: "/dashboard", icon: "home", label: "Home" },
   { href: "/dashboard/transactions", icon: "receipt_long", label: "Transações" },
+  { href: "/dashboard/recurring", icon: "repeat", label: "Recorrentes" },
   { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
   { href: "/dashboard/reports", icon: "assessment", label: "Relatórios" },
   { href: "/dashboard/profile", icon: "person", label: "Perfil" },
@@ -40,8 +42,13 @@ export function DesktopSidebar({ onSignOut }: DesktopSidebarProps) {
   return (
     <aside className="fixed left-0 top-0 bottom-0 z-50 flex flex-col h-screen w-64 border-r border-slate-800/50 bg-slate-950/80 backdrop-blur-xl" role="navigation" aria-label="Navegação principal">
       <div className="p-8">
-        <h1 className="text-xl font-bold tracking-tighter text-primary">FamFlow</h1>
-        <p className="text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">Family Wealth</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold tracking-tighter text-primary">FamFlow</h1>
+            <p className="text-[10px] uppercase tracking-widest text-on-surface-variant mt-1">Family Wealth</p>
+          </div>
+          <NotificationBell />
+        </div>
       </div>
       <nav className="flex-1 px-4 space-y-1">
         {navItemsDesktop.map((item) => (
@@ -162,15 +169,7 @@ const MobileHeaderComponent = function MobileHeader({ hideNotifications = false,
       </div>
       
       <div className="flex items-center gap-2">
-        {!hideNotifications && (
-          <Link 
-            href="/dashboard/alerts" 
-            className="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center"
-            aria-label="Notificações"
-          >
-            <Icon name="notifications" size={20} className="text-primary" />
-          </Link>
-        )}
+        {!hideNotifications && <NotificationBell />}
         
         <button
           onClick={() => setMenuOpen(!menuOpen)}
@@ -220,12 +219,9 @@ const MobileHeaderComponent = function MobileHeader({ hideNotifications = false,
             onClick={() => {
               setMenuOpen(false);
               if (onSignOut) {
-                console.log("Signing out...");
                 onSignOut();
-                console.log("SignOut called, redirecting...");
                 window.location.href = "/";
               } else {
-                console.error("onSignOut is undefined");
                 alert("Função de logout não disponível");
               }
             }}

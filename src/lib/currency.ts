@@ -18,3 +18,18 @@ export function formatCurrencyWithSymbol(amount: number): string {
     ? `${formatted}€` 
     : `€${formatted}`;
 }
+
+export function calculatePercentage(current: number, target: number, maxValue: number = 100): number {
+  if (!target || target <= 0 || !Number.isFinite(target)) {
+    return 0;
+  }
+  const percentage = (current / target) * 100;
+  return Math.min(Math.max(percentage, 0), maxValue);
+}
+
+export function calculateMonthChange(income: number, expenses: number): string {
+  if (!income || income <= 0 || !Number.isFinite(income)) {
+    return "0";
+  }
+  return ((income - expenses) / income * 100).toFixed(0);
+}

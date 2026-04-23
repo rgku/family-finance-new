@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useData } from "@/hooks/DataProvider";
+import { useData, type Budget } from "@/hooks/DataProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
@@ -10,6 +10,7 @@ import { EXPENSE_CATEGORIES } from "@/lib/constants";
 import { Icon } from "@/components/Icon";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
 import { AIBudgetSuggestion } from "@/lib/ai/types";
+import { useToast } from "@/components/Toast";
 
 const categories = EXPENSE_CATEGORIES.filter(c => c.value !== "Outros");
 
@@ -17,8 +18,10 @@ export default function BudgetsPage() {
   const { budgets, setCurrentBudgetMonth, addBudget, updateBudget, deleteBudget } = useData();
   const { profile, signOut } = useAuth();
   const isMobile = useDeviceType();
+  const { showToast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   
   const [selectedCategory, setSelectedCategory] = useState("");
   const [limitAmount, setLimitAmount] = useState("");
@@ -42,24 +45,45 @@ export default function BudgetsPage() {
     setCurrentBudgetMonth(month);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (editingId) {
-      updateBudget(editingId, {
-        limit: parseFloat(limitAmount),
-      });
-    } else {
-      addBudget({
-        category: selectedCategory,
-        limit: parseFloat(limitAmount),
-      });
+    if (!selectedCategory) {
+      showToast("Seleciona uma categoria", "error");
+      return;
     }
     
-    resetForm();
+    if (!limitAmount || parseFloat(limitAmount) <= 0) {
+      showToast("O limite deve ser maior que 0", "error");
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      if (editingId) {
+        await updateBudget(editingId, {
+          limit: parseFloat(limitAmount),
+        });
+        showToast("Orçamento atualizado!", "success");
+      } else {
+        await addBudget({
+          category: selectedCategory,
+          limit: parseFloat(limitAmount),
+        });
+        showToast("Orçamento criado com sucesso!", "success");
+      }
+      
+      resetForm();
+    } catch (error) {
+      console.error("Error saving budget:", error);
+      showToast("Erro ao guardar o orçamento. Tenta novamente.", "error");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleEdit = (budget: any) => {
+  const handleEdit = (budget: Budget) => {
     setSelectedCategory(budget.category);
     setLimitAmount(budget.limit.toString());
     setEditingId(budget.id);
@@ -196,9 +220,10 @@ export default function BudgetsPage() {
           <div className="flex gap-4">
             <button
               type="submit"
-              className="flex-1 py-4 bg-primary text-on-primary font-bold rounded-full hover:brightness-110 transition-all"
+              disabled={loading}
+              className="flex-1 py-4 bg-primary text-on-primary font-bold rounded-full hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {editingId ? "Guardar Alterações" : "Criar Orçamento"}
+              {loading ? "A guardar..." : editingId ? "Guardar Alterações" : "Criar Orçamento"}
             </button>
             {editingId && (
               <button

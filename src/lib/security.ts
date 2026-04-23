@@ -59,11 +59,17 @@ export async function logAuditEvent(entry: AuditLogEntry): Promise<void> {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) return;
 
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('family_id')
+      .eq('id', session.user.id)
+      .single();
+
     const { error } = await supabase
       .from('audit_log')
       .insert({
         user_id: session.user.id,
-        family_id: null,
+        family_id: profile?.family_id || null,
         table_name: entry.table_name,
         record_id: entry.record_id,
         action: entry.action,

@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { DesktopSidebar, MobileNav, MobileHeader } from "@/components/Sidebar";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { useAuth } from "@/components/AuthProvider";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -19,6 +20,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </a>
         {isMobile && <MobileHeader onSignOut={signOut} />}
         {children}
+        <OfflineIndicator />
       </>
     );
   }
@@ -34,6 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           {children}
         </div>
         <MobileNav />
+        <OfflineIndicator />
       </>
     );
   }
@@ -46,6 +49,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <DesktopSidebar onSignOut={signOut} />
       <main className="ml-64" id="main-content" tabIndex={-1}>
         {children}
+        <OfflineIndicator />
       </main>
     </div>
   );

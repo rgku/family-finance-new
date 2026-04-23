@@ -7,6 +7,7 @@ import { useData } from "@/hooks/DataProvider";
 import { CURRENCY } from "@/lib/currency";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/constants";
 import { Icon } from "@/components/Icon";
+import { useToast } from "@/components/Toast";
 
 const ALL_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES]
   .map(c => c.value)
@@ -29,6 +30,7 @@ export default function NewTransaction() {
   const { user } = useAuth();
   const { addTransaction } = useData();
   const router = useRouter();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState("");
@@ -75,10 +77,13 @@ export default function NewTransaction() {
     const amountNum = parseFloat(amount);
     if (!amount || amountNum <= 0) {
       setError("O valor deve ser maior que zero");
+      showToast("O valor deve ser maior que zero", "error");
       return;
     }
-    if (!description) {
-      setError("A descrição é obrigatória");
+    
+    if (!description || description.trim().length < 2) {
+      setError("A descrição deve ter pelo menos 2 caracteres");
+      showToast("A descrição deve ter pelo menos 2 caracteres", "error");
       return;
     }
 
@@ -87,16 +92,22 @@ export default function NewTransaction() {
 
     try {
       await addTransaction({
-        description,
+        description: description.trim(),
         amount: amountNum,
         type,
         category: category || "Outros",
         date,
       });
       
-      router.push("/dashboard");
+      showToast("Transação criada com sucesso!", "success");
+      
+      // Delay redirect to show toast
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 1000);
     } catch (err) {
       setError("Erro ao criar transação");
+      showToast("Erro ao criar transação. Tenta novamente.", "error");
       console.error(err);
     } finally {
       setLoading(false);

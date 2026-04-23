@@ -18,10 +18,14 @@ export function useTransactions(userId?: string, month?: string, limit = 50) {
   return useQuery({
     queryKey: ['transactions', userId, month, limit],
     queryFn: async () => {
+      if (!userId) {
+        throw new Error('userId is required');
+      }
+      
       let query = supabase
         .from('transactions_decrypted')
         .select('*', { count: 'exact' })
-        .eq('user_id', userId!)
+        .eq('user_id', userId)
         .order('date', { ascending: false })
         .limit(limit);
       

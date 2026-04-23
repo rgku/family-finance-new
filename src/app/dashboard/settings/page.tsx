@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useData } from "@/hooks/DataProvider";
 import { useAuth } from "@/components/AuthProvider";
-import { formatCurrencyWithSymbol } from "@/lib/currency";
+import { formatCurrencyWithSymbol, calculatePercentage } from "@/lib/currency";
 import { Icon } from "@/components/Icon";
 
 export default function ExportPage() {
@@ -83,7 +83,7 @@ export default function ExportPage() {
           targetAmount: g.target_amount,
           currentAmount: g.current_amount,
           deadline: g.deadline,
-          progress: Math.round((g.current_amount / g.target_amount) * 100),
+          progress: Math.round(calculatePercentage(g.current_amount, g.target_amount)),
         })),
         budgets: budgets.map(b => ({
           category: b.category,

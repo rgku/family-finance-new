@@ -4,7 +4,7 @@ import { useState, useMemo, Suspense } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
-import { formatCurrencyWithSymbol } from "@/lib/currency";
+import { formatCurrencyWithSymbol, calculatePercentage, calculateMonthChange } from "@/lib/currency";
 import { isDateInCustomMonth, formatCustomMonth, getCustomMonthRange } from "@/lib/dateUtils";
 import Link from "next/link";
 
@@ -111,7 +111,7 @@ export default function Dashboard() {
   }, [filteredTransactions, dataGoals]);
 
   const monthChange = useMemo(() => {
-    return totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome * 100).toFixed(0) : "0";
+    return calculateMonthChange(totalIncome, totalExpenses);
   }, [totalIncome, totalExpenses]);
   
   const isPositive = balance.total >= 0;
@@ -215,10 +215,10 @@ export default function Dashboard() {
                           <Icon name={goal.icon} size={16} className="text-secondary" />
                           <span className="font-medium text-sm truncate">{goal.name}</span>
                         </div>
-                        <span className="font-bold text-secondary text-sm">{Math.round(goal.current_amount / goal.target_amount * 100)}%</span>
+                        <span className="font-bold text-secondary text-sm">{Math.round(calculatePercentage(goal.current_amount, goal.target_amount))}%</span>
                       </div>
                       <div className="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-secondary to-on-secondary-container" style={{ width: `${(goal.current_amount / goal.target_amount) * 100}%` }}></div>
+                        <div className="h-full bg-gradient-to-r from-secondary to-on-secondary-container" style={{ width: `${calculatePercentage(goal.current_amount, goal.target_amount)}%` }}></div>
                       </div>
                     </div>
                   ))}
@@ -340,10 +340,10 @@ export default function Dashboard() {
                           <Icon name={goal.icon} size={18} className="text-secondary" />
                           <span className="font-medium text-sm">{goal.name}</span>
                         </div>
-                        <span className="text-secondary text-sm font-bold">{Math.round(goal.current_amount / goal.target_amount * 100)}%</span>
+                        <span className="text-secondary text-sm font-bold">{Math.round(calculatePercentage(goal.current_amount, goal.target_amount))}%</span>
                       </div>
                       <div className="h-2 bg-surface-container-highest rounded-full">
-                        <div className="h-full bg-secondary rounded-full" style={{ width: `${(goal.current_amount / goal.target_amount) * 100}%` }}></div>
+                        <div className="h-full bg-secondary rounded-full" style={{ width: `${calculatePercentage(goal.current_amount, goal.target_amount)}%` }}></div>
                       </div>
                     </div>
                   ))}
