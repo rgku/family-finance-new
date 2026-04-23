@@ -158,18 +158,18 @@ export default function Dashboard() {
               </div>
             </section>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-surface-container rounded-lg p-4 min-w-0">
                 <p className="font-label text-xs text-on-surface-variant">Receitas</p>
-                <p className="font-headline text-lg font-bold text-primary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.income)}</p>
+                <p className="font-headline text-xl sm:text-lg font-bold text-primary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.income)}</p>
               </div>
               <div className="bg-surface-container rounded-lg p-4 min-w-0">
                 <p className="font-label text-xs text-on-surface-variant">Despesas</p>
-                <p className="font-headline text-lg font-bold text-tertiary min-w-0 truncate">-{formatCurrencyWithSymbol(balance.expenses)}</p>
+                <p className="font-headline text-xl sm:text-lg font-bold text-tertiary min-w-0 truncate">-{formatCurrencyWithSymbol(balance.expenses)}</p>
               </div>
               <div className="bg-surface-container rounded-lg p-4 min-w-0">
                 <p className="font-label text-xs text-on-surface-variant">Poupança</p>
-                <p className="font-headline text-lg font-bold text-secondary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.poupar)}</p>
+                <p className="font-headline text-xl sm:text-lg font-bold text-secondary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.poupar)}</p>
               </div>
             </div>
 
