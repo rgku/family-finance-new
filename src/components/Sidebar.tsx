@@ -16,6 +16,7 @@ const navItemsSecondary = [
   { href: "/dashboard/reports", icon: "assessment", label: "Relatórios" },
   { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
   { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
+  { href: "/dashboard/recurring", icon: "repeat", label: "Recorrentes" },
 ];
 
 const navItemsDesktop = [
