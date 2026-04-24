@@ -169,8 +169,8 @@ OneSignal not configured
 **Solução:**
 As variáveis de ambiente precisam de estar configuradas no Supabase:
 
-1. `ONESIGNAL_APP_ID` = `8954fbf1-30c3-4df4-8741-b98201a6e1ae`
-2. `ONESIGNAL_REST_API_KEY` = (tua API key do OneSignal)
+1. `ONESIGNAL_APP_ID` = `YOUR_ONESIGNAL_APP_ID`
+2. `ONESIGNAL_REST_API_KEY` = `YOUR_ONESIGNAL_REST_API_KEY`
 
 **Verifica no Supabase Dashboard:**
 - Project Settings → Edge Functions → Secrets

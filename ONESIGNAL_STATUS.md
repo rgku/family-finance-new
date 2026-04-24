@@ -34,8 +34,8 @@ All OneSignal push notification infrastructure has been implemented and configur
 
 ### 4. Environment Configuration ✅
 - ✅ `.env.local` configured with:
-  - `NEXT_PUBLIC_ONESIGNAL_APP_ID=8954fbf1-30c3-4df4-8741-b98201a6e1ae`
-  - `ONESIGNAL_REST_API_KEY=os_v2_app_rfkpx4jqyng7jb2bxgbadjxbvy54l5kxbeheqxeropm5xdkwvwrg2yhsxawhbecazvr2qbr62z42lgtt6aco7nx5pcgnhn2yiz6t7xa`
+  - `NEXT_PUBLIC_ONESIGNAL_APP_ID=YOUR_ONESIGNAL_APP_ID`
+  - `ONESIGNAL_REST_API_KEY=YOUR_ONESIGNAL_REST_API_KEY`
 - ✅ Supabase secrets set:
   - `ONESIGNAL_APP_ID` ✓
   - `ONESIGNAL_REST_API_KEY` ✓
@@ -213,7 +213,7 @@ Use OneSignal's A/B testing features to optimize notification copy
 
 Access your OneSignal dashboard at: https://onesignal.com
 
-**App ID:** `8954fbf1-30c3-4df4-8741-b98201a6e1ae`
+**App ID:** `YOUR_ONESIGNAL_APP_ID`
 
 You can:
 - View subscriber count
