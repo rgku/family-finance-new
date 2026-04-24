@@ -143,6 +143,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [supabase]);
 
+  useEffect(() => {
+    if (!loading && !user) {
+      const currentPath = window.location.pathname;
+      if (currentPath.startsWith('/dashboard')) {
+        const redirectParam = new URLSearchParams(window.location.search).get('redirect') || currentPath;
+        window.location.href = `/?redirect=${encodeURIComponent(redirectParam)}`;
+      }
+    }
+  }, [user, loading]);
+
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
