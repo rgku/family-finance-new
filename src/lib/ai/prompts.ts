@@ -86,6 +86,8 @@ Regras:
 - Deteta alertas de orçamento: categorias a ultrapassar 80% do orçamento.
 - Deteta padrões positivos: savings rate bom, metas progredindo bem.
 - Se existir zombie (subscription inativo >60 dias): gera 1 insight do tipo "warning" OU "tip" sobre isso (máximo 1 insight de subscription).
+- IMPORTANTE: Usa EXATAMENTE os nomes das categorias fornecidos nos dados acima (exatamente como escritos: "Alimentação", "Lazer", "Moradia", etc).
+- NUNCA inventes ou troques nomes de categorias. Se não tens a certeza, não menciones essa categoria.
 - Todos os campos são obrigatórios.
 - Responde SOMENTE com JSON válido, sem texto antes ou depois.`;
 }
