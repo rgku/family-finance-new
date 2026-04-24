@@ -219,13 +219,24 @@ function generateFallbackInsights(data: AIInsightsPayload): AIInsightItem[] {
     });
   }
 
-  const overBudget = data.budgets.filter(b => b.limit > 0 && (b.spent / b.limit) >= 0.8);
+const overBudget = data.budgets.filter(b => b.limit > 0 && (b.spent / b.limit) >= 0.8);
   if (overBudget.length > 0) {
-    insights.push({
-      type: "warning",
-      title: "Orçamentos quase esgotados",
-      description: `${overBudget.length} categoria(s) a atingir 80%+ do orçamento: ${overBudget.map(b => b.category).join(", ")}.`,
-    });
+    for (const b of overBudget.slice(0, 3)) {
+      const percentage = Math.round((b.spent / b.limit) * 100);
+      if (percentage >= 100) {
+        insights.push({
+          type: "warning",
+          title: `${b.category} ultrapassado`,
+          description: `Gastaste €${b.spent.toFixed(2)} de €${b.limit.toFixed(2)} (${percentage}%). Orçamento excedido!`,
+        });
+      } else if (percentage >= 80) {
+        insights.push({
+          type: "warning",
+          title: `${b.category} quase esgotado`,
+          description: `Gastaste €${b.spent.toFixed(2)} de €${b.limit.toFixed(2)} (${percentage}%). Atenção!`,
+        });
+      }
+    }
   }
 
   const topCategories = Object.entries(data.categorySpending)
