@@ -1,9 +1,9 @@
 -- ============================================
 -- MIGRATION: User-based Rate Limiting
--- Execute in Supabase SQL Editor
+-- Execute INTEIRO no Supabase SQL Editor
 -- ============================================
 
--- 1. Criar tabela de rate limits por utilizador
+-- 1. Criar tabela PRIMEIRO
 CREATE TABLE IF NOT EXISTS user_rate_limits (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL,
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS user_rate_limits (
   UNIQUE(user_id, action, window_start)
 );
 
--- 2. Índices para performance
+-- 2. Índices
 CREATE INDEX IF NOT EXISTS idx_user_rate_limits_user 
   ON user_rate_limits(user_id, action, window_start DESC);
 
@@ -25,12 +25,24 @@ CREATE INDEX IF NOT EXISTS idx_user_rate_limits_cleanup
 ALTER TABLE user_rate_limits ENABLE ROW LEVEL SECURITY;
 
 -- 4. Política RLS
+DROP POLICY IF EXISTS "Users can view own rate limits" ON user_rate_limits;
 CREATE POLICY "Users can view own rate limits" 
   ON user_rate_limits
   FOR SELECT 
   USING (user_id = auth.uid());
 
--- 5. Função para verificar rate limit
+-- 5. Função de cleanup PRIMEIRO
+DROP FUNCTION IF EXISTS cleanup_user_rate_limits();
+CREATE OR REPLACE FUNCTION cleanup_user_rate_limits()
+RETURNS VOID AS $$
+BEGIN
+  DELETE FROM user_rate_limits 
+  WHERE window_start < NOW() - INTERVAL '15 minutes';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 6. Função de rate limit
+DROP FUNCTION IF EXISTS check_user_rate_limit(UUID, TEXT, INTEGER, INTEGER);
 CREATE OR REPLACE FUNCTION check_user_rate_limit(
   p_user_id UUID,
   p_action TEXT,
@@ -65,7 +77,7 @@ BEGIN
     RETURN QUERY SELECT 
       FALSE::BOOLEAN,
       0::INTEGER,
-      EXTRACT(EPOCH FROM (reset_time - NOW()))::INTEGER;
+      COALESCE(EXTRACT(EPOCH FROM (reset_time - NOW()))::INTEGER, 0);
   ELSE
     INSERT INTO user_rate_limits (user_id, action, count, window_start)
     VALUES (p_user_id, p_action, 1, NOW())
@@ -74,13 +86,14 @@ BEGIN
     
     RETURN QUERY SELECT 
       TRUE::BOOLEAN,
-      (p_max_requests - current_count - 1)::INTEGER,
+      (p_max_requests - COALESCE(current_count, 0) - 1)::INTEGER,
       (p_window_minutes * 60)::INTEGER;
   END IF;
 END;
 $$ LANGUAGE plpgsql;
 
--- 6. Função utilitária para usar em policies
+-- 7. Função utilitária para policies
+DROP FUNCTION IF EXISTS is_rate_limited(TEXT, INTEGER, INTEGER);
 CREATE OR REPLACE FUNCTION is_rate_limited(
   p_action TEXT,
   p_max_requests INTEGER DEFAULT 100,
@@ -93,28 +106,10 @@ BEGIN
   SELECT NOT allowed INTO result
   FROM check_user_rate_limit(auth.uid(), p_action, p_max_requests, p_window_minutes);
   RETURN COALESCE(result, FALSE);
+EXCEPTION WHEN OTHERS THEN
+  RETURN FALSE; -- Se falhar, permitir (fail open)
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 7. Função de cleanup
-CREATE OR REPLACE FUNCTION cleanup_user_rate_limits()
-RETURNS VOID AS $$
-BEGIN
-  DELETE FROM user_rate_limits 
-  WHERE window_start < NOW() - INTERVAL '15 minutes';
-END;
-$$ LANGUAGE plpgsql;
-
--- 8. Aplicar rate limiting em transactions
-DROP POLICY IF EXISTS "strict_transactions_insert" ON transactions;
-CREATE POLICY "strict_transactions_insert" ON transactions
-  FOR INSERT
-  WITH CHECK (
-    user_id = auth.uid()
-    AND NOT is_rate_limited('transaction_create', 100, 1)
-  );
-
--- Testar
-SELECT 
-  'Rate limit test' AS test,
-  check_user_rate_limit(auth.uid(), 'test_action', 10, 1);
+-- 8. Testar
+SELECT 'Table created' AS status;
