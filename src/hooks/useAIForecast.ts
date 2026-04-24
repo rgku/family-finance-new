@@ -31,7 +31,7 @@ export function useAIForecast(month: string): AIForecastState {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/ai/forecast?month=${m}`);
+      const res = await fetch(`/api/ai/forecast?month=${m}`, { credentials: 'include' });
       if (!res.ok) throw new Error("Erro ao carregar previsão");
       const data = await res.json();
       setForecasts(data.forecasts || []);

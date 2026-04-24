@@ -27,7 +27,7 @@ export function useAIInsights(month: string): AIInsightsState {
     setError(null);
     try {
       const url = `/api/ai/insights?month=${m}${forceRefresh ? "&refresh=1" : ""}`;
-      const res = await fetch(url);
+      const res = await fetch(url, { credentials: 'include' });
       if (!res.ok) throw new Error("Erro ao carregar insights");
       const data = await res.json();
       setInsights(data.insights || []);
