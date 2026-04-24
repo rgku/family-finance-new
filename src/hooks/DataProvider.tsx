@@ -233,7 +233,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       // Small delay to ensure DB is updated
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Fetch the newly inserted transaction
+      // Fetch recently inserted transactions and find ours
       const { data: recentTransactions, error: fetchError } = await supabase
         .from('transactions_decrypted')
         .select('*')
@@ -243,6 +243,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       if (fetchError) {
         console.error('Failed to fetch transactions:', fetchError);
+        // Keep optimistic update
       } else if (recentTransactions && recentTransactions.length > 0) {
         const insertedData = recentTransactions.find(trans => 
           trans.id === newId ||
@@ -633,7 +634,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
       
-      // Fetch the newly inserted goal
       const { data: goalData } = await supabase
         .from('goals_decrypted')
         .select('*')
@@ -692,10 +692,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     if (error) {
       setGoals(prev => prev.map(goal => 
-          goal.id === id ? { ...goal, ...g } : goal
-        ));
-        throw error;
-      }
+        goal.id === id ? { ...goal, ...g } : goal
+      ));
+      throw error;
     }
   };
 
