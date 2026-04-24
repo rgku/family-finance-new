@@ -74,15 +74,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION run_cleanup()
 RETURNS VOID AS $$
 BEGIN
-  -- Cleanup rate limits
   DELETE FROM rate_limits WHERE window_start < NOW() - INTERVAL '15 minutes';
-  
-  -- Cleanup user rate limits
   DELETE FROM user_rate_limits WHERE window_start < NOW() - INTERVAL '15 minutes';
-  
-  -- Cleanup audit log (mais de 1 ano)
   DELETE FROM audit_log WHERE created_at < NOW() - INTERVAL '365 days';
-  
   RAISE NOTICE 'Cleanup executado com sucesso';
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -103,19 +97,18 @@ SELECT
 FROM data_retention_policies
 ORDER BY table_name;
 
--- 7. View para sizes das tabelas
+-- 7. View para sizes das tabelas (corrigido)
 CREATE OR REPLACE VIEW table_sizes AS
 SELECT 
   schemaname,
-  relname AS table_name,
-  pg_size_pretty(pg_total_relation_size(schemaname||'.'||relname)) AS total_size,
-  pg_total_relation_size(schemaname||'.'||relname) AS size_bytes
+  tablename AS table_name,
+  pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) AS total_size,
+  pg_total_relation_size(schemaname||'.'||tablename) AS size_bytes
 FROM pg_tables
 WHERE schemaname = 'public'
-  AND relname NOT LIKE 'pg_%'
-  AND relname NOT LIKE 'sql_%'
-ORDER BY pg_total_relation_size(schemaname||'.'||relname) DESC;
+  AND tablename NOT LIKE 'pg_%'
+  AND tablename NOT LIKE 'sql_%'
+ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
 
 -- Testar
 SELECT * FROM retention_status;
-SELECT * FROM table_sizes;
