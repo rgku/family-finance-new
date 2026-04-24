@@ -52,6 +52,14 @@ export interface AIInsightsPayload {
   previousMonthSpending?: Record<string, number>;
   billingCycleDay: number;
   subscriptions?: SubscriptionData;
+  metadata?: {
+    dataQuality: "high" | "medium" | "low";
+    outliersCount: number;
+    categoriesUsed: string[];
+    dayOfMonth: number;
+    daysRemaining: number;
+    isWeekend: boolean;
+  };
 }
 
 export interface SubscriptionData {
