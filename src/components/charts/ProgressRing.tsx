@@ -65,12 +65,10 @@ export const ProgressRing = memo(function ProgressRing({
           <Icon name={icon || "folder"} size={Math.max(size * 0.35, 10)} />
         </div>
         {showPercentage && !isSmall && (
-          <div className="absolute inset-0 flex items-center justify-center pt-4">
-            <span className="font-bold" style={{ color, fontSize: Math.max(size * 0.18, 10) }}>
+            <span className="absolute -top-1 left-1/2 -translate-x-1/2 font-bold" style={{ color, fontSize: Math.max(size * 0.18, 10) }}>
               {Math.round(animatedProgress)}%
             </span>
-          </div>
-        )}
+          )}
       </div>
       {isSmall && showPercentage && (
         <span className="font-bold" style={{ color, fontSize: 14 }}>
