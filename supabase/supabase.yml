@@ -39,4 +39,4 @@ enable_confirmations = false
 verify_jwt = false
 
 [functions.send-push.secrets]
-ONESIGNAL_APP_ID = "8954fbf1-30c3-4df4-8741-b98201a6e1ae"
+ONESIGNAL_APP_ID = ""

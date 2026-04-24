@@ -1,4 +1,4 @@
 VERIFY_JWT = false
 
 [secrets]
-ONESIGNAL_APP_ID = "8954fbf1-30c3-4df4-8741-b98201a6e1ae"
+ONESIGNAL_APP_ID = ""

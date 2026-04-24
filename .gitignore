@@ -45,3 +45,17 @@ next-env.d.ts
 supabase/.temp/
 supabase/**/.temp/
 
+# Sensitive SQL files (migrations with secrets)
+# These should be managed separately or encrypted with SOPS
+# supabase/migrations/*_with_secrets.sql
+
+# Security: Don't commit files containing API keys or secrets
+# *.secret
+# *.private
+# credentials.json
+# service-account.json
+
+# Scripts de debug com keys
+scripts/check-data.js
+scripts/check-user-data.js
+
