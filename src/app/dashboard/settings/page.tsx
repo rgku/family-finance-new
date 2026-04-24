@@ -264,6 +264,16 @@ export default function ExportPage() {
         <h2 className="font-bold text-lg">Conta</h2>
         <div className="space-y-2">
           <Link
+            href="/dashboard/settings/import"
+            className="flex items-center justify-between p-4 bg-surface-container-low rounded-lg hover:bg-surface-container-high transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <Icon name="upload_file" size={20} className="text-primary" />
+              <span className="font-medium">Importar Transações</span>
+            </div>
+            <Icon name="chevron_right" size={20} className="text-on-surface-variant" />
+          </Link>
+          <Link
             href="/dashboard/settings/change-password"
             className="flex items-center justify-between p-4 bg-surface-container-low rounded-lg hover:bg-surface-container-high transition-colors"
           >
