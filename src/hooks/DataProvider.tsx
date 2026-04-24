@@ -218,14 +218,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // Insert into transactions table - values stored as-is (plain text)
-      // The view will handle decryption
       const { error: insertError } = await supabase
         .from('transactions')
         .insert({
           user_id: user.id,
-          encrypted_description: t.description,
-          encrypted_amount: t.amount.toString(),
+          plain_description: t.description,
+          plain_amount: t.amount,
           type: t.type,
           category: t.category,
           date: t.date,
@@ -541,8 +539,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     
     if (!isOnline) {
       const updates: any = {};
-      if (t.description !== undefined) updates.encrypted_description = t.description;
-      if (t.amount !== undefined) updates.encrypted_amount = t.amount;
+      if (t.description !== undefined) updates.plain_description = t.description;
+      if (t.amount !== undefined) updates.plain_amount = t.amount;
       if (t.type !== undefined) updates.type = t.type;
       if (t.category !== undefined) updates.category = t.category;
       if (t.date !== undefined) updates.date = t.date;
@@ -551,8 +549,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
     
     const updates: any = {};
-    if (t.description !== undefined) updates.encrypted_description = t.description;
-    if (t.amount !== undefined) updates.encrypted_amount = t.amount.toString();
+    if (t.description !== undefined) updates.plain_description = t.description;
+    if (t.amount !== undefined) updates.plain_amount = t.amount;
     if (t.type !== undefined) updates.type = t.type;
     if (t.category !== undefined) updates.category = t.category;
     if (t.date !== undefined) updates.date = t.date;
@@ -616,8 +614,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (!isOnline) {
       await saveOffline('goals', {
         name: g.name,
-        encrypted_target_amount: g.target_amount,
-        encrypted_current_amount: g.current_amount || 0,
+        plain_target_amount: g.target_amount,
+        plain_current_amount: g.current_amount || 0,
         deadline: g.deadline,
         icon: g.icon,
         goal_type: g.goal_type || 'savings',
@@ -631,8 +629,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         .insert({
           user_id: user.id,
           name: g.name,
-          encrypted_target_amount: g.target_amount,
-          encrypted_current_amount: g.current_amount || 0,
+          plain_target_amount: g.target_amount,
+          plain_current_amount: g.current_amount || 0,
           deadline: g.deadline,
           icon: g.icon,
           goal_type: g.goal_type || 'savings',
@@ -674,8 +672,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (g.deadline !== undefined) updateData.deadline = g.deadline;
       if (g.icon !== undefined) updateData.icon = g.icon;
       if (g.goal_type !== undefined) updateData.goal_type = g.goal_type;
-      if (g.target_amount !== undefined) updateData.encrypted_target_amount = g.target_amount;
-      if (g.current_amount !== undefined) updateData.encrypted_current_amount = g.current_amount;
+      if (g.target_amount !== undefined) updateData.plain_target_amount = g.target_amount;
+      if (g.current_amount !== undefined) updateData.plain_current_amount = g.current_amount;
       await saveOffline('goals', updateData, 'update', id);
       return;
     }
@@ -685,8 +683,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (g.deadline !== undefined) updateData.deadline = g.deadline;
     if (g.icon !== undefined) updateData.icon = g.icon;
     if (g.goal_type !== undefined) updateData.goal_type = g.goal_type;
-    if (g.target_amount !== undefined) updateData.encrypted_target_amount = g.target_amount;
-    if (g.current_amount !== undefined) updateData.encrypted_current_amount = g.current_amount;
+    if (g.target_amount !== undefined) updateData.plain_target_amount = g.target_amount;
+    if (g.current_amount !== undefined) updateData.plain_current_amount = g.current_amount;
     
     if (Object.keys(updateData).length > 0) {
       const { error } = await supabase
