@@ -1,10 +1,10 @@
-import { AIInsightsPayload, AIForecastPayload, AIBudgetOptimizePayload } from "./types";
+import { AIInsightsPayload, AIForecastPayload, AIBudgetOptimizePayload, SubscriptionData } from "./types";
 import { calculatePercentage } from "../currency";
 
 const SYSTEM_PROMPT = `Eres un asistente de finanzas personales para famílias portuguesas. Analisas datos financieros y generas insights útiles, previsões e sugestões em português de Portugal.`;
 
 export function buildInsightsPrompt(data: AIInsightsPayload): string {
-  const { month, income, expenses, pouparanca, balance, categorySpending, budgets, goals, transactionsCount, previousMonthSpending } = data;
+  const { month, income, expenses, pouparanca, balance, categorySpending, budgets, goals, transactionsCount, previousMonthSpending, subscriptions } = data;
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const [year, monthNum] = month.split("-").map(Number);
   const monthName = monthNames[monthNum - 1];
@@ -33,7 +33,21 @@ export function buildInsightsPrompt(data: AIInsightsPayload): string {
 ${prevEntries}`;
   }
 
-return `${SYSTEM_PROMPT}
+  let subscriptionsSection = "";
+  if (subscriptions && subscriptions.activeCount > 0) {
+    subscriptionsSection = `\n\n## Subscriptions Ativas
+- Total mensal: €${subscriptions.totalMonthly.toFixed(2)}
+- Total anual: €${subscriptions.totalYearly.toFixed(2)}
+- Ativas: ${subscriptions.activeCount}
+- Zombies: ${subscriptions.zombieCount}
+- Poupança potencial: €${subscriptions.potentialSavings.toFixed(2)}`;
+    
+    if (subscriptions.zombieInsight) {
+      subscriptionsSection += `\n- Zombie: ${subscriptions.zombieInsight.name} (€${subscriptions.zombieInsight.amount.toFixed(2)}, ${subscriptions.zombieInsight.daysSinceLastCharge} dias inativo)`;
+    }
+  }
+
+  return `${SYSTEM_PROMPT}
 
 ## Dados do Mês: ${monthName} ${year}
 - Total de transações: ${transactionsCount}
@@ -51,7 +65,7 @@ ${budgetEntries}
 
 ## Metas da Família
 ${goalsEntries}
-${comparisonSection}
+${comparisonSection}${subscriptionsSection}
 
 ## Instruções
 Gera um JSON com exactamente este formato:
@@ -71,6 +85,7 @@ Regras:
 - Deteta anomalias: gastos >30% acima da média numa categoria vs mês anterior.
 - Deteta alertas de orçamento: categorias a ultrapassar 80% do orçamento.
 - Deteta padrões positivos: savings rate bom, metas progredindo bem.
+- Se existir zombie (subscription inativo >60 dias): gera 1 insight do tipo "warning" OU "tip" sobre isso (máximo 1 insight de subscription).
 - Todos os campos são obrigatórios.
 - Responde SOMENTE com JSON válido, sem texto antes ou depois.`;
 }
