@@ -1,0 +1,11 @@
+node_modules
+.git
+tests
+*.log
+coverage
+.env.local
+.env*.local
+.DS_Store
+*.map
+playwright-report
+test-results
