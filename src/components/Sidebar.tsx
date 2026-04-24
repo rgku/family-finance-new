@@ -41,7 +41,7 @@ export function DesktopSidebar({ onSignOut }: DesktopSidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 z-50 flex flex-col h-screen w-64 border-r border-slate-800/50 bg-slate-950/80 backdrop-blur-xl" role="navigation" aria-label="Navegação principal">
+    <aside className="hidden md:flex fixed left-0 top-0 bottom-0 z-50 flex-col h-screen w-64 border-r border-slate-800/50 bg-slate-950/80 backdrop-blur-xl" role="navigation" aria-label="Navegação principal">
       <div className="p-8">
         <div className="flex items-center justify-between">
           <div>
@@ -116,7 +116,7 @@ const MobileNavComponent = function MobileNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-1 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]" role="navigation" aria-label="Navegação principal">
+      <nav className="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-1 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]" role="navigation" aria-label="Navegação principal">
         {navItemsMobile.map((item) => (
           <NavItemMemo key={item.href} {...item} isActive={pathname === item.href} />
         ))}
@@ -140,7 +140,7 @@ const MobileNavComponent = function MobileNav() {
       </nav>
       
       {showMore && (
-        <div className="fixed bottom-20 left-0 right-0 z-40 mx-4 bg-surface-container rounded-2xl p-4 shadow-xl">
+        <div className="md:hidden fixed bottom-20 left-0 right-0 z-40 mx-4 bg-surface-container rounded-2xl p-4 shadow-xl">
           <div className="grid grid-cols-4 gap-3">
             {navItemsSecondary.map((item) => (
               <NavItemSecondaryMemo 
