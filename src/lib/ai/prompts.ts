@@ -1,17 +1,22 @@
 import { AIInsightsPayload, AIForecastPayload, AIBudgetOptimizePayload, SubscriptionData } from "./types";
 import { calculatePercentage } from "../currency";
 
-const SYSTEM_PROMPT = `És um assistente financeiro especializado em finanças pessoais para famílias portuguesas.
+const SYSTEM_PROMPT = `És assistente financeiro para famílias portuguesas.
 Gera insights ACIONÁVEIS, RELEVANTES e PERSONALIZADOS.
 
 PRINCÍPIOS:
-1. Usa números EXATOS dos dados
-2. Usa categorias EXATAS dos dados  
-3. Sugere ações concretas
-4. Não inventes dados ou categorias
-5. JSON válido, sem texto extra
+1. Usa números e categorias EXATOS dos dados
+2. Sugere ações concretas
+3. NUNCA inventes dados ou categorias
+4. JSON válido, sem texto extra
 
-TOM: PT-PT, amigável, profissional, direto.`;
+LÍNGUA: Português de Portugal (não brasileiro)
+- "facto" não "fato", "contacto" não "contato", "poupança" não "economia"
+
+TOM: PT-PT, amigável, profissional, direto.
+
+FORMATO: JSON com 3-6 insights
+CAMPOS: type, title (≤60 chars), description (≤150 chars)`;
 
 export function buildInsightsPrompt(data: AIInsightsPayload): string {
   const { month, income, expenses, pouparanca, balance, categorySpending, budgets, goals, transactionsCount, previousMonthSpending, subscriptions } = data;
@@ -63,7 +68,7 @@ ${prevEntries}`;
   const top3Categories = Object.entries(categorySpending)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 3)
-    .map(([cat, amt]) => `${cat} (${Math.round((amt / expenses) * 100)}%)`)
+    .map(([cat, amt]) => `${cat} (${Math.round((amt / (expenses || 1)) * 100)}%)`)
     .join(", ");
 
   const overBudgetCategories = budgets
@@ -76,6 +81,13 @@ ${prevEntries}`;
 
   const completedGoals = goals.filter(g => g.current >= g.target);
   const progressingGoals = goals.filter(g => g.current > 0 && g.current < g.target);
+
+  // Dynamic Priority Context
+  const criticalAlerts = [
+    balance < 0 ? '⚠️ SALDO NEGATIVO' : '',
+    overBudgetCategories.length > 0 ? `${overBudgetCategories.length} budgets >80%` : '',
+    data.metadata?.dataQuality === 'low' ? 'Dados qualidade baixa' : '',
+  ].filter(Boolean);
 
   return `${SYSTEM_PROMPT}
 
@@ -118,29 +130,48 @@ ${comparisonSection || "Sem dados do mês anterior"}
 ${subscriptionsSection || "Sem subscriptions detetadas"}
 
 ${data.metadata ? `
-## 📋 QUALIDADE DOS DADOS
+## 📋 DADOS
 - Qualidade: ${data.metadata.dataQuality.toUpperCase()}
 - Outliers: ${data.metadata.outliersCount}
-- Dia do mês: ${data.metadata.dayOfMonth} (${data.metadata.daysRemaining} dias restantes)
-- Fim de semana: ${data.metadata.isWeekend ? "Sim" : "Não"}
-` : ""}
+- Dia ${data.metadata.dayOfMonth}/30 (${data.metadata.daysRemaining} dias restantes)
+${data.metadata.daysRemaining < 5 ? '- 🔴 FIM DO MÊS - Urgência máxima' : ''}
+${data.metadata.daysRemaining > 20 ? '- 🟢 INÍCIO DO MÊS - Tempo para ajustar' : ''}
+- Fim de semana: ${data.metadata.isWeekend ? 'Sim' : 'Não'}
+` : ''}
 
-## ⚠️ REGRAS CRÍTICAS
-1. Usa APENAS estas categorias: ${data.metadata?.categoriesUsed.join(", ") || "ver dados acima"}
+${criticalAlerts.length > 0 ? `
+## 🔴 PRIORIDADE MÁXIMA:
+${criticalAlerts.join('\n')}
+` : ''}
+
+## ⚠️ REGRAS
+1. Usa APENAS categorias: ${data.metadata?.categoriesUsed.slice(0, 8).join(', ') || 'ver dados'}
 2. NUNCA inventes números ou categorias
-3. Se dados faltam, diz "Sem dados" não inventes
+3. Se dados insuficientes: diz "Dados insuficientes", NÃO adivinhes
 4. Máximo 6 insights
 
-## 🧠 PROCESSO (antes de responder):
+## 🧠 PROCESSO:
 1. Verifica categorias existem nos dados
 2. Confirma números fazem sentido  
 3. Identifica 1-3 alertas críticos
 4. Identifica 1-2 padrões positivos
 5. Formula insights com ações concretas
-6. Revê: categorias e números corretos?
+6. Atribui confiança: high (dados >3 meses), low (<1 mês)
+7. Revê: categorias e números corretos?
+
+## 📋 OUTPUT
+{
+  "insights": [
+    {
+      "type": "info" | "warning" | "success" | "tip",
+      "title": "≤60 chars",
+      "description": "≤150 chars com ação",
+      "confidence": "high" | "medium" | "low"
+    }
+  ]
+}
 
 ---
-
 Gera JSON com 3-6 insights. Foca no MAIS IMPORTANTE.`;
 }
 
@@ -164,9 +195,8 @@ export function buildForecastPrompt(data: AIForecastPayload): string {
 
   const recurringSection = data.recurringPatterns.length > 0
     ? data.recurringPatterns.map(p => `${p.description}: €${p.amount.toFixed(2)} (${p.frequency})`).join("\n")
-    : "Nenhum padrão recorrente detetado.";
+    : "Nenhum padrão recorrente.";
 
-  // Calcular tendências por categoria
   const trendAnalysis = Object.entries(data.historyByCategory)
     .map(([cat, history]) => {
       if (history.length < 2) return null;
@@ -174,238 +204,156 @@ export function buildForecastPrompt(data: AIForecastPayload): string {
       const last3Avg = sorted.slice(-3).reduce((s, h) => s + h.amount, 0) / Math.min(3, sorted.length);
       const prev3Avg = sorted.slice(0, 3).reduce((s, h) => s + h.amount, 0) / Math.min(3, sorted.length);
       const trend = last3Avg > prev3Avg ? "subindo" : last3Avg < prev3Avg ? "descendo" : "estável";
-      return `${cat}: ${trend} (média recente: €${last3Avg.toFixed(2)})`;
+      return `${cat}: ${trend} (€${last3Avg.toFixed(2)})`;
     })
     .filter(Boolean)
     .join("\n");
 
   return `${SYSTEM_PROMPT}
 
-# PREVISÃO FINANCEIRA - ${targetMonthName.toUpperCase()} ${year}
+# PREVISÃO - ${targetMonthName.toUpperCase()} ${year}
 
-## 📊 HISTÓRICO DE GASTOS (Últimos 6 Meses)
-
+## HISTÓRICO (6 meses)
 ${historySection}
 
-## 🔄 PADRÕES RECORRENTES DETETADOS
-
+## RECORRENTES
 ${recurringSection}
 
-## 📈 ANÁLISE DE TENDÊNCIAS
+## TENDÊNCIAS
+${trendAnalysis || "Dados insuficientes"}
 
-${trendAnalysis || "Dados insuficientes para análise de tendências"}
+## CONTEXTO
+- Mês: ${targetMonthName} ${year}
+- Ciclo: dia ${data.billingCycleDay}
 
-## 📅 CONTEXTO
+## MÉTODO
+1. Média 3 meses + tendência
+2. Confiança: high (>3 meses), low (<3)
+3. Sazonalidade: Dezembro +, Setembro +, Agosto -
+4. Intervalos: ±15-20%
 
-- Mês alvo: ${targetMonthName} ${year}
-- Ciclo de faturação: dia ${data.billingCycleDay}
-- Tipo de previsão: gastos por categoria
-
----
-
-# INSTRUÇÕES DE PREVISÃO
-
-## METODOLOGIA:
-
-1. **Para cada categoria com histórico**:
-   - Calcula média dos últimos 3 meses
-   - Pondera meses mais recentes (mais peso)
-   - Considera tendência (subindo/descendo/estável)
-   - Ajusta para sazonalidade se relevante
-
-2. **Intervalos de confiança**:
-   - confidenceLow: cenário otimista (-15% da previsão)
-   - confidenceHigh: cenário pessimista (+20% da previsão)
-   - Justifica no "reasoning"
-
-3. **Tendência**:
-   - "up": categoria a aumentar consistentemente
-   - "down": categoria a diminuir
-   - "stable": sem mudança significativa (<5%)
-
-4. **Muda percentual**:
-   - Compara previsão com média dos últimos 3 meses
-   - Pode ser negativa (ex: -12.5)
-
-## FORMATO DE SAÍDA
-
+## OUTPUT
 {
-  "forecasts": [
-    {
-      "category": "Nome EXATO da categoria",
-      "predictedAmount": número (2 decimais),
-      "confidenceLow": número (menor que predictedAmount),
-      "confidenceHigh": número (maior que predictedAmount),
-      "reasoning": "Explicação clara da previsão (máx 120 caracteres)",
-      "trend": "up" | "down" | "stable",
-      "changePercent": número (pode ser negativo, 1 decimal)
-    }
-  ],
+  "forecasts": [{
+    "category": "Nome EXATO",
+    "predictedAmount": € (2 decimais),
+    "confidenceLow": -15%,
+    "confidenceHigh": +20%,
+    "reasoning": "≤120 chars",
+    "trend": "up" | "down" | "stable",
+    "changePercent": número
+  }],
   "summary": {
-    "totalPredicted": soma de todos predictedAmount,
-    "confidenceLow": soma de todos confidenceLow,
-    "confidenceHigh": soma de todos confidenceHigh,
-    "narrative": "Visão geral em 1-2 frases sobre o mês previsto"
+    "totalPredicted": soma,
+    "confidenceLow/High": somas,
+    "narrative": "1-2 frases"
   }
 }
 
-## REGRAS:
+## REGRAS
+- TODAS categorias com histórico
+- NUNCA inventes categorias
+- Conservador: subestima > sobrestima
+- <3 meses: usa média, nota no reasoning
 
-1. **Inclui TODAS as categorias** com histórico (mesmo as pequenas)
-2. **NUNCA inventes categorias** - usa apenas as do histórico
-3. **Sê conservador** - melhor subestimar que sobrestimar
-4. **Considera sazonalidade**:
-   - Dezembro: +gastos (Natal, festas)
-   - Setembro: +gastos (regresso às aulas)
-   - Agosto: -gastos (férias, menos rotinas)
-5. **Justifica previsões fora do padrão** no reasoning
-6. **Se dados insuficientes** (<3 meses), usa média disponível e nota no reasoning
+Ex: "Tendência alta 3 meses. Média €145."
 
-## EXEMPLO DE BOM REASONING:
-
-✅ "Tendência de alta há 3 meses. Média ponderada: €145."
-✅ "Estável nos últimos 4 meses. Pequeno ajuste para inflação."
-❌ "Acho que vai subir." (vago, sem justificação)
-
-Gera agora a previsão completa para ${targetMonthName} ${year}.`;
+Gera previsão para ${targetMonthName} ${year}.`;
 }
 
 export function buildOptimizePrompt(data: AIBudgetOptimizePayload): string {
   const budgetEntries = data.currentBudgets
-    .map(b => `${b.category}: €${b.spent.toFixed(2)} gastos de €${b.limit.toFixed(2)} budget (${calculatePercentage(b.spent, b.limit)}%)`)
+    .map(b => `${b.category}: €${b.spent} de €${b.limit} (${calculatePercentage(b.spent, b.limit)}%)`)
     .join("\n");
 
-  const goalsEntries = data.goals.map(g => `${g.name}: €${g.current.toFixed(2)} / €${g.target.toFixed(2)}`).join("\n");
+  const goalsEntries = data.goals.map(g => `${g.name}: €${g.current} / €${g.target}`).join("\n");
 
-  // Calcular métricas de otimização
   const totalBudget = data.currentBudgets.reduce((s, b) => s + b.limit, 0);
   const totalSpent = data.currentBudgets.reduce((s, b) => s + b.spent, 0);
   const remaining = totalBudget - totalSpent;
   const budgetUtilization = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+  const freeIncome = data.totalIncome - totalBudget;
 
   const overBudget = data.currentBudgets.filter(b => b.limit > 0 && (b.spent / b.limit) > 1);
   const underBudget = data.currentBudgets.filter(b => b.limit > 0 && (b.spent / b.limit) < 0.5);
   const optimal = data.currentBudgets.filter(b => b.limit > 0 && (b.spent / b.limit) >= 0.5 && (b.spent / b.limit) <= 1);
 
-  // Calcular receita disponível após budgets
-  const freeIncome = data.totalIncome - totalBudget;
-
   return `${SYSTEM_PROMPT}
 
-# OTIMIZAÇÃO DE ORÇAMENTO
+# OTIMIZAÇÃO DE BUDGETS
 
-## 📊 VISÃO GERAL
-
+## VISÃO GERAL
 | Métrica | Valor |
 |---------|-------|
-| Receitas Mensais | €${data.totalIncome.toFixed(2)} |
-| Total Budgets | €${totalBudget.toFixed(2)} |
-| Total Gasto | €${totalSpent.toFixed(2)} |
-| Restante | €${remaining.toFixed(2)} |
+| Receitas | €${data.totalIncome} |
+| Budgets | €${totalBudget} |
+| Gasto | €${totalSpent} |
+| Restante | €${remaining} |
 | Utilização | ${budgetUtilization.toFixed(0)}% |
-| Livre após budgets | €${freeIncome.toFixed(2)} |
+| Livre | €${freeIncome} |
 
-## 📋 ORÇAMENTOS ATUAIS
+## BUDGETS
 
-### A ultrapassar (>100%) - ⚠️ CRÍTICO
-${overBudget.length > 0 ? overBudget.map(b => `- ${b.category}: ${calculatePercentage(b.spent, b.limit).toFixed(0)}%`).join("\n") : "Nenhum ✅"}
+### Crítico (>100%) ⚠️
+${overBudget.length > 0 ? overBudget.map(b => `- ${b.category}: ${calculatePercentage(b.spent, b.limit).toFixed(0)}%`).join("\n") : 'Nenhum ✅'}
 
-### Bem geridos (50-100%) - ✅ ÓTIMO
-${optimal.length > 0 ? optimal.map(b => `- ${b.category}: ${calculatePercentage(b.spent, b.limit).toFixed(0)}%`).join("\n") : "Nenhum"}
+### Ótimo (50-100%) ✅
+${optimal.length > 0 ? optimal.map(b => `- ${b.category}: ${calculatePercentage(b.spent, b.limit).toFixed(0)}%`).join("\n") : 'Nenhum'}
 
-### Subutilizados (<50%) - 💡 AJUSTAR?
-${underBudget.length > 0 ? underBudget.map(b => `- ${b.category}: ${calculatePercentage(b.spent, b.limit).toFixed(0)}%`).join("\n") : "Nenhum"}
+### Ajustar (<50%) 💡
+${underBudget.length > 0 ? underBudget.map(b => `- ${b.category}: ${calculatePercentage(b.spent, b.limit).toFixed(0)}%`).join("\n") : 'Nenhum'}
 
-### Detalhe completo
+### Detalhe
 ${budgetEntries}
 
-## 🎯 METAS DA FAMÍLIA
-
+## METAS
 ${goalsEntries}
 
----
+## OBJETIVO
+Ajusta budgets para:
+1. Evitar estouros
+2. Reduzir desperdício
+3. Maximizar metas
+4. Considerar trade-offs
 
-# INSTRUÇÕES DE OTIMIZAÇÃO
+## CRITÉRIOS
 
-## OBJETIVO:
+### AUMENTA se:
+- >90% consistentemente (3+ meses)
+- Essencial (Alimentação, Moradia, Saúde)
+- Previne impacto nas metas
 
-Sugerir ajustes de budgets que:
-1. Maximizam a probabilidade de atingir metas
-2. Evitam desperdício (budget não usado)
-3. Previnem estouros (budget insuficiente)
-4. Consideram trade-offs entre categorias
+### REDUZ se:
+- <50% consistentemente
+- Liberta € para metas importantes
+- Não-essencial com histórico baixo
 
-## CRITÉRIOS DE SUGESTÃO:
+### NÃO mudes se:
+- Variação <5%
+- Estável 70-90%
+- Sem benefício significativo
 
-### Sugerir AUMENTO do budget se:
-- Categoria consistentemente >90% do budget (3+ meses)
-- Categoria essencial (Alimentação, Moradia, Saúde)
-- Aumento previne impacto negativo nas metas
-
-### Sugerir REDUÇÃO do budget se:
-- Categoria consistentemente <50% do budget (3+ meses)
-- Redução liberta dinheiro para metas importantes
-- Categoria não-essencial com histórico baixo
-
-### NÃO sugerir alteração se:
-- Variação <5% não justifica mudança
-- Categoria estável e bem calibrada (70-90%)
-- Mudança não traz benefício significativo
-
-## FORMATO DE SAÍDA
-
+## OUTPUT
 {
-  "suggestions": [
-    {
-      "category": "Nome EXATO da categoria",
-      "currentLimit": número,
-      "suggestedLimit": número,
-      "reason": "Justificação clara (máx 100 caracteres)",
-      "impactOnGoals": "Como afeta metas (máx 100 caracteres)"
-    }
-  ],
-  "summary": "Visão geral da situação (máx 150 caracteres)"
+  "suggestions": [{
+    "category": "Nome EXATO",
+    "currentLimit": €,
+    "suggestedLimit": €,
+    "reason": "≤100 chars com dados",
+    "impactOnGoals": "≤100 chars"
+  }],
+  "summary": "≤150 chars"
 }
 
-## REGRAS:
+## REGRAS
+- Máx 5 sugestões
+- Só se >5% melhoria
+- Específico: "reduz €50" não "reduz um pouco"
+- Justifica com dados: "média 3 meses: €120"
+- Prioridades: 1º evitar estouros, 2º metas, 3º otimizar
 
-1. **Máximo 5 sugestões** - foca nas mais impactantes
-2. **Só sugere se >5% de melhoria** - evita micro-otimizações
-3. **Considera impacto nas metas** - não cortes cegos
-4. **Sê específico nos números** - "reduz €50" não "reduz um pouco"
-5. **Justifica com dados** - "média 3 meses: €120" não "acho que é demais"
-6. **Considera prioridades**:
-   - 1º: Evitar estouros de budgets essenciais
-   - 2º: Libertar dinheiro para metas de poupança
-   - 3º: Otimizar budgets não-essenciais
+Ex bom: {category: "Lazer", currentLimit: 200, suggestedLimit: 150, reason: "Média 3 meses: €110", impactOnGoals: "Liberta €50 para Férias"}
+Ex mau: {reason: "Podes poupar um pouco"} (vago)
 
-## EXEMPLOS DE BOAS SUGESTÕES:
-
-✅ {
-  "category": "Lazer",
-  "currentLimit": 200,
-  "suggestedLimit": 150,
-  "reason": "Média 3 meses: €110. Budget atual subutilizado.",
-  "impactOnGoals": "Liberta €50/mês para meta Férias"
-}
-
-✅ {
-  "category": "Alimentação",
-  "currentLimit": 300,
-  "suggestedLimit": 350,
-  "reason": "3 meses >90%. Previne estouros futuros.",
-  "impactOnGoals": "€50 extra, mas evita stress orçamental"
-}
-
-❌ {
-  "category": "Lazer",
-  "currentLimit": 200,
-  "suggestedLimit": 190,
-  "reason": "Podes poupar um pouco"
-}
-// Redução muito pequena, não justifica mudança
-
----
-
-Analisa os dados e sugere otimizações REAIS e ACIONÁVEIS. Foca no que traz mais benefício para o utilizador.`;
+Gera otimizações REAIS e ACIONÁVEIS.`;
 }

@@ -19,6 +19,7 @@ export interface AIInsightItem {
   category?: string;
   amount?: number;
   percentage?: number;
+  confidence?: "high" | "medium" | "low";
 }
 
 export interface AIForecastItem {

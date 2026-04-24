@@ -35,6 +35,15 @@ export function validateInsights(
   const seenTitles = new Set<string>();
   
   insights.forEach((insight, idx) => {
+    // Check 0: Confidence field
+    if (!insight.confidence) {
+      warnings.push({
+        type: "vague",
+        message: "Falta campo confidence (high/medium/low)",
+        insightIndex: idx
+      });
+    }
+    
     // Check 1: Category exists in data
     const mentionedCategories = extractCategoriesFromText(
       insight.title + " " + insight.description,
