@@ -9,7 +9,7 @@ import { useSpendingPower } from "@/hooks/useSpendingPower";
 import { isDateInCustomMonth, formatCustomMonth, getCustomMonthRange } from "@/lib/dateUtils";
 import Link from "next/link";
 
-import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
+import { MobileHeader } from "@/components/Sidebar";
 import { Icon } from "@/components/Icon";
 import { CategoryPieChart } from "@/components/charts";
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
@@ -142,9 +142,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-surface">
-      {!isMobile && <DesktopSidebar onSignOut={signOut} />}
-
+    <>
       {isMobile ? (
         <>
           <MobileHeader onSignOut={signOut} />
@@ -261,11 +259,9 @@ export default function Dashboard() {
               <Icon name="chevron_right" size={20} className="text-on-surface-variant" />
             </Link>
           </main>
-
-          <MobileNav />
         </>
       ) : (
-        <main className="ml-64 p-8 space-y-8">
+        <main className="p-8 space-y-8">
           <header className="flex justify-between items-center mb-4">
             <div>
               <h1 className="text-3xl font-bold text-on-surface">Dashboard</h1>
@@ -380,6 +376,6 @@ export default function Dashboard() {
           </div>
         </main>
       )}
-    </div>
+    </>
   );
 }
