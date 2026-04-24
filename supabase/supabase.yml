@@ -1,0 +1,42 @@
+[project]
+name = "family-finance-new"
+
+[project]
+slug = "family-finance-new"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost"
+
+[edge_runtime]
+enabled = true
+dns_prefetch = true
+
+[auth]
+site_url = "https://family-finance-new.vercel.app"
+additional_redirect_urls = ["https://family-finance-new.vercel.app"]
+jwtExpiry = 3600
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+# Edge Functions Secrets
+[functions.send-push]
+verify_jwt = false
+
+[functions.send-push.secrets]
+ONESIGNAL_APP_ID = "8954fbf1-30c3-4df4-8741-b98201a6e1ae"
