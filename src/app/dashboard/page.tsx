@@ -5,6 +5,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol, calculatePercentage, calculateMonthChange } from "@/lib/currency";
+import { useSpendingPower } from "@/hooks/useSpendingPower";
 import { isDateInCustomMonth, formatCustomMonth, getCustomMonthRange } from "@/lib/dateUtils";
 import Link from "next/link";
 
@@ -116,6 +117,30 @@ export default function Dashboard() {
   
   const isPositive = balance.total >= 0;
 
+  const { available, dailyBudget, status } = useSpendingPower();
+
+  function InMyPocketSmallCard() {
+    if (available <= 0) return null;
+
+    const statusColors = {
+      good: "text-green-500",
+      warning: "text-amber-500",
+      danger: "text-red-500",
+    };
+
+    return (
+      <div className="bg-surface-container rounded-lg p-4 min-w-0">
+        <p className="font-label text-xs text-on-surface-variant">In My Pocket</p>
+        <p className={`font-headline text-xl sm:text-lg font-bold ${statusColors[status]} min-w-0 truncate`}>
+          {formatCurrencyWithSymbol(Math.max(available, 0))}
+        </p>
+        <p className="text-xs text-on-surface-variant">
+          ~{dailyBudget.toFixed(2)}€/dia
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-surface">
       {!isMobile && <DesktopSidebar onSignOut={signOut} />}
@@ -172,6 +197,8 @@ export default function Dashboard() {
                 <p className="font-headline text-xl sm:text-lg font-bold text-secondary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.poupar)}</p>
               </div>
             </div>
+
+            <InMyPocketSmallCard />
 
             <section className="bg-surface-container rounded-lg p-4">
               <h3 className="font-headline text-lg font-bold text-on-surface mb-4">Despesas por Categoria</h3>
