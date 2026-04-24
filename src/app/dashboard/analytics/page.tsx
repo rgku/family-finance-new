@@ -11,12 +11,13 @@ import { isDateInCustomMonth, formatCustomMonth, getCustomMonthRange } from "@/l
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
 import { MonthlyTrendChart } from "@/components/charts/MonthlyTrendChart";
 import { ExpenseChart } from "@/components/charts/ExpenseChart";
+import { ProgressRing } from "@/components/charts/ProgressRing";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
 import { Icon } from "@/components/Icon";
 import { AIInsightItem } from "@/lib/ai/types";
 
 export default function AnalyticsPage() {
-  const { transactions, goals: dataGoals } = useData();
+  const { transactions, goals: dataGoals, budgets } = useData();
   const { profile, signOut } = useAuth();
   const isMobile = useDeviceType();
   const billingDay = profile?.billing_cycle_day || 1;
@@ -84,6 +85,71 @@ export default function AnalyticsPage() {
       amount: value,
     })).sort((a, b) => b.amount - a.amount);
   }, [filteredTransactions]);
+
+  // Budget vs Reality calculation
+  const budgetComparison = useMemo(() => {
+    if (!budgets || budgets.length === 0) return null;
+    
+    const totalBudget = budgets.reduce((sum, b) => sum + b.limit, 0);
+    const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
+    const difference = totalBudget - totalSpent;
+    const percentageUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+    
+    // Find category with biggest difference
+    const categoryDiffs = budgets.map(b => ({
+      category: b.category,
+      budget: b.limit,
+      spent: b.spent,
+      difference: b.limit - b.spent,
+      percentage: b.limit > 0 ? (b.spent / b.limit) * 100 : 0,
+    }));
+    
+    const worstCategory = categoryDiffs
+      .filter(c => c.percentage > 100)
+      .sort((a, b) => b.percentage - a.percentage)[0];
+    
+    const bestCategory = categoryDiffs
+      .filter(c => c.percentage < 80)
+      .sort((a, b) => a.percentage - b.percentage)[0];
+    
+    return {
+      totalBudget,
+      totalSpent,
+      difference,
+      percentageUsed,
+      worstCategory,
+      bestCategory,
+    };
+  }, [budgets]);
+
+  // Savings trend (last 3 months)
+  const savingsTrend = useMemo(() => {
+    const trend: { month: string; amount: number; percentage: number }[] = [];
+    
+    for (let i = 2; i >= 0; i--) {
+      const d = new Date(year, month - 1 - i, 15);
+      const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      
+      const monthTransactions = transactions.filter(t => {
+        const transDate = new Date(t.date);
+        return transDate.getFullYear() === d.getFullYear() && transDate.getMonth() === d.getMonth();
+      });
+      
+      const monthIncome = monthTransactions.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
+      const monthExpenses = monthTransactions.filter(t => t.type === "expense" && t.category !== "Investimentos").reduce((s, t) => s + t.amount, 0);
+      
+      const monthSavings = monthIncome - monthExpenses;
+      const percentage = monthIncome > 0 ? (monthSavings / monthIncome) * 100 : 0;
+      
+      trend.push({
+        month: m,
+        amount: monthSavings,
+        percentage,
+      });
+    }
+    
+    return trend;
+  }, [transactions, year, month]);
 
   const monthlyTrend = useMemo(() => {
     const months: { month: string; income: number; expense: number; pouparanca: number }[] = [];
@@ -193,10 +259,96 @@ const pageContent = (
         </div>
       </div>
 
+      {/* vs Budget Card */}
+      {budgetComparison && (
+        <div className={`p-5 sm:p-6 rounded-lg min-w-0 ${
+          budgetComparison.difference >= 0 
+            ? 'bg-gradient-to-br from-green-500/20 to-green-600/10 border border-green-500/30' 
+            : 'bg-gradient-to-br from-red-500/20 to-red-600/10 border border-red-500/30'
+        }`}>
+          <div className="flex items-center gap-2 mb-3">
+            <Icon name="account_balance_wallet" size={20} className={budgetComparison.difference >= 0 ? "text-green-500" : "text-red-500"} />
+            <p className="text-sm font-medium text-on-surface">vs Orçamento</p>
+          </div>
+          <p className={`text-xl sm:text-2xl font-bold ${budgetComparison.difference >= 0 ? "text-green-600" : "text-red-600"}`}>
+            {budgetComparison.difference >= 0 ? '+' : ''}{formatCurrencyWithSymbol(budgetComparison.difference)}
+          </p>
+          <p className="text-xs text-on-surface-variant mt-1">
+            {budgetComparison.totalSpent}€ gastos de {budgetComparison.totalBudget}€ ({Math.round(budgetComparison.percentageUsed)}%)
+          </p>
+          {budgetComparison.worstCategory && (
+            <div className="mt-3 pt-3 border-t border-on-surface/10">
+              <p className="text-xs text-red-400">
+                ⚠️ {budgetComparison.worstCategory.category} sobre orçamento ({Math.round(budgetComparison.worstCategory.percentage)}%)
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="bg-surface-container rounded-lg p-6">
         <h3 className="font-bold text-lg mb-4">Tendência Mensal (6 meses)</h3>
         <MonthlyTrendChart data={monthlyTrend} />
       </div>
+
+      {/* Savings Trend (3 months) */}
+      {savingsTrend.length > 0 && (
+        <div className="bg-surface-container rounded-lg p-6">
+          <h3 className="font-bold text-lg mb-4">Tendência Poupança (3 meses)</h3>
+          <div className="space-y-3">
+            {savingsTrend.map((item, idx) => {
+              const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+              const [, m] = item.month.split("-").map(Number);
+              const isPositive = item.amount >= 0;
+              return (
+                <div key={item.month} className="flex items-center gap-4">
+                  <span className="text-sm text-on-surface-variant w-12">{monthNames[m - 1]}</span>
+                  <div className="flex-1 h-6 bg-surface-container-highest rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full ${isPositive ? "bg-gradient-to-r from-green-500 to-green-400" : "bg-gradient-to-r from-red-500 to-red-400"}`}
+                      style={{ width: `${Math.min(Math.abs(item.percentage), 100)}%` }}
+                    />
+                  </div>
+                  <div className="w-20 text-right">
+                    <span className={`text-sm font-bold ${isPositive ? "text-green-600" : "text-red-600"}`}>
+                      {item.percentage >= 0 ? '+' : ''}{Math.round(item.percentage)}%
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Goals Progress */}
+      {dataGoals.length > 0 && (
+        <div className="bg-surface-container rounded-lg p-6">
+          <h3 className="font-bold text-lg mb-6 flex items-center gap-2">
+            <Icon name="flag" size={20} className="text-secondary" />
+            Metas
+          </h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {dataGoals.map((goal) => {
+              const progress = goal.target_amount > 0 ? (goal.current_amount / goal.target_amount) * 100 : 0;
+              const isCompleted = progress >= 100;
+              return (
+                <div key={goal.id} className="flex flex-col items-center">
+                  <ProgressRing
+                    progress={progress}
+                    size={80}
+                    strokeWidth={6}
+                    color={isCompleted ? "#10b981" : "#8b5cf6"}
+                    showPercentage={true}
+                  />
+                  <p className="text-xs text-center mt-2 font-medium truncate w-full">{goal.name}</p>
+                  <p className="text-xs text-on-surface-variant">{formatCurrencyWithSymbol(goal.current_amount)}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="bg-surface-container rounded-lg p-6">
         <h3 className="font-bold text-lg mb-6">Despesas por Categoria</h3>
