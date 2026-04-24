@@ -159,6 +159,9 @@ export async function GET(request: NextRequest) {
       previousMonthSpending[t.category] = (previousMonthSpending[t.category] || 0) + Number(t.amount);
     });
 
+    // Detect subscriptions from transactions
+    const subscriptionData = detectSubscriptions(transResult.data || []);
+
     const payload: AIInsightsPayload = {
       month: monthParam,
       income,
@@ -171,6 +174,7 @@ export async function GET(request: NextRequest) {
       transactionsCount: monthTransactions.length,
       previousMonthSpending: Object.keys(previousMonthSpending).length > 0 ? previousMonthSpending : undefined,
       billingCycleDay: billingDay,
+      subscriptions: subscriptionData.activeCount > 0 ? subscriptionData : undefined,
     };
 
     let insights: AIInsightItem[];
@@ -249,5 +253,107 @@ function generateFallbackInsights(data: AIInsightsPayload): AIInsightItem[] {
     }
   }
 
+  // Subscription insights (fallback)
+  if (data.subscriptions && data.subscriptions.zombieInsight) {
+    const { name, amount, daysSinceLastCharge } = data.subscriptions.zombieInsight;
+    insights.push({
+      type: "warning" as const,
+      title: "Subscription inativa",
+      description: `${name} sem uso há ${daysSinceLastCharge} dias. Poupança potencial: €${(amount * 12).toFixed(2)}/ano`,
+    });
+  }
+
   return insights;
+}
+
+interface TransactionRow {
+  description?: string;
+  category?: string;
+  amount?: number;
+  date?: string;
+  type?: string;
+}
+
+const SUBSCRIPTION_KEYWORDS = [
+  "netflix", "spotify", "disney", "hbo", "amazon prime", "apple tv",
+  "youtube premium", "youtube music", "tidal", "deezer", "xbox", "playstation",
+  "adobe", "microsoft 365", "dropbox", "icloud", "google one", "vpn", "nordvpn",
+];
+
+function detectSubscriptions(transactions: TransactionRow[]): {
+  activeCount: number;
+  totalMonthly: number;
+  totalYearly: number;
+  zombieCount: number;
+  potentialSavings: number;
+  zombieInsight?: { name: string; amount: number; daysSinceLastCharge: number };
+} {
+  const now = new Date();
+
+  const subscriptionTransactions = transactions.filter(t => {
+    if (t.type !== "expense") return false;
+    const desc = (t.description || "").toLowerCase();
+    const cat = (t.category || "").toLowerCase();
+    return SUBSCRIPTION_KEYWORDS.some(kw => desc.includes(kw) || cat.includes(kw));
+  });
+
+  if (subscriptionTransactions.length === 0) {
+    return { activeCount: 0, totalMonthly: 0, totalYearly: 0, zombieCount: 0, potentialSavings: 0 };
+  }
+
+  const grouped = new Map<string, { amount: number; lastDate: string; count: number }>();
+  
+  subscriptionTransactions.forEach(t => {
+    const key = t.description || t.category || "unknown";
+    const existing = grouped.get(key);
+    if (existing) {
+      if (new Date(t.date || "") > new Date(existing.lastDate)) {
+        existing.lastDate = t.date || "";
+      }
+      existing.amount = Number(t.amount);
+      existing.count++;
+    } else {
+      grouped.set(key, {
+        amount: Number(t.amount),
+        lastDate: t.date || "",
+        count: 1,
+      });
+    }
+  });
+
+  let activeCount = 0;
+  let totalMonthly = 0;
+  let zombieCount = 0;
+  let potentialSavings = 0;
+  let oldestZombie: { name: string; amount: number; daysSinceLastCharge: number } | undefined;
+
+  grouped.forEach((data, name) => {
+    if (data.count > 1) activeCount++;
+    const daysSinceLastCharge = Math.floor(
+      (now.getTime() - new Date(data.lastDate).getTime()) / (1000 * 60 * 60 * 24)
+    );
+
+    if (daysSinceLastCharge > 60 || data.count === 1) {
+      zombieCount++;
+      potentialSavings += data.amount;
+      if (!oldestZombie || daysSinceLastCharge > oldestZombie.daysSinceLastCharge) {
+        oldestZombie = {
+          name: name.split(" ")[0],
+          amount: data.amount,
+          daysSinceLastCharge,
+        };
+      }
+    }
+
+    totalMonthly += data.amount;
+  });
+
+  return {
+    activeCount,
+    totalMonthly,
+    totalYearly: totalMonthly * 12,
+    zombieCount,
+    potentialSavings,
+    zombieInsight: oldestZombie,
+  };
 }

@@ -51,6 +51,20 @@ export interface AIInsightsPayload {
   transactionsCount: number;
   previousMonthSpending?: Record<string, number>;
   billingCycleDay: number;
+  subscriptions?: SubscriptionData;
+}
+
+export interface SubscriptionData {
+  totalMonthly: number;
+  totalYearly: number;
+  activeCount: number;
+  zombieCount: number;
+  potentialSavings: number;
+  zombieInsight?: {
+    name: string;
+    amount: number;
+    daysSinceLastCharge: number;
+  };
 }
 
 export interface AIForecastPayload {
