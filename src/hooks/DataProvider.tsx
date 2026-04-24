@@ -218,15 +218,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { error: insertError } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: user.id,
-          plain_description: t.description,
-          plain_amount: t.amount,
-          type: t.type,
-          category: t.category,
-          date: t.date,
+      const { error: insertError, data: newId } = await supabase
+        .rpc('insert_transaction', {
+          p_user_id: user.id,
+          p_description: t.description,
+          p_amount: t.amount,
+          p_type: t.type,
+          p_category: t.category,
+          p_date: t.date,
         });
 
       if (insertError) throw insertError;
@@ -234,7 +233,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       // Small delay to ensure DB is updated
       await new Promise(resolve => setTimeout(resolve, 300));
       
-      // Fetch recently inserted transactions and find ours
+      // Fetch the newly inserted transaction
       const { data: recentTransactions, error: fetchError } = await supabase
         .from('transactions_decrypted')
         .select('*')
@@ -244,14 +243,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       if (fetchError) {
         console.error('Failed to fetch transactions:', fetchError);
-        // Keep optimistic update
       } else if (recentTransactions && recentTransactions.length > 0) {
-        // Find our transaction by matching non-encrypted fields
-        const insertedData = recentTransactions.find(t => 
-          t.type === t.type &&
-          t.category === t.category &&
-          t.date === t.date &&
-          Math.abs((parseFloat(t.amount) || 0) - t.amount) < 0.01
+        const insertedData = recentTransactions.find(trans => 
+          trans.id === newId ||
+          (trans.type === t.type &&
+          trans.category === t.category &&
+          trans.date === t.date &&
+          Math.abs((parseFloat(trans.amount) || 0) - t.amount) < 0.01)
         ) || recentTransactions[0];
         
         setTransactions(prev => {
@@ -539,8 +537,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     
     if (!isOnline) {
       const updates: any = {};
-      if (t.description !== undefined) updates.plain_description = t.description;
-      if (t.amount !== undefined) updates.plain_amount = t.amount;
+      if (t.description !== undefined) updates.description = t.description;
+      if (t.amount !== undefined) updates.amount = t.amount;
       if (t.type !== undefined) updates.type = t.type;
       if (t.category !== undefined) updates.category = t.category;
       if (t.date !== undefined) updates.date = t.date;
@@ -548,18 +546,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return;
     }
     
-    const updates: any = {};
-    if (t.description !== undefined) updates.plain_description = t.description;
-    if (t.amount !== undefined) updates.plain_amount = t.amount;
-    if (t.type !== undefined) updates.type = t.type;
-    if (t.category !== undefined) updates.category = t.category;
-    if (t.date !== undefined) updates.date = t.date;
-    
     const { error } = await supabase
-      .from('transactions')
-      .update(updates)
-      .eq('id', id)
-      .eq('user_id', user.id);
+      .rpc('update_transaction', {
+        p_id: id,
+        p_user_id: user.id,
+        p_description: t.description,
+        p_amount: t.amount,
+        p_type: t.type,
+        p_category: t.category,
+        p_date: t.date,
+      });
 
     if (error) {
       setTransactions(prev => prev.map(trans => 
@@ -614,8 +610,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (!isOnline) {
       await saveOffline('goals', {
         name: g.name,
-        plain_target_amount: g.target_amount,
-        plain_current_amount: g.current_amount || 0,
+        target_amount: g.target_amount,
+        current_amount: g.current_amount || 0,
         deadline: g.deadline,
         icon: g.icon,
         goal_type: g.goal_type || 'savings',
@@ -624,32 +620,36 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { data, error } = await supabase
-        .from('goals')
-        .insert({
-          user_id: user.id,
-          name: g.name,
-          plain_target_amount: g.target_amount,
-          plain_current_amount: g.current_amount || 0,
-          deadline: g.deadline,
-          icon: g.icon,
-          goal_type: g.goal_type || 'savings',
-        })
-        .select()
-        .single();
+      const { data: newId, error } = await supabase
+        .rpc('insert_goal', {
+          p_user_id: user.id,
+          p_name: g.name,
+          p_target_amount: g.target_amount,
+          p_current_amount: g.current_amount || 0,
+          p_deadline: g.deadline,
+          p_icon: g.icon || 'savings',
+          p_goal_type: g.goal_type || 'savings',
+        });
 
       if (error) throw error;
       
-      if (data) {
+      // Fetch the newly inserted goal
+      const { data: goalData } = await supabase
+        .from('goals_decrypted')
+        .select('*')
+        .eq('id', newId)
+        .single();
+
+      if (goalData) {
         setGoals(prev => prev.map(goal => 
           goal.id === tempId ? {
-            id: data.id,
-            name: data.name,
-            target_amount: parseFloat(data.target_amount) || 0,
-            current_amount: parseFloat(data.current_amount) || 0,
-            deadline: data.deadline,
-            icon: data.icon || 'savings',
-            goal_type: data.goal_type || 'savings',
+            id: goalData.id,
+            name: goalData.name,
+            target_amount: parseFloat(goalData.target_amount) || 0,
+            current_amount: parseFloat(goalData.current_amount) || 0,
+            deadline: goalData.deadline,
+            icon: goalData.icon || 'savings',
+            goal_type: goalData.goal_type || 'savings',
           } : goal
         ));
       }
@@ -672,29 +672,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (g.deadline !== undefined) updateData.deadline = g.deadline;
       if (g.icon !== undefined) updateData.icon = g.icon;
       if (g.goal_type !== undefined) updateData.goal_type = g.goal_type;
-      if (g.target_amount !== undefined) updateData.plain_target_amount = g.target_amount;
-      if (g.current_amount !== undefined) updateData.plain_current_amount = g.current_amount;
+      if (g.target_amount !== undefined) updateData.target_amount = g.target_amount;
+      if (g.current_amount !== undefined) updateData.current_amount = g.current_amount;
       await saveOffline('goals', updateData, 'update', id);
       return;
     }
     
-    const updateData: Record<string, unknown> = {};
-    if (g.name !== undefined) updateData.name = g.name;
-    if (g.deadline !== undefined) updateData.deadline = g.deadline;
-    if (g.icon !== undefined) updateData.icon = g.icon;
-    if (g.goal_type !== undefined) updateData.goal_type = g.goal_type;
-    if (g.target_amount !== undefined) updateData.plain_target_amount = g.target_amount;
-    if (g.current_amount !== undefined) updateData.plain_current_amount = g.current_amount;
-    
-    if (Object.keys(updateData).length > 0) {
-      const { error } = await supabase
-        .from('goals')
-        .update(updateData)
-        .eq('id', id)
-        .eq('user_id', user.id);
+    const { error } = await supabase
+      .rpc('update_goal', {
+        p_id: id,
+        p_user_id: user.id,
+        p_name: g.name,
+        p_target_amount: g.target_amount,
+        p_current_amount: g.current_amount,
+        p_deadline: g.deadline,
+        p_icon: g.icon,
+        p_goal_type: g.goal_type,
+      });
 
-      if (error) {
-        setGoals(prev => prev.map(goal => 
+    if (error) {
+      setGoals(prev => prev.map(goal => 
           goal.id === id ? { ...goal, ...g } : goal
         ));
         throw error;
