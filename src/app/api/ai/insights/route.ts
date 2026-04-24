@@ -3,6 +3,8 @@ import { createClient, createAdminSupabase } from "@/lib/supabase/server";
 import { groqChatJSON } from "@/lib/ai/groq";
 import { buildInsightsPrompt } from "@/lib/ai/prompts";
 import { AIInsightsPayload, AIInsightItem } from "@/lib/ai/types";
+import { validateDataQuality, detectOutliers, getDaysRemainingInMonth, isWeekend } from "@/lib/ai/dataQuality";
+import { validateInsights } from "@/lib/ai/validateOutput";
 
 export const dynamic = "force-dynamic";
 
@@ -162,7 +164,8 @@ export async function GET(request: NextRequest) {
     // Detect subscriptions from transactions
     const subscriptionData = detectSubscriptions(transResult.data || []);
 
-    const payload: AIInsightsPayload = {
+    // Data Quality Validation
+    const basePayload: AIInsightsPayload = {
       month: monthParam,
       income,
       expenses,
@@ -177,9 +180,48 @@ export async function GET(request: NextRequest) {
       subscriptions: subscriptionData.activeCount > 0 ? subscriptionData : undefined,
     };
 
+    // Validate data quality
+    const dataQuality = validateDataQuality(basePayload);
+    const outliers = detectOutliers(monthTransactions);
+
+    // Add metadata
+    const payload: AIInsightsPayload = {
+      ...basePayload,
+      metadata: {
+        dataQuality: dataQuality.overall,
+        outliersCount: outliers.length,
+        categoriesUsed: [...new Set(budgets.map(b => b.category))],
+        dayOfMonth: new Date().getDate(),
+        daysRemaining: getDaysRemainingInMonth(),
+        isWeekend: isWeekend(),
+      }
+    };
+
+    // Log data quality issues (monitoring)
+    if (dataQuality.issues.length > 0) {
+      console.log("Data quality issues:", dataQuality.issues);
+    }
+
     let insights: AIInsightItem[];
     try {
-      insights = await generateInsights(payload);
+      // If data quality is low, use fallback only
+      if (dataQuality.overall === "low") {
+        console.warn("Data quality low, using fallback only");
+        insights = generateFallbackInsights(payload);
+      } else {
+        insights = await generateInsights(payload);
+        
+        // Validate AI output
+        const validation = validateInsights(insights, payload);
+        
+        if (!validation.valid) {
+          console.warn("AI output validation failed", validation.errors);
+          insights = generateFallbackInsights(payload);
+        } else if (validation.warnings.length > 0) {
+          console.log("AI output warnings:", validation.warnings);
+          // Use insights but log warnings
+        }
+      }
     } catch (aiError) {
       console.warn("AI insights generation failed, using fallback:", aiError);
       insights = generateFallbackInsights(payload);

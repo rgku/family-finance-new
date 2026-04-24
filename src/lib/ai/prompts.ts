@@ -2,26 +2,16 @@ import { AIInsightsPayload, AIForecastPayload, AIBudgetOptimizePayload, Subscrip
 import { calculatePercentage } from "../currency";
 
 const SYSTEM_PROMPT = `És um assistente financeiro especializado em finanças pessoais para famílias portuguesas.
-O teu objetivo é analisar dados financeiros e gerar insights ACIONÁVEIS, RELEVANTES e PERSONALIZADOS.
+Gera insights ACIONÁVEIS, RELEVANTES e PERSONALIZADOS.
 
-CONTEXTO DO UTILIZADOR:
-- Família portuguesa a gerir orçamento doméstico
-- Utiliza categorias padrão: Alimentação, Lazer, Moradia, Transportes, Saúde, Educação, etc.
-- Valoriza poupança e controlo de gastos
-- Prefere linguagem direta, prática e encorajadora
+PRINCÍPIOS:
+1. Usa números EXATOS dos dados
+2. Usa categorias EXATAS dos dados  
+3. Sugere ações concretas
+4. Não inventes dados ou categorias
+5. JSON válido, sem texto extra
 
-PRINCÍPIOS DE ANÁLISE:
-1. Sê ESPECÍFICO - usa números exatos dos dados fornecidos
-2. Sê RELEVANTE - foca no que realmente importa para o utilizador
-3. Sê ACIONÁVEL - sugere ações concretas que o utilizador pode tomar
-4. Sê HONESTO - não inventes dados ou categorias
-5. Sê CONTEXTUAL - considera o momento do mês e padrões sazonais
-
-FORMATO DE RESPOSTA:
-- JSON válido, sem texto antes ou depois
-- Português de Portugal (não brasileiro)
-- Tom amigável mas profissional
-- Evita jargão financeiro complexo`;
+TOM: PT-PT, amigável, profissional, direto.`;
 
 export function buildInsightsPrompt(data: AIInsightsPayload): string {
   const { month, income, expenses, pouparanca, balance, categorySpending, budgets, goals, transactionsCount, previousMonthSpending, subscriptions } = data;
@@ -127,77 +117,31 @@ ${comparisonSection || "Sem dados do mês anterior"}
 ## 📱 SUBSCRIPTIONS
 ${subscriptionsSection || "Sem subscriptions detetadas"}
 
----
+${data.metadata ? `
+## 📋 QUALIDADE DOS DADOS
+- Qualidade: ${data.metadata.dataQuality.toUpperCase()}
+- Outliers: ${data.metadata.outliersCount}
+- Dia do mês: ${data.metadata.dayOfMonth} (${data.metadata.daysRemaining} dias restantes)
+- Fim de semana: ${data.metadata.isWeekend ? "Sim" : "Não"}
+` : ""}
 
-# INSTRUÇÕES DE ANÁLISE
+## ⚠️ REGRAS CRÍTICAS
+1. Usa APENAS estas categorias: ${data.metadata?.categoriesUsed.join(", ") || "ver dados acima"}
+2. NUNCA inventes números ou categorias
+3. Se dados faltam, diz "Sem dados" não inventes
+4. Máximo 6 insights
 
-## O QUE PROCURAR:
-
-1. **ALERTAS CRÍTICOS** (prioridade máxima):
-   - Saldo negativo (despesas > receitas)
-   - Orçamentos ultrapassados (>100%)
-   - Orçamentos em risco (80-99%)
-   - Subscription zombie detetada
-
-2. **PADRÕES POSITIVOS** (para reforçar):
-   - Poupança ≥20% das receitas
-   - Saldo positivo consistente
-   - Metas completadas ou em bom progresso
-   - Categorias bem geridas (<80% do budget)
-
-3. **OPORTUNIDADES DE MELHORIA**:
-   - Categorias com gastos >30% vs mês anterior
-   - Subscription que pode ser cancelada
-   - Meta que precisa de atenção
-   - Budget consistentemente baixo (<50%) - pode ser reduzido
-
-4. **CONTEXTOS ESPECIAIS**:
-   - Se estamos no fim do mês e budget está alto → alerta urgente
-   - Se estamos no início do mês → alerta mais suave
-   - Se é dezembro → considerar gastos de Natal
-   - Se é setembro → considerar gastos de regresso às aulas
-
-## FORMATO DE SAÍDA
-
-Gera um JSON com este formato EXATO:
-{
-  "insights": [
-    {
-      "type": "info" | "warning" | "success" | "tip",
-      "title": "Título curto e impactante (máx 60 caracteres)",
-      "description": "Descrição com números exatos e ação sugerida (máx 150 caracteres)"
-    }
-  ]
-}
-
-## REGRAS DE OURO:
-
-1. **NUNCA inventes categorias** - usa SEMPRE os nomes exatos fornecidos
-2. **NUNCA inventes números** - usa SEMPRE os dados fornecidos
-3. **Máximo 6 insights** - qualidade > quantidade
-4. **Pelo menos 1 insight positivo** se houver algo bom a destacar
-5. **Sê específico com números**: em vez de "gastaste muito", diz "gastaste €X em Y"
-6. **Sugere ações concretas**: em vez de "deves poupar mais", diz "reduz €X em Y para poupar €Z"
-7. **Considera o contexto do mês**: fim do mês = urgência, início = planeamento
-8. **Evita repetições**: não digas a mesma coisa de formas diferentes
-
-## EXEMPLOS DE BONS INSIGHTS:
-
-✅ "Lazer quase esgotado - Gastaste €146 de €170 (86%). Restam €24 para o fim do mês."
-✅ "Parabéns! Poupança de 28% ultrapassa a meta de 20%. Continua assim!"
-✅ "Netflix inativo há 67 dias. Cancela para poupar €15.99/mês (€192/ano)."
-✅ "Supermercado +30% vs mês passado. Verifica se foram compras extra ou preços."
-
-## EXEMPLOS DE INSIGHTS A EVITAR:
-
-❌ "Estás a gastar muito em algumas categorias." (vago, sem números)
-❌ "Deves poupar mais para o futuro." (não acionável)
-❌ "Alimentação está a ultrapassar 80%" quando é Lazer (categoria errada)
-❌ "Parabéns pelo teu sucesso financeiro!" (genérico, sem contexto)
+## 🧠 PROCESSO (antes de responder):
+1. Verifica categorias existem nos dados
+2. Confirma números fazem sentido  
+3. Identifica 1-3 alertas críticos
+4. Identifica 1-2 padrões positivos
+5. Formula insights com ações concretas
+6. Revê: categorias e números corretos?
 
 ---
 
-Gera agora os insights baseados nestes dados específicos. Foca no que é MAIS IMPORTANTE para o utilizador tomar decisões informadas sobre o seu dinheiro.`;
+Gera JSON com 3-6 insights. Foca no MAIS IMPORTANTE.`;
 }
 
 export function buildForecastPrompt(data: AIForecastPayload): string {
