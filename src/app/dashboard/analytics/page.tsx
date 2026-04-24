@@ -6,6 +6,9 @@ import { useData } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { useAIInsights } from "@/hooks/useAIInsights";
 import { useAIForecast } from "@/hooks/useAIForecast";
+import { useSpendingPower } from "@/hooks/useSpendingPower";
+import { useFiscalSnapshot } from "@/hooks/useFiscalSnapshot";
+import { useSubscriptionTracker } from "@/hooks/useSubscriptionTracker";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import { isDateInCustomMonth, formatCustomMonth, getCustomMonthRange } from "@/lib/dateUtils";
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
@@ -214,6 +217,145 @@ function InsightCard({ insight }: { insight: AIInsightItem }) {
   );
 }
 
+function InMyPocketCard() {
+  const { available, dailyBudget, remainingDays, breakdown, status, message } = useSpendingPower();
+
+  const statusStyles = {
+    good: "from-green-500/20 to-green-600/10 border-green-500/30 text-green-600",
+    warning: "from-amber-500/20 to-amber-600/10 border-amber-500/30 text-amber-600",
+    danger: "from-red-500/20 to-red-600/10 border-red-500/30 text-red-600",
+  };
+
+  if (available <= 0 && status === "danger") return null;
+
+  return (
+    <div className={`bg-gradient-to-br p-5 rounded-lg border ${statusStyles[status]}`}>
+      <div className="flex items-center gap-2 mb-3">
+        <Icon name="account_balance_wallet" size={20} />
+        <p className="text-sm font-medium">In My Pocket</p>
+      </div>
+      <p className={`text-2xl font-bold`}>
+        {formatCurrencyWithSymbol(Math.max(available, 0))}
+      </p>
+      <p className="text-xs mt-1 opacity-80">{message}</p>
+      <div className="mt-4 pt-3 border-t border-current/20 space-y-2">
+        {breakdown.map((item, idx) => (
+          <div key={idx} className="flex justify-between text-xs">
+            <span>{item.label}</span>
+            <span className={item.type === "income" ? "text-green-500" : "text-red-400"}>
+              {item.type === "income" ? "+" : "-"}{formatCurrencyWithSymbol(item.amount)}
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs mt-3 pt-3 border-t border-current/20">
+        {remainingDays} dias restantes no mês
+      </p>
+    </div>
+  );
+}
+
+function FiscalSnapshotCard() {
+  const { benefits, totalDeductible, totalPotentialRefund, yearlyExpenses, lastYearExpenses } = useFiscalSnapshot();
+
+  if (yearlyExpenses === 0) return null;
+
+  const hasBenefits = benefits.some((b) => b.totalExpenses > 0);
+  if (!hasBenefits) return null;
+
+  return (
+    <div className="bg-gradient-to-br from-secondary/20 to-secondary/5 border border-secondary/30 rounded-lg p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <Icon name="receipt_long" size={20} className="text-secondary" />
+        <p className="text-sm font-medium">Benefícios Fiscais</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <p className="text-xs text-on-surface-variant">Dedutível</p>
+          <p className="text-lg font-bold text-secondary">
+            {formatCurrencyWithSymbol(totalDeductible)}
+          </p>
+        </div>
+        <div>
+          <p className="text-xs text-on-surface-variant">Potencial reembolso</p>
+          <p className="text-lg font-bold text-green-500">
+            {formatCurrencyWithSymbol(totalPotentialRefund)}
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {benefits
+          .filter((b) => b.totalExpenses > 0)
+          .map((benefit, idx) => (
+            <div key={idx} className="flex justify-between items-center text-xs">
+              <span className="truncate">{benefit.category}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-on-surface-variant">
+                  {formatCurrencyWithSymbol(benefit.totalExpenses)} ({benefit.deductiblePercentage}%)
+                </span>
+                <span className="text-green-500 font-medium">
+                  +{formatCurrencyWithSymbol(benefit.potentialRefund)}
+                </span>
+              </div>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+}
+
+function SubscriptionTrackerCard() {
+  const { subscriptions, totalMonthly, totalYearly, activeCount, zombieCount, potentialSavings } = useSubscriptionTracker();
+
+  if (activeCount === 0) return null;
+
+  return (
+    <div className="bg-surface-container rounded-lg p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Icon name="subscriptions" size={20} className="text-primary" />
+          <p className="text-sm font-medium">Subscriptions</p>
+        </div>
+        <div className="text-right">
+          <p className="text-lg font-bold">{formatCurrencyWithSymbol(totalMonthly)}/mês</p>
+          <p className="text-xs text-on-surface-variant">
+            {formatCurrencyWithSymbol(totalYearly)}/ano
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        {subscriptions.slice(0, 5).map((sub) => (
+          <div key={sub.id} className="flex items-center justify-between py-2 border-b border-surface-container-high last:border-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <Icon name={sub.icon} size={16} className="text-secondary shrink-0" />
+              <span className="text-sm truncate">{sub.name}</span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="text-sm font-medium">{formatCurrencyWithSymbol(sub.amount)}</span>
+              {sub.isZombie && (
+                <span className="text-xs bg-red-500/20 text-red-500 px-2 py-0.5 rounded-full">
+                  Zombie
+                </span>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {zombieCount > 0 && (
+        <div className="mt-4 pt-4 border-t border-surface-container-high">
+          <p className="text-xs text-red-400">
+            ⚠️ {zombieCount} subscription(zombie) detectada(s) - Poupança potencial: {formatCurrencyWithSymbol(potentialSavings)}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const pageContent = (
     <>
       <header className="flex justify-between items-center">
@@ -354,6 +496,12 @@ const pageContent = (
         <h3 className="font-bold text-lg mb-6">Despesas por Categoria</h3>
         <ExpenseChart data={categoryBreakdown} />
       </div>
+
+      <InMyPocketCard />
+
+      <FiscalSnapshotCard />
+
+      <SubscriptionTrackerCard />
 
       <div className="bg-surface-container rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
