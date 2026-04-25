@@ -129,14 +129,20 @@ export default function Dashboard() {
     };
 
     return (
-      <div className="bg-surface-container rounded-lg p-4 min-w-0">
-        <p className="font-label text-xs text-on-surface-variant">In My Pocket</p>
-        <p className={`font-headline text-xl sm:text-lg font-bold ${statusColors[status]} min-w-0 truncate`}>
+      <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-lg p-5">
+        <div className="flex items-center gap-2 mb-2">
+          <Icon name="account_balance_wallet" size={18} className="text-green-500" />
+          <p className="font-label text-sm font-medium text-on-surface">In My Pocket</p>
+        </div>
+        <p className={`font-headline text-2xl font-bold ${statusColors[status]}`}>
           {formatCurrencyWithSymbol(Math.max(available, 0))}
         </p>
-        <p className="text-xs text-on-surface-variant">
-          ~{dailyBudget.toFixed(2)}€/dia
-        </p>
+        <div className="flex items-center justify-between mt-3 text-xs text-on-surface-variant">
+          <span>~{dailyBudget.toFixed(2)}€/dia</span>
+          <span className={status === "good" ? "text-green-500" : status === "warning" ? "text-amber-500" : "text-red-500"}>
+            {status === "good" ? "✓" : status === "warning" ? "⚠" : "✕"} {status === "good" ? "No orçamento" : status === "warning" ? "Atenção" : "Ultrapassado"}
+          </span>
+        </div>
       </div>
     );
   }
@@ -317,6 +323,8 @@ export default function Dashboard() {
                 <p className="text-lg sm:text-xl font-bold text-secondary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.poupar)}</p>
               </div>
             </div>
+
+            <InMyPocketSmallCard />
           </div>
 
           <div className="space-y-6">
