@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
   e2e:
@@ -33,12 +33,16 @@ jobs:
         run: npm run test:e2e
         env:
           CI: true
+          TEST_EMAIL: ${{ secrets.TEST_EMAIL }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
       
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
+          name: playwright-report-${{ github.run_id }}
           path: playwright-report/
           retention-days: 7
       
@@ -46,6 +50,52 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: test-screenshots
-          path: tests/e2e/**/*.png
+          name: test-screenshots-${{ github.run_id }}
+          path: test-results/**/test-failed-*.png
           retention-days: 7
+      
+      - name: Comment PR with test results
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const reportPath = 'playwright-report/index.html';
+            
+            let commentBody = '## 🎭 E2E Test Results\n\n';
+            
+            if (process.env.TEST_RESULTS === 'passed') {
+              commentBody += '✅ **All tests passed!**\n\n';
+            } else {
+              commentBody += '❌ **Some tests failed**\n\n';
+              commentBody += 'Check the artifacts for detailed results.\n\n';
+            }
+            
+            commentBody += '---\n';
+            commentBody += `📊 Report: [Download artifacts](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})\n`;
+            commentBody += `🔍 Commit: ${context.sha.substring(0, 7)}\n`;
+            
+            // Find existing comment and update or create new
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            
+            const existingComment = comments.find(c => c.user.login === 'github-actions[bot]' && c.body.includes('E2E Test Results'));
+            
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: commentBody
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: commentBody
+              });
+            }
