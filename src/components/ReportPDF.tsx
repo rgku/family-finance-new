@@ -314,7 +314,7 @@ interface Goal {
   name: string;
   target: number;
   current: number;
-  deadline?: string;
+  deadline?: string | null;
 }
 
 interface ReportData {
