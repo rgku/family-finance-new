@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/components/AuthProvider";
+import { useData } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import Link from "next/link";
@@ -60,18 +61,40 @@ function PDFDocumentWithLink({ data, selectedMonth }: PDFDocumentWithLinkProps) 
   );
 }
 
+interface Goal {
+  name: string;
+  target: number;
+  current: number;
+  deadline?: string | null;
+}
+
 interface ReportData {
   month: string;
   year: number;
   income: number;
   expenses: number;
   balance: number;
+  savings?: number;
   budget: { category: string; limit: number; spent: number }[];
   transactions: { id: string; description: string; amount: number; type: string; category: string; date: string }[];
+  goals?: Goal[];
+  previousMonth?: {
+    income: number;
+    expenses: number;
+    balance: number;
+  };
+  stats?: {
+    dailyAverage: number;
+    highestExpense: { description: string; amount: number };
+    totalTransactions: number;
+    categoriesCount: number;
+    daysInPeriod: number;
+  };
 }
 
 export default function ReportsPage() {
   const { signOut } = useAuth();
+  const { transactions, goals, budgets } = useData();
   const isMobile = useDeviceType();
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<ReportData | null>(null);
@@ -106,6 +129,61 @@ export default function ReportsPage() {
       controller.abort();
     };
   }, [selectedMonth]);
+
+  // Calculate additional data for PDF
+  const enrichedReportData = useMemo<ReportData | null>(() => {
+    if (!reportData) return null;
+
+    const prevMonthDate = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
+    
+    // Filter transactions for current and previous month
+    const currentMonthTrans = transactions.filter(t => {
+      const d = new Date(t.date);
+      return d.getFullYear() === year && d.getMonth() === month - 1;
+    });
+
+    const prevMonthTrans = transactions.filter(t => {
+      const d = new Date(t.date);
+      return d.getFullYear() === prevMonthDate.year && d.getMonth() === prevMonthDate.month - 1;
+    });
+
+    // Calculate previous month data
+    const prevIncome = prevMonthTrans.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
+    const prevExpenses = prevMonthTrans.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+    
+    // Calculate stats
+    const daysInPeriod = new Date(year, month, 0).getDate();
+    const totalExpenses = currentMonthTrans.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+    const categories = [...new Set(currentMonthTrans.map(t => t.category))];
+    
+    const highestExpense = currentMonthTrans
+      .filter(t => t.type === "expense")
+      .sort((a, b) => b.amount - a.amount)[0];
+
+    return {
+      ...reportData,
+      goals: goals.map(g => ({
+        name: g.name,
+        target: g.target_amount,
+        current: g.current_amount,
+        deadline: g.deadline,
+      })),
+      previousMonth: {
+        income: prevIncome,
+        expenses: prevExpenses,
+        balance: prevIncome - prevExpenses,
+      },
+      stats: {
+        dailyAverage: totalExpenses / daysInPeriod,
+        highestExpense: highestExpense
+          ? { description: highestExpense.description, amount: highestExpense.amount }
+          : { description: "N/A", amount: 0 },
+        totalTransactions: currentMonthTrans.length,
+        categoriesCount: categories.length,
+        daysInPeriod,
+      },
+    };
+  }, [reportData, transactions, goals, year, month]);
 
   const prevMonth = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
   const nextMonth = month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 };
@@ -246,8 +324,8 @@ export default function ReportsPage() {
             </p>
             
             <div className="flex flex-wrap gap-4">
-              {reportData ? (
-                <PDFDocumentWithLink data={reportData} selectedMonth={selectedMonth} />
+              {enrichedReportData ? (
+                <PDFDocumentWithLink data={enrichedReportData} selectedMonth={selectedMonth} />
               ) : (
                 <button disabled className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-surface-container-high/50 text-on-surface/50 rounded-full font-medium">
                   <Icon name="download" size={20} />
