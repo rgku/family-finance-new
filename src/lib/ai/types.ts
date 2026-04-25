@@ -13,7 +13,7 @@ export const AI_PROVIDER_CONFIG = {
 export type AIProvider = "groq" | "cohere";
 
 export interface AIInsightItem {
-  type: "info" | "warning" | "success" | "tip";
+  type: "info" | "warning" | "success" | "tip" | "alert";
   title: string;
   description: string;
   category?: string;

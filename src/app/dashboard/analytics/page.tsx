@@ -15,9 +15,13 @@ import { EXPENSE_CATEGORIES } from "@/lib/constants";
 import { MonthlyTrendChart } from "@/components/charts/MonthlyTrendChart";
 import { ExpenseChart } from "@/components/charts/ExpenseChart";
 import { ProgressRing } from "@/components/charts/ProgressRing";
+import { SavingsBarChart } from "@/components/charts/SavingsBarChart";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
 import { Icon } from "@/components/Icon";
 import { AIInsightItem } from "@/lib/ai/types";
+import { GoalsProgressCard } from "@/components/GoalsProgressCard";
+import { SavingsTipsCard } from "@/components/SavingsTipsCard";
+import { AIAlertsCard } from "@/components/AIAlertCard";
 
 export default function AnalyticsPage() {
   const { transactions, goals: dataGoals, budgets } = useData();
@@ -37,7 +41,7 @@ export default function AnalyticsPage() {
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const [year, month] = selectedMonth.split("-").map(Number);
 
-  const { insights: aiInsights, loading: aiLoading, refetch } = useAIInsights(selectedMonth);
+  const { insights: aiInsights, loading: aiLoading, refetch, savingsTips, alerts, currentSavingsRate } = useAIInsights(selectedMonth);
 
   const nextMonthParam = (() => {
     const [y, m] = selectedMonth.split("-").map(Number);
@@ -134,6 +138,9 @@ export default function AnalyticsPage() {
       const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       
       const monthTransactions = transactions.filter(t => {
+        if (billingDay > 1) {
+          return isDateInCustomMonth(t.date, billingDay, d.getFullYear(), d.getMonth() + 1);
+        }
         const transDate = new Date(t.date);
         return transDate.getFullYear() === d.getFullYear() && transDate.getMonth() === d.getMonth();
       });
@@ -152,7 +159,7 @@ export default function AnalyticsPage() {
     }
     
     return trend;
-  }, [transactions, year, month]);
+  }, [transactions, year, month, billingDay]);
 
   const monthlyTrend = useMemo(() => {
     const months: { month: string; income: number; expense: number; pouparanca: number }[] = [];
@@ -528,33 +535,7 @@ const pageContent = (
       )}
 
       {/* Goals Progress */}
-      {dataGoals.length > 0 && (
-        <div className="bg-surface-container rounded-lg p-6">
-          <h3 className="font-bold text-lg mb-6 flex items-center gap-2">
-            <Icon name="flag" size={20} className="text-secondary" />
-            Metas
-          </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {dataGoals.map((goal) => {
-              const progress = goal.target_amount > 0 ? (goal.current_amount / goal.target_amount) * 100 : 0;
-              const isCompleted = progress >= 100;
-              return (
-                <div key={goal.id} className="flex flex-col items-center">
-                  <ProgressRing
-                    progress={progress}
-                    size={80}
-                    strokeWidth={6}
-                    color={isCompleted ? "#10b981" : "#8b5cf6"}
-                    showPercentage={true}
-                  />
-                  <p className="text-xs text-center mt-2 font-medium truncate w-full">{goal.name}</p>
-                  <p className="text-xs text-on-surface-variant">{formatCurrencyWithSymbol(goal.current_amount)}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <GoalsProgressCard goals={dataGoals} />
 
       <div className="bg-surface-container rounded-lg p-6">
         <h3 className="font-bold text-lg mb-6">Despesas por Categoria</h3>
@@ -566,6 +547,29 @@ const pageContent = (
       <FiscalSnapshotCard />
 
       <SubscriptionTrackerCard />
+
+      {/* Tendência de Poupança (3 meses) */}
+      <div className="bg-surface-container rounded-lg p-6">
+        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+          <Icon name="trending_up" size={20} className="text-secondary" />
+          Tendência de Poupança
+        </h3>
+        <SavingsBarChart data={savingsTrend} />
+      </div>
+
+      {/* Dicas de Poupança IA */}
+      {(savingsTips.length > 0 || currentSavingsRate !== undefined) && (
+        <SavingsTipsCard
+          tips={savingsTips}
+          currentSavingsRate={currentSavingsRate}
+          targetSavingsRate={30}
+        />
+      )}
+
+      {/* Alertas IA */}
+      {alerts.length > 0 && (
+        <AIAlertsCard alerts={alerts} />
+      )}
 
       <div className="bg-surface-container rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
@@ -601,9 +605,18 @@ const pageContent = (
           </div>
         ) : (
           <div className="space-y-3">
-            {aiInsights.map((insight, idx) => (
-              <InsightCard key={idx} insight={insight} />
-            ))}
+            {aiInsights
+              .filter(i => i.type !== "tip" && i.type !== "alert")
+              .filter(i => !(i.type === "warning" && (
+                i.title.toLowerCase().includes("+") ||
+                i.description.toLowerCase().includes("aumentou") ||
+                i.description.toLowerCase().includes("cresceu") ||
+                i.description.toLowerCase().includes("mais que") ||
+                i.percentage !== undefined && i.percentage > 30
+              )))
+              .map((insight, idx) => (
+                <InsightCard key={idx} insight={insight} />
+              ))}
           </div>
         )}
       </div>
