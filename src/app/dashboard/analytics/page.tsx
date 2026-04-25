@@ -231,6 +231,7 @@ export default function AnalyticsPage() {
   warning: { bg: "bg-amber-500/10", icon: "warning", color: "text-amber-600" },
   info: { bg: "bg-blue-500/10", icon: "info", color: "text-blue-600" },
   tip: { bg: "bg-primary/10", icon: "lightbulb", color: "text-primary" },
+  alert: { bg: "bg-red-500/10", icon: "error", color: "text-red-600" },
 };
 
 function InsightCard({ insight }: { insight: AIInsightItem }) {
