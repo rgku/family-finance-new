@@ -2,6 +2,8 @@
 
 import { useMemo } from "react";
 import { useData } from "./DataProvider";
+import { useAuth } from "./AuthProvider";
+import { isDateInCustomMonth, getCustomMonthRange } from "@/lib/dateUtils";
 
 interface SpendingPower {
   available: number;
@@ -18,17 +20,29 @@ interface SpendingPower {
 
 export function useSpendingPower(): SpendingPower {
   const { transactions, goals, budgets } = useData();
+  const { profile } = useAuth();
 
   return useMemo(() => {
     const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const currentDay = now.getDate();
-    const remainingDays = daysInMonth - currentDay;
+    const billingDay = profile?.billing_cycle_day || 1;
+    
+    const { startDate, endDate } = getCustomMonthRange(billingDay, now);
+    const currentMonth = startDate.getMonth();
+    const currentYear = startDate.getFullYear();
+    
+    const daysInPeriod = billingDay > 1 
+      ? Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+      : new Date(currentYear, currentMonth + 1, 0).getDate();
+    const currentDay = billingDay > 1
+      ? Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+      : now.getDate();
+    const remainingDays = Math.max(0, daysInPeriod - currentDay);
 
     const monthlyTransactions = transactions.filter((t) => {
       const date = new Date(t.date);
+      if (billingDay > 1) {
+        return isDateInCustomMonth(t.date, billingDay, currentYear, currentMonth + 1);
+      }
       return date.getFullYear() === currentYear && date.getMonth() === currentMonth;
     });
 
@@ -37,7 +51,7 @@ export function useSpendingPower(): SpendingPower {
       .reduce((sum, t) => sum + t.amount, 0);
 
     const expenses = monthlyTransactions
-      .filter((t) => t.type === "expense")
+      .filter((t) => t.type === "expense" && t.category !== "Investimentos")
       .reduce((sum, t) => sum + t.amount, 0);
 
     const balance = income - expenses;
@@ -46,9 +60,22 @@ export function useSpendingPower(): SpendingPower {
       const progress = g.target_amount > 0 ? (g.current_amount / g.target_amount) * 100 : 0;
       return progress < 100;
     });
+    
     const goalsAllocated = activeGoals.reduce((sum, g) => {
-      const monthlyContribution = g.target_amount / 12;
-      return sum + Math.min(monthlyContribution, g.target_amount - g.current_amount);
+      if (g.goal_type === 'savings' && g.created_at) {
+        const goalCreated = new Date(g.created_at);
+        if (billingDay > 1) {
+          if (!isDateInCustomMonth(g.created_at, billingDay, currentYear, currentMonth + 1)) {
+            return sum;
+          }
+        } else {
+          if (goalCreated.getFullYear() !== currentYear || goalCreated.getMonth() !== currentMonth) {
+            return sum;
+          }
+        }
+        return sum + g.current_amount;
+      }
+      return sum;
     }, 0);
 
     const monthlyBudgets = budgets.filter((b) => b.limit > 0);
@@ -90,5 +117,5 @@ export function useSpendingPower(): SpendingPower {
       status,
       message,
     };
-  }, [transactions, goals, budgets]);
+  }, [transactions, goals, budgets, profile?.billing_cycle_day]);
 }
