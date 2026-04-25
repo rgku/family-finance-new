@@ -14,6 +14,7 @@ export default function TransactionsPage() {
   const isMobile = useDeviceType();
 
   const [dateRange, setDateRange] = useState<{ start: string; end: string } | null>(null);
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
   const filteredTransactions = useMemo(() => {
     let result = transactions;
@@ -25,11 +26,51 @@ export default function TransactionsPage() {
       result = result.filter(t => t.date <= dateRange.end);
     }
     
+    if (sortConfig) {
+      result = [...result].sort((a, b) => {
+        let aVal: any;
+        let bVal: any;
+        
+        switch (sortConfig.key) {
+          case 'date':
+            aVal = new Date(a.date);
+            bVal = new Date(b.date);
+            break;
+          case 'amount':
+            aVal = a.amount;
+            bVal = b.amount;
+            break;
+          case 'description':
+            aVal = a.description.toLowerCase();
+            bVal = b.description.toLowerCase();
+            break;
+          default:
+            return 0;
+        }
+        
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    
     return result;
-  }, [transactions, dateRange]);
+  }, [transactions, dateRange, sortConfig]);
 
   const handleClearFilter = () => {
     setDateRange(null);
+  };
+
+  const handleSort = (key: string) => {
+    setSortConfig(current => {
+      if (current?.key !== key) {
+        return { key, direction: 'desc' };
+      }
+      if (current.direction === 'desc') {
+        return { key, direction: 'asc' };
+      }
+      return null;
+    });
   };
 
   const handleEdit = (id: string) => {
@@ -68,7 +109,7 @@ export default function TransactionsPage() {
   };
 
   return (
-    <div className="p-8">
+    <div className="p-8 pb-24 md:pb-8">
       <header className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-on-surface">Transações</h1>
@@ -130,10 +171,28 @@ export default function TransactionsPage() {
           <table className="w-full" aria-label="Transações">
             <thead className="bg-surface-container-low">
               <tr>
-                <th scope="col" className="text-left p-4 text-sm font-medium text-on-surface-variant">Descrição</th>
+                <th 
+                  scope="col" 
+                  className="text-left p-4 text-sm font-medium text-on-surface-variant cursor-pointer hover:text-primary"
+                  onClick={() => handleSort('description')}
+                >
+                  Descrição {sortConfig?.key === 'description' && (sortConfig.direction === 'asc' ? ' ↑' : ' ↓')}
+                </th>
                 <th scope="col" className="text-left p-4 text-sm font-medium text-on-surface-variant">Categoria</th>
-                <th scope="col" className="text-left p-4 text-sm font-medium text-on-surface-variant">Data</th>
-                <th scope="col" className="text-right p-4 text-sm font-medium text-on-surface-variant">Valor</th>
+                <th 
+                  scope="col" 
+                  className="text-left p-4 text-sm font-medium text-on-surface-variant cursor-pointer hover:text-primary"
+                  onClick={() => handleSort('date')}
+                >
+                  Data {sortConfig?.key === 'date' && (sortConfig.direction === 'asc' ? ' ↑' : ' ↓')}
+                </th>
+                <th 
+                  scope="col" 
+                  className="text-right p-4 text-sm font-medium text-on-surface-variant cursor-pointer hover:text-primary"
+                  onClick={() => handleSort('amount')}
+                >
+                  Valor {sortConfig?.key === 'amount' && (sortConfig.direction === 'asc' ? ' ↑' : ' ↓')}
+                </th>
                 <th scope="col" className="text-right p-4 text-sm font-medium text-on-surface-variant">Ações</th>
               </tr>
             </thead>

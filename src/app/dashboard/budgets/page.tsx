@@ -396,5 +396,5 @@ export default function BudgetsPage() {
     );
   }
 
-  return <div className="p-8 space-y-6">{pageContent}</div>;
+  return <div className="p-8 pb-24 md:pb-8 space-y-6">{pageContent}</div>;
 }
