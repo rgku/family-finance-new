@@ -105,12 +105,12 @@ export const SavingsBarChart = memo(function SavingsBarChart({ data }: SavingsBa
                 boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
               }}
               labelStyle={{ color: "#f8fafc", fontWeight: 600 }}
-              formatter={(value: number, name: string) => {
+              formatter={(value, name) => {
                 if (name === "percentage") {
-                  return [`${value.toFixed(1)}%`, "Poupança"];
+                  return [`${Number(value).toFixed(1)}%`, "Poupança"];
                 }
                 if (name === "amount") {
-                  return [formatCurrencyWithSymbol(value), "Valor"];
+                  return [formatCurrencyWithSymbol(Number(value)), "Valor"];
                 }
                 return [value, name];
               }}
