@@ -43,6 +43,7 @@ export default function AuthPage() {
           }
         }
       } else {
+        // Signup with detailed error logging
         const { error, data } = await supabase.auth.signUp({
           email,
           password,
@@ -50,17 +51,21 @@ export default function AuthPage() {
             data: {
               full_name: fullName || "",
             },
+            emailRedirectTo: `${window.location.origin}/auth/callback`,
           },
         });
         
+        console.log("Signup response:", { error, data });
+        
         if (error) {
+          console.error("Signup error:", error);
           setError(error.message);
-        } else if (data.session) {
-          // Email confirmed, user created - go to dashboard
-          router.push("/dashboard");
+        } else if (data.user) {
+          // User created, may or may not require email confirmation
+          console.log("User created:", data.user.id);
+          setError("Conta criada! Verifica o teu email para confirmar.");
         } else {
-          // Email confirmation required
-          setError("Confirma o teu email antes de entrar. Verifica a tua caixa de correio.");
+          setError("Erro ao criar conta. Tenta novamente.");
         }
       }
     } catch (err) {
