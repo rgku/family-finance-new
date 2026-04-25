@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useData } from "./DataProvider";
-import { useAuth } from "./AuthProvider";
+import { useAuth } from "@/components/AuthProvider";
 import { isDateInCustomMonth, getCustomMonthRange } from "@/lib/dateUtils";
 
 interface SpendingPower {
