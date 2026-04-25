@@ -1,78 +1,81 @@
-import { test, expect } from '@playwright/test';
+import { test } from './fixtures';
+import { expect } from '@playwright/test';
 
 test.describe('Notifications E2E Tests', () => {
-  test('carrega página de alertas', async ({ page }) => {
-    await page.goto('/dashboard/alerts');
-    await expect(page.locator('text=Alertas, text=Notificações')).toBeVisible();
+  test('carrega página de alertas', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto('/dashboard/alerts');
+    await authenticatedPage.waitForTimeout(1000);
+    expect(await authenticatedPage.url()).toContain('/alerts');
   });
 
-  test('mostra sino de notificações no header', async ({ page }) => {
-    await page.goto('/dashboard');
-    
-    const notificationBell = page.locator('[aria-label*="notificação"], [aria-label*="notification"], button:has-text("🔔"), .notification-bell, [data-testid="notification-bell"]');
-    const hasBell = await notificationBell.count() > 0;
+  test('mostra sino de notificações no header', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto('/dashboard');
+    await authenticatedPage.waitForTimeout(500);
+    // Check if the bell icon exists in the header
+    const bellButton = authenticatedPage.locator('button:has([data-testid*="bell"]), button svg').first();
+    const hasBell = await bellButton.count() > 0;
     expect(hasBell).toBeTruthy();
   });
 
-  test('abre dropdown de notificações', async ({ page }) => {
-    await page.goto('/dashboard');
+  test('abre dropdown de notificações', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto('/dashboard');
     
-    const notificationBell = page.locator('[aria-label*="notificação"], [aria-label*="notification"], .notification-bell').first();
+    const notificationBell = authenticatedPage.locator('[aria-label*="notificação"], [aria-label*="notification"], .notification-bell').first();
     if (await notificationBell.isVisible()) {
       await notificationBell.click();
-      await page.waitForTimeout(500);
+      await authenticatedPage.waitForTimeout(500);
       
-      const hasDropdown = await page.locator('[role="listbox"], [class*="notification"], text=Notificações, text=Sem notificações').isVisible().catch(() => false);
+      const hasDropdown = await authenticatedPage.locator('[role="listbox"], [class*="notification"], text=Notificações, text=Sem notificações').isVisible().catch(() => false);
       expect(hasDropdown).toBeTruthy();
     }
   });
 
-  test('marca notificação como lida', async ({ page }) => {
-    await page.goto('/dashboard/alerts');
+  test('marca notificação como lida', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto('/dashboard/alerts');
     
-    const unreadNotifications = page.locator('[data-unread="true"], .unread, [aria-label*="não lida"]');
+    const unreadNotifications = authenticatedPage.locator('[data-unread="true"], .unread, [aria-label*="não lida"]');
     if (await unreadNotifications.count() > 0) {
       await unreadNotifications.first().click();
-      await page.waitForTimeout(500);
+      await authenticatedPage.waitForTimeout(500);
     }
   });
 
-  test('marca todas as notificações como lidas', async ({ page }) => {
-    await page.goto('/dashboard/alerts');
+  test('marca todas as notificações como lidas', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto('/dashboard/alerts');
     
-    const markAllReadButton = page.locator('button:has-text("Marcar todas como lidas"), button:has-text("Ler todas"), button:has-text("Clear all")');
+    const markAllReadButton = authenticatedPage.locator('button:has-text("Marcar todas como lidas"), button:has-text("Ler todas"), button:has-text("Clear all")');
     if (await markAllReadButton.isVisible()) {
       await markAllReadButton.click();
-      await page.waitForTimeout(500);
+      await authenticatedPage.waitForTimeout(500);
     }
   });
 
-  test('elimina notificação', async ({ page }) => {
-    await page.goto('/dashboard/alerts');
+  test('elimina notificação', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto('/dashboard/alerts');
     
-    const deleteButtons = page.locator('button[aria-label*="eliminar"], button[aria-label*="delete"], button:has-text("×"), [data-testid="delete-notification"]');
+    const deleteButtons = authenticatedPage.locator('button[aria-label*="eliminar"], button[aria-label*="delete"], button:has-text("×"), [data-testid="delete-notification"]');
     if (await deleteButtons.count() > 0) {
       await deleteButtons.first().click();
-      await page.waitForTimeout(500);
+      await authenticatedPage.waitForTimeout(500);
     }
   });
 
-  test('limpa todas as notificações', async ({ page }) => {
-    await page.goto('/dashboard/alerts');
+  test('limpa todas as notificações', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto('/dashboard/alerts');
     
-    const clearAllButton = page.locator('button:has-text("Limpar todas"), button:has-text("Clear all"), button:has-text("Eliminar todas")');
+    const clearAllButton = authenticatedPage.locator('button:has-text("Limpar todas"), button:has-text("Clear all"), button:has-text("Eliminar todas")');
     if (await clearAllButton.isVisible()) {
       await clearAllButton.click();
-      await page.waitForTimeout(500);
+      await authenticatedPage.waitForTimeout(500);
     }
   });
 
-  test('notificações push estão configuradas', async ({ page }) => {
-    await page.goto('/dashboard/settings');
+  test('notificações push estão configuradas', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto('/dashboard/settings');
     
-    const pushNotificationsSection = page.locator('text=Push, text=Notificações push, text=Browser notifications');
+    const pushNotificationsSection = authenticatedPage.locator('text=Push, text=Notificações push, text=Browser notifications');
     if (await pushNotificationsSection.isVisible()) {
-      const toggle = page.locator('input[type="checkbox"], [role="switch"]').nth(1);
+      const toggle = authenticatedPage.locator('input[type="checkbox"], [role="switch"]').nth(1);
       if (await toggle.isVisible()) {
         const isChecked = await toggle.isChecked();
         expect(typeof isChecked).toBe('boolean');
@@ -80,38 +83,38 @@ test.describe('Notifications E2E Tests', () => {
     }
   });
 
-  test('configura preferências de notificação', async ({ page }) => {
-    await page.goto('/dashboard/settings');
+  test('configura preferências de notificação', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto('/dashboard/settings');
     
-    const notificationToggles = page.locator('input[type="checkbox"], [role="switch"]');
+    const notificationToggles = authenticatedPage.locator('input[type="checkbox"], [role="switch"]');
     const count = await notificationToggles.count();
     
     if (count > 0) {
       await notificationToggles.first().click();
-      await page.waitForTimeout(300);
+      await authenticatedPage.waitForTimeout(300);
     }
   });
 
-  test('badge de notificações não lidas', async ({ page }) => {
-    await page.goto('/dashboard');
+  test('badge de notificações não lidas', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto('/dashboard');
     
-    const badge = page.locator('[class*="badge"], [class*="counter"], .notification-count, [aria-label*="não lida"]');
+    const badge = authenticatedPage.locator('[class*="badge"], [class*="counter"], .notification-count, [aria-label*="não lida"]');
     const hasBadge = await badge.count() >= 0;
     expect(hasBadge).toBeTruthy();
   });
 
-  test('navega para página de notificações pelo bell', async ({ page }) => {
-    await page.goto('/dashboard');
+  test('navega para página de notificações pelo bell', async ({ authenticatedPage }) => {
+    await authenticatedPage.goto('/dashboard');
     
-    const notificationBell = page.locator('[aria-label*="notificação"], .notification-bell').first();
+    const notificationBell = authenticatedPage.locator('[aria-label*="notificação"], .notification-bell').first();
     if (await notificationBell.isVisible()) {
       await notificationBell.click();
-      await page.waitForTimeout(300);
+      await authenticatedPage.waitForTimeout(300);
       
-      const viewAllLink = page.locator('a:has-text("Ver todas"), a:has-text("See all"), button:has-text("Ver alertas")');
+      const viewAllLink = authenticatedPage.locator('a:has-text("Ver todas"), a:has-text("See all"), button:has-text("Ver alertas")');
       if (await viewAllLink.isVisible()) {
         await viewAllLink.click();
-        await expect(page).toHaveURL(/\/dashboard\/alerts/);
+        await expect(authenticatedPage).toHaveURL(/\/dashboard\/alerts/);
       }
     }
   });

@@ -109,7 +109,7 @@ export default function TransactionsPage() {
   };
 
   return (
-    <div className="p-8 pb-24 md:pb-8">
+    <div className="p-8 pb-32 md:pb-8">
       <header className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold text-on-surface">Transações</h1>

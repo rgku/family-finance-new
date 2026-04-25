@@ -261,7 +261,7 @@ export default function Dashboard() {
           </main>
         </>
       ) : (
-        <main className="p-8 pb-24 md:pb-8 space-y-8">
+        <main className="p-8 pb-32 md:pb-8 space-y-8">
           <header className="flex justify-between items-center mb-4">
             <div>
               <h1 className="text-3xl font-bold text-on-surface">Dashboard</h1>

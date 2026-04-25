@@ -192,6 +192,28 @@ export default function AnalyticsPage() {
     return months;
   }, [transactions, dataGoals, year, month, profile, billingDay]);
 
+  // Monthly comparison (current vs previous month)
+  const monthComparison = useMemo(() => {
+    if (monthlyTrend.length < 2) return null;
+    const current = monthlyTrend[monthlyTrend.length - 1];
+    const previous = monthlyTrend[monthlyTrend.length - 2];
+    if (!previous) return null;
+    
+    const incomeChange = current.income - previous.income;
+    const expenseChange = current.expense - previous.expense;
+    const incomePercent = previous.income > 0 ? (incomeChange / previous.income) * 100 : 0;
+    const expensePercent = previous.expense > 0 ? (expenseChange / previous.expense) * 100 : 0;
+    
+    return {
+      incomeChange,
+      expenseChange,
+      incomePercent,
+      expensePercent,
+      incomeDirection: incomeChange > 0 ? 'up' : incomeChange < 0 ? 'down' : 'stable',
+      expenseDirection: expenseChange > 0 ? 'up' : expenseChange < 0 ? 'down' : 'stable',
+    };
+  }, [monthlyTrend]);
+
   const prevMonth = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
   const nextMonth = month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 };
   const now = new Date();
@@ -428,6 +450,48 @@ const pageContent = (
         </div>
       )}
 
+      {/* Monthly Comparison Card */}
+      {monthComparison && (
+        <div className="bg-surface-container p-5 sm:p-6 rounded-lg">
+          <div className="flex items-center gap-2 mb-4">
+            <Icon name="trending_up" size={20} className="text-primary" />
+            <p className="text-sm font-medium text-on-surface">vs Mês Anterior</p>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <p className="text-xs text-on-surface-variant">Receitas</p>
+              <div className="flex items-center gap-2">
+                <span className={`text-lg font-bold ${monthComparison.incomeDirection === 'up' ? 'text-green-500' : monthComparison.incomeDirection === 'down' ? 'text-red-500' : 'text-on-surface'}`}>
+                  {monthComparison.incomeDirection === 'up' ? '↑' : monthComparison.incomeDirection === 'down' ? '↓' : '→'}
+                </span>
+                <span className="text-lg font-bold text-on-surface">
+                  {formatCurrencyWithSymbol(monthComparison.incomeChange)}
+                </span>
+              </div>
+              <p className="text-xs text-on-surface-variant">
+                {monthComparison.incomePercent >= 0 ? '+' : ''}{monthComparison.incomePercent.toFixed(1)}%
+              </p>
+            </div>
+            
+            <div className="space-y-2">
+              <p className="text-xs text-on-surface-variant">Despesas</p>
+              <div className="flex items-center gap-2">
+                <span className={`text-lg font-bold ${monthComparison.expenseDirection === 'up' ? 'text-red-500' : monthComparison.expenseDirection === 'down' ? 'text-green-500' : 'text-on-surface'}`}>
+                  {monthComparison.expenseDirection === 'up' ? '↑' : monthComparison.expenseDirection === 'down' ? '↓' : '→'}
+                </span>
+                <span className="text-lg font-bold text-on-surface">
+                  {formatCurrencyWithSymbol(monthComparison.expenseChange)}
+                </span>
+              </div>
+              <p className="text-xs text-on-surface-variant">
+                {monthComparison.expensePercent >= 0 ? '+' : ''}{monthComparison.expensePercent.toFixed(1)}%
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-surface-container rounded-lg p-6">
         <h3 className="font-bold text-lg mb-4">Tendência Mensal (6 meses)</h3>
         <MonthlyTrendChart data={monthlyTrend} />
@@ -617,5 +681,5 @@ const pageContent = (
     );
   }
 
-  return <div className="p-8 space-y-8">{pageContent}</div>;
+  return <div className="p-8 pb-32 md:pb-8 space-y-8">{pageContent}</div>;
 }
