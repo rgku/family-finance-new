@@ -8,27 +8,10 @@ import { formatCurrencyWithSymbol } from "@/lib/currency";
 import Link from "next/link";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
 import { Icon } from "@/components/Icon";
-import { pdf } from "@react-pdf/renderer";
-import { PDFReport } from "@/components/ReportPDF";
 
 interface PDFDocumentWithLinkProps {
   data: ReportData;
   selectedMonth: string;
-}
-
-async function generateAndDownloadPDF(data: ReportData, selectedMonth: string) {
-  try {
-    const blob = await pdf(<PDFReport data={data} />).toBlob();
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `famflow-relatorio-${selectedMonth}.pdf`;
-    link.click();
-    URL.revokeObjectURL(url);
-  } catch (error) {
-    console.error("Erro ao gerar PDF:", error);
-    alert("Erro ao gerar PDF. Tenta novamente.");
-  }
 }
 
 function PDFDocumentWithLink({ data, selectedMonth }: PDFDocumentWithLinkProps) {
@@ -45,8 +28,23 @@ function PDFDocumentWithLink({ data, selectedMonth }: PDFDocumentWithLinkProps) 
 
   const handleClick = async () => {
     setIsGenerating(true);
-    await generateAndDownloadPDF(data, selectedMonth);
-    setIsGenerating(false);
+    try {
+      // Dynamic import for lazy loading
+      const { pdf } = await import("@react-pdf/renderer");
+      const { PDFReport } = await import("@/components/ReportPDF");
+      const blob = await pdf(<PDFReport data={data} />).toBlob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `famflow-relatorio-${selectedMonth}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Erro ao gerar PDF:", error);
+      alert("Erro ao gerar PDF. Tenta novamente.");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   return (
