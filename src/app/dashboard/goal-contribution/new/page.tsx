@@ -27,9 +27,13 @@ function GoalContributionForm() {
 
   const activeGoals = goals.filter(g => g.goal_type === 'savings');
 
+  console.log('Goals from DataProvider:', goals);
+  console.log('Active savings goals:', activeGoals);
+
   useEffect(() => {
     const goalIdParam = searchParams.get("goal");
     if (goalIdParam) {
+      console.log('Setting goal from URL:', goalIdParam);
       setGoalId(goalIdParam);
     }
   }, [searchParams]);
@@ -53,6 +57,9 @@ function GoalContributionForm() {
     setLoading(true);
     setError("");
 
+    const amountNum = parseFloat(amount);
+    console.log('Adding contribution:', { goalId, amount: amountNum, original: amount });
+    
     try {
       await addGoalContribution(goalId, amountNum);
       
