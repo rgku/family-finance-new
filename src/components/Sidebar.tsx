@@ -12,21 +12,23 @@ const navItemsMobile = [
 
 const navItemsSecondary = [
   { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
-  { href: "/dashboard/transactions", icon: "receipt_long", label: "Trans" },
+  { href: "/dashboard/transactions", icon: "receipt_long", label: "Histórico" },
   { href: "/dashboard/reports", icon: "assessment", label: "Relatórios" },
   { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
+  { href: "/dashboard/goal-contribution/new", icon: "savings", label: "Poupança" },
   { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
   { href: "/dashboard/recurring", icon: "repeat", label: "Recorrentes" },
 ];
 
 const navItemsDesktop = [
   { href: "/dashboard", icon: "home", label: "Home" },
-  { href: "/dashboard/transactions", icon: "receipt_long", label: "Transações" },
+  { href: "/dashboard/transactions", icon: "receipt_long", label: "Histórico" },
   { href: "/dashboard/recurring", icon: "repeat", label: "Recorrentes" },
   { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
   { href: "/dashboard/reports", icon: "assessment", label: "Relatórios" },
   { href: "/dashboard/profile", icon: "person", label: "Perfil" },
   { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
+  { href: "/dashboard/goal-contribution/new", icon: "savings", label: "Poupança" },
   { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
   { href: "/dashboard/alerts", icon: "notifications", label: "Alertas" },
   { href: "/dashboard/family", icon: "group", label: "Família" },
