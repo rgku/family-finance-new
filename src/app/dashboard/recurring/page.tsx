@@ -97,23 +97,23 @@ export default function RecurringPage() {
           {recurring.map((rec) => (
             <div
               key={rec.id}
-              className={`bg-surface-container rounded-lg p-6 ${
+              className={`bg-surface-container rounded-2xl p-4 sm:p-6 ${
                 !rec.enabled ? "opacity-50" : ""
               }`}
             >
               <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3 flex-1">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center ${
                     rec.type === "income" ? "bg-primary/20" : "bg-tertiary/20"
                   }`}>
                     <Icon
                       name={rec.type === "income" ? "payments" : "shopping_bag"}
-                      size={24}
+                      size={20}
                       className={rec.type === "income" ? "text-primary" : "text-tertiary"}
                     />
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg text-on-surface">{rec.description}</h3>
+                    <h3 className="font-bold text-on-surface">{rec.description}</h3>
                     <p className="text-sm text-on-surface-variant">{rec.category}</p>
                   </div>
                 </div>
@@ -133,9 +133,9 @@ export default function RecurringPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-surface-container-highest">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-surface-container-highest">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-on-surface-variant">
+                  <div className="flex items-center gap-2">
                     <Icon name="calendar_today" size={16} />
                     <span>Próxima: {getNextRunLabel(rec.next_run)}</span>
                   </div>
@@ -152,7 +152,7 @@ export default function RecurringPage() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 self-end sm:self-auto">
                   <button
                     onClick={() => handleToggle(rec.id, rec.enabled)}
                     className={`p-2 rounded-full transition-colors ${
