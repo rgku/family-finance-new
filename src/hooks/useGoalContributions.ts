@@ -52,12 +52,13 @@ export function useUpdateGoalContribution() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async ({ id, amount, contributionDate }: { id: string; amount: number; contributionDate: string }) => {
+    mutationFn: async ({ id, amount, contributionDate, userId }: { id: string; amount: number; contributionDate: string; userId: string }) => {
       const month = contributionDate.slice(0, 7) + '-01';
       const { error } = await supabase
         .from('goal_contributions')
         .update({ amount, contribution_date: contributionDate, month })
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', userId);
       if (error) throw error;
       return { id, amount, contributionDate };
     },
@@ -73,11 +74,12 @@ export function useDeleteGoalContribution() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async ({ id, userId }: { id: string; userId: string }) => {
       const { error } = await supabase
         .from('goal_contributions')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', userId);
       if (error) throw error;
       return id;
     },

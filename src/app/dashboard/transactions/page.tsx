@@ -132,11 +132,13 @@ export default function TransactionsPage() {
   };
 
   const handleContributionSave = async (id: string) => {
+    if (!user) return;
     try {
       await updateContribution.mutateAsync({
         id,
         amount: parseFloat(contributionEditForm.amount),
         contributionDate: contributionEditForm.date,
+        userId: user.id,
       });
       showToast("Contribuição atualizada!", "success");
       setEditingId(null);
@@ -147,9 +149,10 @@ export default function TransactionsPage() {
   };
 
   const handleContributionDelete = async (id: string) => {
+    if (!user) return;
     if (!confirm("Tem a certeza que deseja excluir esta contribuição?")) return;
     try {
-      await deleteContribution.mutateAsync(id);
+      await deleteContribution.mutateAsync({ id, userId: user.id });
       showToast("Contribuição eliminada!", "success");
     } catch (error) {
       console.error("Error deleting contribution:", error);
