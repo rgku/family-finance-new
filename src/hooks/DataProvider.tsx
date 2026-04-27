@@ -801,6 +801,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return;
     }
     
+    // Delete contributions first
+    await supabase
+      .from('goal_contributions')
+      .delete()
+      .eq('goal_id', id);
+    
+    // Delete goal
     const { error } = await supabase
       .from('goals')
       .delete()
@@ -813,6 +820,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
       throw error;
     }
+    
+    // Trigger refresh
+    localStorage.setItem(GOALS_UPDATED_CHANNEL, Date.now().toString());
   };
 
   const addBudget = async (b: Omit<Budget, "id" | "spent">) => {
