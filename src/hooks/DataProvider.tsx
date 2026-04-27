@@ -72,13 +72,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   // Listen for goals updates from other components
   useEffect(() => {
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === GOALS_UPDATED_CHANNEL) {
+    const interval = setInterval(() => {
+      const lastUpdate = localStorage.getItem(GOALS_UPDATED_CHANNEL);
+      if (lastUpdate && lastUpdate !== lastFetchUserId.current) {
         refreshGoals();
+        lastFetchUserId.current = lastUpdate;
       }
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    }, 1000);
+    return () => clearInterval(interval);
   }, [user, supabase]);
 
   useEffect(() => {
