@@ -735,8 +735,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       console.error('[addGoalContribution] Goal fetch error:', goalError);
     }
     
-    const newCurrentAmount = (parseFloat(goal?.current_amount) || 0) + amount;
-    console.log('[addGoalContribution] New amount:', newCurrentAmount);
+    const currentVal = goal?.current_amount ? parseFloat(goal.current_amount) : 0;
+    const newCurrentAmount = currentVal + amount;
+    console.log('[addGoalContribution] Current:', currentVal, 'add:', amount, 'new:', newCurrentAmount);
     
     // Update goal's current_amount - use just id
     const { error: updateError } = await supabase
