@@ -548,15 +548,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
     
     const { error } = await supabase
-      .rpc('update_transaction', {
-        p_id: id,
-        p_user_id: user.id,
-        p_description: t.description,
-        p_amount: t.amount,
-        p_type: t.type,
-        p_category: t.category,
-        p_date: t.date,
-      });
+      .from('transactions')
+      .update({ 
+        description: t.description,
+        amount: t.amount,
+        type: t.type,
+        category: t.category,
+        date: t.date,
+      })
+      .eq('id', id)
+      .eq('user_id', user.id);
 
     if (error) {
       setTransactions(prev => prev.map(trans => 
