@@ -82,7 +82,7 @@ function GoalContributionForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6 bg-surface-container-low rounded-3xl p-4 sm:p-6">
       <div>
         <label htmlFor="goal" className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
           Meta
@@ -190,10 +190,10 @@ export default function NewGoalContribution() {
 
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-surface-container-low">
+      <div className="min-h-screen bg-surface">
         <MobileHeader onSignOut={signOut} />
-        <div className="p-4">
-          <header className="mb-6">
+        <div className="pt-20 px-4 pb-24 space-y-6">
+          <header>
             <h1 className="text-2xl font-bold text-on-surface">Nova Contribuição</h1>
             <p className="text-on-surface-variant text-sm">Adicione dinheiro a uma meta</p>
           </header>
