@@ -110,6 +110,7 @@ export function useDeleteGoalContribution() {
         .eq('id', id)
         .single();
       if (fetchError) throw fetchError;
+      console.log('[deleteGoalContribution] Old contrib:', contrib);
 
       // Delete contribution
       const { error } = await supabase
@@ -128,6 +129,7 @@ export function useDeleteGoalContribution() {
           .eq('id', contrib.goal_id)
           .single();
         const newAmount = (parseFloat(goal?.current_amount) || 0) - currentVal;
+        console.log('[deleteGoalContribution] Current:', goal?.current_amount, 'subtract:', currentVal, 'new:', newAmount);
         await supabase
           .from('goals')
           .update({ current_amount: newAmount.toFixed(2) })

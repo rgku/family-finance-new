@@ -737,7 +737,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     
     const currentVal = goal?.current_amount ? parseFloat(goal.current_amount) : 0;
     const newCurrentAmount = currentVal + amount;
-    console.log('[addGoalContribution] Current:', currentVal, 'add:', amount, 'new:', newCurrentAmount);
+    console.log('[addGoalContribution] Current DB:', currentVal, 'adding:', amount, 'new:', newCurrentAmount);
     
     // Update goal's current_amount - use just id
     const { error: updateError } = await supabase
@@ -752,6 +752,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
       console.error('[addGoalContribution] Update error:', updateError);
       throw updateError;
     }
+    
+    // Verify update
+    const { data: verify } = await supabase
+      .from('goals')
+      .select('current_amount')
+      .eq('id', goalId)
+      .single();
+    console.log('[addGoalContribution] Verify after update:', verify?.current_amount);
     
     // Update local state
     setGoals(prev => prev.map(goal => 
