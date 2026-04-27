@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useData } from "@/hooks/DataProvider";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/components/AuthProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
 import { CURRENCY } from "@/lib/currency";
