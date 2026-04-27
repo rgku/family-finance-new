@@ -6,9 +6,25 @@ import type { GoalContribution } from "@/hooks/useGoalContributions";
 
 interface GoalContributionListProps {
   contributions: GoalContribution[];
+  editingId: string | null;
+  editForm: { amount: string; date: string };
+  onEdit: (id: string) => void;
+  onDelete: (id: string) => void;
+  onFormChange: (field: string, value: string) => void;
+  onSave: (id: string) => void;
+  onCancel: () => void;
 }
 
-export function GoalContributionList({ contributions }: GoalContributionListProps) {
+export function GoalContributionList({
+  contributions,
+  editingId,
+  editForm,
+  onEdit,
+  onDelete,
+  onFormChange,
+  onSave,
+  onCancel,
+}: GoalContributionListProps) {
   const groupedContributions = useMemo(() => {
     const groups: Record<string, GoalContribution[]> = {};
     
@@ -27,6 +43,14 @@ export function GoalContributionList({ contributions }: GoalContributionListProp
         items,
       }));
   }, [contributions]);
+
+  const handleEdit = (id: string) => {
+    const contrib = contributions.find(c => c.id === id);
+    if (!contrib) return;
+    onEdit(id);
+    onFormChange("amount", contrib.amount.toString());
+    onFormChange("date", contrib.contribution_date);
+  };
 
   if (contributions.length === 0) {
     return (
@@ -55,7 +79,17 @@ export function GoalContributionList({ contributions }: GoalContributionListProp
           </p>
           <div className="space-y-2">
             {items.map((contribution) => (
-              <GoalContributionCard key={contribution.id} contribution={contribution} />
+              <GoalContributionCard
+                key={contribution.id}
+                contribution={contribution}
+                isEditing={editingId === contribution.id}
+                editForm={editForm}
+                onEdit={handleEdit}
+                onDelete={onDelete}
+                onFormChange={onFormChange}
+                onSave={onSave}
+                onCancel={onCancel}
+              />
             ))}
           </div>
         </div>

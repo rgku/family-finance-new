@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSupabase } from '@/hooks/useSupabase';
 
 export interface GoalContribution {
@@ -44,5 +44,46 @@ export function useGoalContributions(userId?: string) {
     },
     enabled: !!userId,
     staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useUpdateGoalContribution() {
+  const supabase = useSupabase();
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, amount, contributionDate }: { id: string; amount: number; contributionDate: string }) => {
+      const month = contributionDate.slice(0, 7) + '-01';
+      const { error } = await supabase
+        .from('goal_contributions')
+        .update({ amount, contribution_date: contributionDate, month })
+        .eq('id', id);
+      if (error) throw error;
+      return { id, amount, contributionDate };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goalContributions'] });
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+    },
+  });
+}
+
+export function useDeleteGoalContribution() {
+  const supabase = useSupabase();
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('goal_contributions')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goalContributions'] });
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+    },
   });
 }

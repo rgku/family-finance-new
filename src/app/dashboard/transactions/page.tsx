@@ -4,11 +4,12 @@ import { useState, useMemo } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
-import { useGoalContributions } from "@/hooks/useGoalContributions";
+import { useGoalContributions, useUpdateGoalContribution, useDeleteGoalContribution } from "@/hooks/useGoalContributions";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import { Icon } from "@/components/Icon";
 import { TransactionItem, allCategories } from "@/components/TransactionItem";
 import { GoalContributionList } from "@/components/GoalContributionList";
+import { useToast } from "@/components/Toast";
 
 type Tab = "transactions" | "contributions";
 
@@ -16,9 +17,13 @@ export default function TransactionsPage() {
   const { user } = useAuth();
   const { transactions, updateTransaction, deleteTransaction } = useData();
   const { data: contributions } = useGoalContributions(user?.id);
+  const updateContribution = useUpdateGoalContribution();
+  const deleteContribution = useDeleteGoalContribution();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<Tab>("transactions");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ description: "", amount: "", type: "expense" as "income" | "expense", category: "", date: "" });
+  const [contributionEditForm, setContributionEditForm] = useState({ amount: "", date: "" });
   const isMobile = useDeviceType();
 
   const [dateRange, setDateRange] = useState<{ start: string; end: string } | null>(null);
@@ -114,6 +119,50 @@ export default function TransactionsPage() {
 
   const handleCancel = () => {
     setEditingId(null);
+  };
+
+  const handleContributionEdit = (id: string) => {
+    const contrib = contributions?.find(c => c.id === id);
+    if (!contrib) return;
+    setEditingId(id);
+    setContributionEditForm({
+      amount: contrib.amount.toString(),
+      date: contrib.contribution_date,
+    });
+  };
+
+  const handleContributionSave = async (id: string) => {
+    try {
+      await updateContribution.mutateAsync({
+        id,
+        amount: parseFloat(contributionEditForm.amount),
+        contributionDate: contributionEditForm.date,
+      });
+      showToast("Contribuição atualizada!", "success");
+      setEditingId(null);
+    } catch (error) {
+      console.error("Error updating contribution:", error);
+      showToast("Erro ao atualizar contribuição.", "error");
+    }
+  };
+
+  const handleContributionDelete = async (id: string) => {
+    if (!confirm("Tem a certeza que deseja excluir esta contribuição?")) return;
+    try {
+      await deleteContribution.mutateAsync(id);
+      showToast("Contribuição eliminada!", "success");
+    } catch (error) {
+      console.error("Error deleting contribution:", error);
+      showToast("Erro ao eliminar contribuição.", "error");
+    }
+  };
+
+  const handleContributionCancel = () => {
+    setEditingId(null);
+  };
+
+  const handleContributionFormChange = (field: string, value: string) => {
+    setContributionEditForm(prev => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -329,7 +378,16 @@ export default function TransactionsPage() {
               Adicionar
             </a>
           </div>
-          <GoalContributionList contributions={contributions || []} />
+          <GoalContributionList 
+            contributions={contributions || []} 
+            editingId={editingId}
+            editForm={contributionEditForm}
+            onEdit={handleContributionEdit}
+            onDelete={handleContributionDelete}
+            onFormChange={handleContributionFormChange}
+            onSave={handleContributionSave}
+            onCancel={handleContributionCancel}
+          />
         </div>
       )}
     </div>
