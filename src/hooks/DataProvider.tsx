@@ -717,8 +717,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         amount,
         contribution_date: contributionDate,
         month,
-      })
-      .eq('user_id', user.id);
+      });
 
     if (insertError) {
       console.error('[addGoalContribution] Insert error:', insertError);
@@ -730,7 +729,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       .from('goals')
       .select('current_amount')
       .eq('id', goalId)
-      .eq('user_id', user.id)
       .single();
     
     if (goalError) {
@@ -740,15 +738,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const newCurrentAmount = (parseFloat(goal?.current_amount) || 0) + amount;
     console.log('[addGoalContribution] New amount:', newCurrentAmount);
     
-    // Update goal's current_amount
+    // Update goal's current_amount - use just id
     const { error: updateError } = await supabase
       .from('goals')
       .update({ 
         current_amount: newCurrentAmount,
         last_contribution_date: new Date().toISOString()
       })
-      .eq('id', goalId)
-      .eq('user_id', user.id);
+      .eq('id', goalId);
 
     if (updateError) {
       console.error('[addGoalContribution] Update error:', updateError);
