@@ -56,8 +56,7 @@ function GoalContributionForm() {
 
     setLoading(true);
     setError("");
-
-    const amountNum = parseFloat(amount);
+    
     console.log('Adding contribution:', { goalId, amount: amountNum, original: amount });
     
     try {
