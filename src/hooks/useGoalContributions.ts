@@ -68,18 +68,24 @@ export function useUpdateGoalContribution() {
       }
       console.log('[updateGoalContribution] Old contrib:', oldContrib);
 
+      // Calculate diff first
+      const oldVal = parseFloat(oldContrib.amount) || 0;
+      const newVal = amount;
+      const diff = newVal - oldVal;
+      console.log('[updateGoalContribution] Old:', oldVal, 'new:', newVal, 'diff:', diff);
+
       // Update contribution
       const { error } = await supabase
         .from('goal_contributions')
         .update({ amount, contribution_date: contributionDate, month })
         .eq('id', id)
         .eq('user_id', userId);
-      if (error) throw error;
+      if (error) {
+        console.error('[updateGoalContribution] Update error:', error);
+        throw error;
+      }
 
       // Update goal current_amount (difference)
-      const oldVal = parseFloat(oldContrib.amount) || 0;
-      const newVal = amount;
-      const diff = newVal - oldVal;
       if (oldContrib.goal_id && diff !== 0) {
         const { data: goal } = await supabase
           .from('goals')
@@ -87,6 +93,7 @@ export function useUpdateGoalContribution() {
           .eq('id', oldContrib.goal_id)
           .single();
         const newAmount = (parseFloat(goal?.current_amount) || 0) + diff;
+        console.log('[updateGoalContribution] Goal current:', goal?.current_amount, 'new:', newAmount);
         await supabase
           .from('goals')
           .update({ current_amount: newAmount.toFixed(2) })
