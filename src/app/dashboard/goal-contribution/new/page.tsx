@@ -82,7 +82,7 @@ function GoalContributionForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-surface-container-low rounded-3xl p-4 sm:p-6">
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
       <div>
         <label htmlFor="goal" className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
           Meta
@@ -95,21 +95,21 @@ function GoalContributionForm() {
             </a>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             {activeGoals.map((goal) => (
               <button
                 key={goal.id}
                 type="button"
                 onClick={() => setGoalId(goal.id)}
-                className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all ${
+                className={`flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all ${
                   goalId === goal.id
-                    ? "bg-primary/20 text-primary border border-primary"
-                    : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high"
+                    ? "bg-primary/20 text-primary border-primary"
+                    : "bg-surface-container-high text-on-surface-variant border-transparent"
                 }`}
               >
-                <Icon name={goal.icon || 'savings'} size={24} className="text-lg" />
+                <Icon name={goal.icon || 'savings'} size={28} className="text-xl" />
                 <div className="text-center">
-                  <span className="text-xs font-medium block">{goal.name}</span>
+                  <span className="text-sm font-semibold block">{goal.name}</span>
                   <span className="text-[10px] text-on-surface-variant">
                     {goal.current_amount}€ / {goal.target_amount}€
                   </span>
@@ -125,7 +125,7 @@ function GoalContributionForm() {
           Valor ({CURRENCY.symbol})
         </label>
         <div className="relative">
-          <span className="absolute left-5 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold text-lg">
             {CURRENCY.symbol}
           </span>
           <input
@@ -134,7 +134,7 @@ function GoalContributionForm() {
             step="0.01"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
-            className="w-full bg-surface-container-low border-none rounded-2xl pl-12 pr-5 py-4 text-on-surface placeholder:text-on-surface-variant focus:ring-2 focus:ring-primary/20 transition-all"
+            className="w-full bg-surface-container-high border-2 border-transparent rounded-2xl pl-10 pr-4 py-4 text-xl font-semibold text-on-surface placeholder:text-on-surface-variant focus:border-primary focus:ring-0 transition-all"
             placeholder="0,00"
             required
           />
@@ -150,7 +150,7 @@ function GoalContributionForm() {
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-          className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface focus:ring-2 focus:ring-primary/20 transition-all [color-scheme:dark]"
+          className="w-full bg-surface-container-high border-2 border-transparent rounded-2xl px-4 py-4 text-lg text-on-surface focus:border-primary focus:ring-0 transition-all"
           required
         />
       </div>
@@ -164,7 +164,7 @@ function GoalContributionForm() {
           type="text"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface placeholder:text-on-surface-variant focus:ring-2 focus:ring-primary/20 transition-all"
+          className="w-full bg-surface-container-high border-2 border-transparent rounded-2xl px-4 py-4 text-on-surface placeholder:text-on-surface-variant focus:border-primary focus:ring-0 transition-all"
           placeholder="Ex: Mais um passo para as férias..."
         />
       </div>
@@ -176,7 +176,7 @@ function GoalContributionForm() {
       <button
         type="submit"
         disabled={loading || activeGoals.length === 0}
-        className="w-full py-4 bg-primary text-on-primary font-bold rounded-full hover:brightness-110 shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50"
+        className="w-full py-4 bg-primary text-on-primary font-bold rounded-2xl hover:brightness-110 transition-all active:scale-95 disabled:opacity-50 text-lg"
       >
         {loading ? "A guardar..." : "Adicionar Contribuição"}
       </button>
