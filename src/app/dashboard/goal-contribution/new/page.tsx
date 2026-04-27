@@ -82,7 +82,7 @@ function GoalContributionForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <label htmlFor="goal" className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
           Meta
