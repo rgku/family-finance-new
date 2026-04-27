@@ -3,6 +3,9 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useData } from "@/hooks/DataProvider";
+import { useAuth } from "@/hooks/useAuth";
+import { useDeviceType } from "@/hooks/useDeviceType";
+import { MobileHeader, MobileNav } from "@/components/Sidebar";
 import { CURRENCY } from "@/lib/currency";
 import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/Toast";
@@ -17,6 +20,8 @@ function GoalContributionForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
+  const { signOut } = useAuth();
+  const isMobile = useDeviceType();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   
@@ -180,6 +185,28 @@ function GoalContributionForm() {
 }
 
 export default function NewGoalContribution() {
+  const { signOut } = useAuth();
+  const isMobile = useDeviceType();
+
+  if (isMobile) {
+    return (
+      <div className="min-h-screen bg-surface-container-low">
+        <MobileHeader onSignOut={signOut} />
+        <div className="p-4">
+          <header className="mb-6">
+            <h1 className="text-2xl font-bold text-on-surface">Nova Contribuição</h1>
+            <p className="text-on-surface-variant text-sm">Adicione dinheiro a uma meta</p>
+          </header>
+
+          <Suspense fallback={<div className="text-center py-8">A carregar...</div>}>
+            <GoalContributionForm />
+          </Suspense>
+        </div>
+        <MobileNav />
+      </div>
+    );
+  }
+
   return (
     <div className="p-8 max-w-2xl mx-auto">
       <header className="mb-8">
