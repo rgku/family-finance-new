@@ -98,6 +98,9 @@ export function useUpdateGoalContribution() {
           .from('goals')
           .update({ current_amount: newAmount.toFixed(2) })
           .eq('id', oldContrib.goal_id);
+        
+        // Trigger DataProvider refresh
+        localStorage.setItem('goals-updated', Date.now().toString());
       }
 
       return { id, amount, contributionDate };
@@ -150,6 +153,9 @@ export function useDeleteGoalContribution() {
           .from('goals')
           .update({ current_amount: newAmount.toFixed(2) })
           .eq('id', contrib.goal_id);
+        
+        // Trigger DataProvider refresh
+        localStorage.setItem('goals-updated', Date.now().toString());
       }
 
       return id;

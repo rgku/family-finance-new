@@ -43,6 +43,7 @@ interface DataContextType {
   updateGoal: (id: string, g: Partial<Goal>) => Promise<void>;
   deleteGoal: (id: string) => Promise<void>;
   addGoalContribution: (goalId: string, amount: number) => Promise<void>;
+  refreshGoals: () => Promise<void>;
   
   budgets: Budget[];
   setCurrentBudgetMonth: (month: string) => void;
@@ -55,6 +56,8 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
+const GOALS_UPDATED_CHANNEL = 'goals-updated';
+
 export function DataProvider({ children }: { children: ReactNode }) {
   const { user, supabase: authSupabase } = useAuth();
   const supabase = authSupabase!;
@@ -66,6 +69,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [currentMonth, setCurrentMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [loading, setLoading] = useState(true);
   const lastFetchUserId = useRef<string | null>(null);
+
+  // Listen for goals updates from other components
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === GOALS_UPDATED_CHANNEL) {
+        refreshGoals();
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, [user, supabase]);
 
   useEffect(() => {
     if (!user) {
@@ -761,6 +775,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       .single();
     console.log('[addGoalContribution] Verify after update:', verify?.current_amount);
     
+    // Trigger DataProvider refresh
+    localStorage.setItem('goals-updated', Date.now().toString());
+    
     // Update local state
     setGoals(prev => prev.map(goal => 
       goal.id === goalId ? { 
@@ -900,9 +917,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setCurrentMonth(month);
   };
 
+  const refreshGoals = async () => {
+    if (!user || !supabase) return;
+    const { data } = await supabase
+      .from('goals_decrypted')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    if (data) {
+      const newGoals = data.map(g => ({
+        id: g.id,
+        name: g.name,
+        target_amount: parseFloat(g.target_amount) || 0,
+        current_amount: parseFloat(g.current_amount) || 0,
+        deadline: g.deadline,
+        icon: g.icon || 'savings',
+        goal_type: g.goal_type || 'savings',
+        created_at: g.created_at,
+      }));
+      setGoals(newGoals);
+      // Notify other components
+      localStorage.setItem(GOALS_UPDATED_CHANNEL, Date.now().toString());
+    }
+  };
+
   const contextValue = useMemo(() => ({
     transactions, addTransaction, updateTransaction, deleteTransaction,
-    goals, addGoal, updateGoal, deleteGoal, addGoalContribution,
+    goals, addGoal, updateGoal, deleteGoal, addGoalContribution, refreshGoals,
     budgets: budgets || [], setCurrentBudgetMonth, addBudget, updateBudget, deleteBudget,
     loading,
   }), [transactions, goals, budgets, loading]);
