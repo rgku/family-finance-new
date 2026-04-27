@@ -21,17 +21,22 @@ const navItemsSecondary = [
 ];
 
 const navItemsDesktop = [
+  // Core Financeiro
   { href: "/dashboard", icon: "home", label: "Home" },
   { href: "/dashboard/transactions", icon: "receipt_long", label: "Histórico" },
   { href: "/dashboard/recurring", icon: "repeat", label: "Recorrentes" },
+  { href: "/dashboard/goal-contribution/new", icon: "savings", label: "Poupança" },
+  { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
+  { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
+  
+  // Insights
   { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
   { href: "/dashboard/reports", icon: "assessment", label: "Relatórios" },
+  
+  // Account & Settings (no fundo)
   { href: "/dashboard/profile", icon: "person", label: "Perfil" },
-  { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
-  { href: "/dashboard/goal-contribution/new", icon: "savings", label: "Poupança" },
-  { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
-  { href: "/dashboard/alerts", icon: "notifications", label: "Alertas" },
   { href: "/dashboard/family", icon: "group", label: "Família" },
+  { href: "/dashboard/alerts", icon: "notifications", label: "Alertas" },
   { href: "/dashboard/settings", icon: "settings", label: "Definições" },
 ];
 
