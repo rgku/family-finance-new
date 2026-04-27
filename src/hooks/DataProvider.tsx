@@ -703,29 +703,50 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (!user) throw new Error("Must be logged in");
     if (amount <= 0) throw new Error("Amount must be positive");
     
-    const { error } = await supabase.rpc('add_goal_contribution', {
-      p_goal_id: goalId,
-      p_amount: amount
-    });
-
-    if (error) throw error;
+    const contributionDate = new Date().toISOString().split('T')[0];
+    const month = contributionDate.slice(0, 7) + '-01';
     
-    // Refresh goals to get updated current_amount
-    const { data: updatedGoal } = await supabase
-      .from('goals_decrypted')
-      .select('*')
+    // Insert contribution
+    const { error: insertError } = await supabase
+      .from('goal_contributions')
+      .insert({
+        goal_id: goalId,
+        user_id: user.id,
+        amount,
+        contribution_date: contributionDate,
+        month,
+      });
+
+    if (insertError) throw insertError;
+    
+    // Get current goal to calculate new current_amount
+    const { data: goal } = await supabase
+      .from('goals')
+      .select('current_amount')
       .eq('id', goalId)
       .single();
     
-    if (updatedGoal) {
-      setGoals(prev => prev.map(goal => 
-        goal.id === goalId ? { 
-          ...goal, 
-          current_amount: parseFloat(updatedGoal.current_amount) || 0,
-          last_contribution_date: new Date().toISOString()
-        } : goal
-      ));
-    }
+    const newCurrentAmount = (parseFloat(goal?.current_amount) || 0) + amount;
+    
+    // Update goal's current_amount
+    const { error: updateError } = await supabase
+      .from('goals')
+      .update({ 
+        current_amount: newCurrentAmount,
+        last_contribution_date: new Date().toISOString()
+      })
+      .eq('id', goalId);
+
+    if (updateError) throw updateError;
+    
+    // Update local state
+    setGoals(prev => prev.map(goal => 
+      goal.id === goalId ? { 
+        ...goal, 
+        current_amount: newCurrentAmount,
+        last_contribution_date: new Date().toISOString()
+      } : goal
+    ));
   };
 
   const deleteGoal = async (id: string) => {
