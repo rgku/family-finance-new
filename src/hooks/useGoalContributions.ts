@@ -54,12 +54,40 @@ export function useUpdateGoalContribution() {
   return useMutation({
     mutationFn: async ({ id, amount, contributionDate, userId }: { id: string; amount: number; contributionDate: string; userId: string }) => {
       const month = contributionDate.slice(0, 7) + '-01';
+      
+      // Get old contribution
+      const { data: oldContrib, error: fetchError } = await supabase
+        .from('goal_contributions')
+        .select('amount, goal_id')
+        .eq('id', id)
+        .single();
+      if (fetchError) throw fetchError;
+
+      // Update contribution
       const { error } = await supabase
         .from('goal_contributions')
         .update({ amount, contribution_date: contributionDate, month })
         .eq('id', id)
         .eq('user_id', userId);
       if (error) throw error;
+
+      // Update goal current_amount (difference)
+      const oldVal = parseFloat(oldContrib.amount) || 0;
+      const newVal = amount;
+      const diff = newVal - oldVal;
+      if (oldContrib.goal_id && diff !== 0) {
+        const { data: goal } = await supabase
+          .from('goals')
+          .select('current_amount')
+          .eq('id', oldContrib.goal_id)
+          .single();
+        const newAmount = (parseFloat(goal?.current_amount) || 0) + diff;
+        await supabase
+          .from('goals')
+          .update({ current_amount: newAmount.toFixed(2) })
+          .eq('id', oldContrib.goal_id);
+      }
+
       return { id, amount, contributionDate };
     },
     onSuccess: () => {
