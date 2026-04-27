@@ -144,25 +144,25 @@ export default function BudgetsPage() {
 
   const pageContent = (
     <>
-      <header className="flex justify-between items-center">
+      <header className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-on-surface">Orçamentos Mensais</h1>
-          <p className="text-on-surface-variant">Controle os seus gastos por categoria</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-on-surface">Orçamentos Mensais</h1>
+          <p className="text-on-surface-variant text-sm">Controle os seus gastos por categoria</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2 flex-wrap justify-end">
           <button
             onClick={() => handleAIOptimize(false)}
-            className="px-4 py-3 bg-secondary text-on-secondary rounded-full font-bold hover:brightness-110 flex items-center gap-2 transition-all"
+            className="px-3 py-2 bg-secondary text-on-secondary rounded-full font-bold text-sm hover:brightness-110 flex items-center gap-1.5 transition-all"
           >
-            <Icon name="sparkles" size={18} />
+            <Icon name="sparkles" size={16} />
             <span className="hidden sm:inline">Otimizar com IA</span>
             <span className="sm:hidden">IA</span>
           </button>
           <button
             onClick={() => { resetForm(); setShowForm(!showForm); }}
-            className="px-6 py-3 bg-primary text-on-primary rounded-full font-bold hover:brightness-110"
+            className="px-4 py-2 bg-primary text-on-primary rounded-full font-bold text-sm hover:brightness-110 whitespace-nowrap"
           >
-            {showForm ? "Cancelar" : "+ Novo Orçamento"}
+            {showForm ? "Cancelar" : "+ Novo"}
           </button>
         </div>
       </header>
@@ -388,7 +388,7 @@ export default function BudgetsPage() {
     return (
       <div className="min-h-screen bg-surface">
         <MobileHeader onSignOut={signOut} />
-        <main className="pt-24 px-4 pb-24 space-y-6 max-w-2xl mx-auto">
+        <main className="pt-20 px-4 pb-24 space-y-4">
           {pageContent}
         </main>
         <MobileNav />
