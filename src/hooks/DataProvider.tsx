@@ -703,6 +703,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (!user) throw new Error("Must be logged in");
     if (amount <= 0) throw new Error("Amount must be positive");
     
+    console.log('[addGoalContribution] Adding contribution:', { goalId, amount, userId: user.id });
+    
     const contributionDate = new Date().toISOString().split('T')[0];
     const month = contributionDate.slice(0, 7) + '-01';
     
@@ -715,18 +717,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
         amount,
         contribution_date: contributionDate,
         month,
-      });
+      })
+      .eq('user_id', user.id);
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      console.error('[addGoalContribution] Insert error:', insertError);
+      throw insertError;
+    }
     
     // Get current goal to calculate new current_amount
-    const { data: goal } = await supabase
+    const { data: goal, error: goalError } = await supabase
       .from('goals')
       .select('current_amount')
       .eq('id', goalId)
+      .eq('user_id', user.id)
       .single();
     
+    if (goalError) {
+      console.error('[addGoalContribution] Goal fetch error:', goalError);
+    }
+    
     const newCurrentAmount = (parseFloat(goal?.current_amount) || 0) + amount;
+    console.log('[addGoalContribution] New amount:', newCurrentAmount);
     
     // Update goal's current_amount
     const { error: updateError } = await supabase
@@ -735,9 +747,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
         current_amount: newCurrentAmount,
         last_contribution_date: new Date().toISOString()
       })
-      .eq('id', goalId);
+      .eq('id', goalId)
+      .eq('user_id', user.id);
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error('[addGoalContribution] Update error:', updateError);
+      throw updateError;
+    }
     
     // Update local state
     setGoals(prev => prev.map(goal => 
