@@ -75,12 +75,37 @@ export function useDeleteGoalContribution() {
   
   return useMutation({
     mutationFn: async ({ id, userId }: { id: string; userId: string }) => {
+      // Get contribution amount first
+      const { data: contrib, error: fetchError } = await supabase
+        .from('goal_contributions')
+        .select('amount, goal_id')
+        .eq('id', id)
+        .single();
+      if (fetchError) throw fetchError;
+
+      // Delete contribution
       const { error } = await supabase
         .from('goal_contributions')
         .delete()
         .eq('id', id)
         .eq('user_id', userId);
       if (error) throw error;
+
+      // Update goal current_amount
+      const currentVal = parseFloat(contrib.amount) || 0;
+      if (contrib.goal_id && currentVal > 0) {
+        const { data: goal } = await supabase
+          .from('goals')
+          .select('current_amount')
+          .eq('id', contrib.goal_id)
+          .single();
+        const newAmount = (parseFloat(goal?.current_amount) || 0) - currentVal;
+        await supabase
+          .from('goals')
+          .update({ current_amount: newAmount.toFixed(2) })
+          .eq('id', contrib.goal_id);
+      }
+
       return id;
     },
     onSuccess: () => {

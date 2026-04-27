@@ -743,7 +743,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const { error: updateError } = await supabase
       .from('goals')
       .update({ 
-        current_amount: newCurrentAmount,
+        current_amount: newCurrentAmount.toFixed(2),
         last_contribution_date: new Date().toISOString()
       })
       .eq('id', goalId);
