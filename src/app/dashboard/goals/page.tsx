@@ -249,6 +249,10 @@ export default function GoalsPage() {
                 <button onClick={() => handleDelete(goal.id)} className="px-2 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-error/20 hover:text-error transition-colors text-xs font-medium">
                   <Icon name="delete" size={14} />
                 </button>
+                <a href={`/dashboard/goal-contribution/new?goal=${goal.id}`} className="px-2 py-1.5 rounded-lg bg-primary text-on-primary text-xs font-medium flex items-center gap-1">
+                  <Icon name="add" size={14} />
+                  +€
+                </a>
               </div>
             </div>
           );

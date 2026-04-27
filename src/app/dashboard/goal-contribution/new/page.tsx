@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useData } from "@/hooks/DataProvider";
 import { CURRENCY } from "@/lib/currency";
 import { Icon } from "@/components/Icon";
@@ -15,6 +15,7 @@ const GOAL_ICONS = [
 export default function NewGoalContribution() {
   const { goals, addGoalContribution } = useData();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -25,6 +26,13 @@ export default function NewGoalContribution() {
   const [description, setDescription] = useState("");
 
   const activeGoals = goals.filter(g => g.goal_type === 'savings');
+
+  useEffect(() => {
+    const goalIdParam = searchParams.get("goal");
+    if (goalIdParam) {
+      setGoalId(goalIdParam);
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
