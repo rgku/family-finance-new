@@ -60,8 +60,13 @@ export function useUpdateGoalContribution() {
         .from('goal_contributions')
         .select('amount, goal_id')
         .eq('id', id)
-        .single();
+        .maybeSingle();
       if (fetchError) throw fetchError;
+      if (!oldContrib) {
+        console.log('[updateGoalContribution] Contrib not found:', id);
+        throw new Error('Contribution not found');
+      }
+      console.log('[updateGoalContribution] Old contrib:', oldContrib);
 
       // Update contribution
       const { error } = await supabase
@@ -108,8 +113,12 @@ export function useDeleteGoalContribution() {
         .from('goal_contributions')
         .select('amount, goal_id')
         .eq('id', id)
-        .single();
+        .maybeSingle();
       if (fetchError) throw fetchError;
+      if (!contrib) {
+        console.log('[deleteGoalContribution] Contrib not found, maybe already deleted:', id);
+        return id;
+      }
       console.log('[deleteGoalContribution] Old contrib:', contrib);
 
       // Delete contribution
