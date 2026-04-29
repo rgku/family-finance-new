@@ -698,14 +698,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      // Insert using plain_* columns for encryption
       const { data: newId, error } = await supabase
         .from('goals')
         .insert({
           user_id: user.id,
           family_id: profile?.family_id || null,
           name: g.name,
-          target_amount: g.target_amount,
-          current_amount: g.current_amount || 0,
+          plain_target_amount: g.target_amount,
+          plain_current_amount: g.current_amount || 0,
           deadline: g.deadline,
           icon: g.icon || 'savings',
           goal_type: g.goal_type || 'savings',
@@ -761,17 +762,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return;
     }
     
+    // Update using plain_* columns for encryption
+    const updateData: Record<string, unknown> = {};
+    if (g.name !== undefined) updateData.name = g.name;
+    if (g.deadline !== undefined) updateData.deadline = g.deadline;
+    if (g.icon !== undefined) updateData.icon = g.icon;
+    if (g.goal_type !== undefined) updateData.goal_type = g.goal_type;
+    if (g.target_amount !== undefined) updateData.plain_target_amount = g.target_amount;
+    if (g.current_amount !== undefined) updateData.plain_current_amount = g.current_amount;
+    
     const { error } = await supabase
-      .rpc('update_goal', {
-        p_id: id,
-        p_user_id: user.id,
-        p_name: g.name,
-        p_target_amount: g.target_amount,
-        p_current_amount: g.current_amount,
-        p_deadline: g.deadline,
-        p_icon: g.icon,
-        p_goal_type: g.goal_type,
-      });
+      .from('goals')
+      .update(updateData)
+      .eq('id', id)
+      .eq('user_id', user.id);
 
     if (error) {
       setGoals(prev => prev.map(goal => 
