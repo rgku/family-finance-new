@@ -812,7 +812,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     
     // Get current goal to calculate new current_amount
     const { data: goal, error: goalError } = await supabase
-      .from('goals')
+      .from('goals_decrypted')
       .select('current_amount')
       .eq('id', goalId)
       .single();
@@ -821,15 +821,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
       console.error('[addGoalContribution] Goal fetch error:', goalError);
     }
     
-    const currentVal = goal?.current_amount ? parseFloat(goal.current_amount) : 0;
+    const currentVal = goal?.current_amount ? parseFloat(goal.current_amount.toString()) : 0;
     const newCurrentAmount = currentVal + amount;
     console.log('[addGoalContribution] Current DB:', currentVal, 'adding:', amount, 'new:', newCurrentAmount);
     
-    // Update goal's current_amount - use just id
+    // Update goal's plain_current_amount (triggers will handle encryption)
     const { error: updateError } = await supabase
       .from('goals')
       .update({ 
-        current_amount: newCurrentAmount.toFixed(2),
+        plain_current_amount: newCurrentAmount.toFixed(2),
         last_contribution_date: new Date().toISOString()
       })
       .eq('id', goalId);
@@ -841,7 +841,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     
     // Verify update
     const { data: verify } = await supabase
-      .from('goals')
+      .from('goals_decrypted')
       .select('current_amount')
       .eq('id', goalId)
       .single();
