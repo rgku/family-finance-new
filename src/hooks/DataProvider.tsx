@@ -152,23 +152,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
       
       // If online, fetch fresh data from server
       if (isOnline) {
-        // Build query: if user has family, fetch family data; otherwise fetch user data only
-        const hasFamily = !!profile?.family_id;
-        
+        // Build query: fetch user's data AND family data (if user has family)
+        // This ensures old records without family_id are still visible
         let transQuery = supabase.from('transactions_decrypted').select('*');
         let goalsQuery = supabase.from('goals_decrypted').select('*');
         let budgetsQuery = supabase.from('budgets').select('*');
         
-        if (hasFamily && profile?.family_id) {
-          // Fetch data for entire family
+        if (profile?.family_id) {
+          // Fetch user's data OR family data (handles both old and new records)
           transQuery = transQuery
-            .eq('family_id', profile.family_id)
+            .or(`user_id.eq.${user.id},family_id.eq.${profile.family_id}`)
             .order('date', { ascending: false });
           goalsQuery = goalsQuery
-            .eq('family_id', profile.family_id)
+            .or(`user_id.eq.${user.id},family_id.eq.${profile.family_id}`)
             .order('created_at', { ascending: false });
           budgetsQuery = budgetsQuery
-            .eq('family_id', profile.family_id)
+            .or(`user_id.eq.${user.id},family_id.eq.${profile.family_id}`)
             .order('created_at', { ascending: false });
         } else {
           // Fetch only user's data
