@@ -3,6 +3,7 @@ import { openDB } from 'idb';
 export interface OfflineTransaction {
   id: string;
   user_id: string;
+  family_id?: string | null;
   description: string;
   amount: string;
   type: 'income' | 'expense';
@@ -15,6 +16,7 @@ export interface OfflineTransaction {
 export interface OfflineGoal {
   id: string;
   user_id: string;
+  family_id?: string | null;
   name: string;
   target_amount: string;
   current_amount: string;
@@ -28,6 +30,7 @@ export interface OfflineGoal {
 export interface OfflineBudget {
   id: string;
   user_id: string;
+  family_id?: string | null;
   category: string;
   limit_amount: number;
   month: string;

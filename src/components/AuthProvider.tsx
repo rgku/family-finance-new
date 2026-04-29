@@ -22,6 +22,7 @@ interface Profile {
   tier: string;
   member_limit: number;
   billing_cycle_day: number;
+  family_id: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -58,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           tier: data.tier,
           member_limit: data.member_limit,
           billing_cycle_day: data.billing_cycle_day || 1,
+          family_id: data.family_id || null,
         });
       }
     } catch (err) {

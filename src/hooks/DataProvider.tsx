@@ -12,6 +12,8 @@ export interface Transaction {
   type: "income" | "expense";
   category: string;
   date: string;
+  user_id?: string;
+  family_id?: string | null;
 }
 
 export interface Goal {
@@ -23,6 +25,8 @@ export interface Goal {
   icon: string;
   goal_type: 'savings' | 'expense';
   created_at?: string;
+  user_id?: string;
+  family_id?: string | null;
 }
 
 export interface Budget {
@@ -30,6 +34,8 @@ export interface Budget {
   category: string;
   limit: number;
   spent: number;
+  user_id?: string;
+  family_id?: string | null;
 }
 
 interface DataContextType {
@@ -59,7 +65,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 const GOALS_UPDATED_CHANNEL = 'goals-updated';
 
 export function DataProvider({ children }: { children: ReactNode }) {
-  const { user, supabase: authSupabase } = useAuth();
+  const { user, supabase: authSupabase, profile } = useAuth();
   const supabase = authSupabase!;
   const { isOnline, saveOffline, fetchAndCache } = useOfflineSync();
   
@@ -69,6 +75,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [currentMonth, setCurrentMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [loading, setLoading] = useState(true);
   const lastFetchUserId = useRef<string | null>(null);
+  const lastFetchFamilyId = useRef<string | null>(null);
 
   // Listen for goals updates from other components
   useEffect(() => {
@@ -89,13 +96,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setBudgetsRaw([]);
       setLoading(false);
       lastFetchUserId.current = null;
+      lastFetchFamilyId.current = null;
       return;
     }
 
-    if (lastFetchUserId.current === user.id) {
+    // Skip if already fetched for this user and family
+    if (lastFetchUserId.current === user.id && lastFetchFamilyId.current === profile?.family_id) {
       return;
     }
     lastFetchUserId.current = user.id;
+    lastFetchFamilyId.current = profile?.family_id || null;
 
     const fetchData = async () => {
       setLoading(true);
@@ -116,6 +126,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           type: t.type,
           category: t.category,
           date: t.date,
+          user_id: t.user_id,
+          family_id: t.family_id,
         })));
       }
       
@@ -129,6 +141,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           icon: g.icon || 'savings',
           goal_type: g.goal_type || 'savings',
           created_at: g.created_at,
+          user_id: g.user_id,
+          family_id: g.family_id,
         })));
       }
       
@@ -138,10 +152,41 @@ export function DataProvider({ children }: { children: ReactNode }) {
       
       // If online, fetch fresh data from server
       if (isOnline) {
+        // Build query: if user has family, fetch family data; otherwise fetch user data only
+        const hasFamily = !!profile?.family_id;
+        
+        let transQuery = supabase.from('transactions_decrypted').select('*');
+        let goalsQuery = supabase.from('goals_decrypted').select('*');
+        let budgetsQuery = supabase.from('budgets').select('*');
+        
+        if (hasFamily && profile?.family_id) {
+          // Fetch data for entire family
+          transQuery = transQuery
+            .eq('family_id', profile.family_id)
+            .order('date', { ascending: false });
+          goalsQuery = goalsQuery
+            .eq('family_id', profile.family_id)
+            .order('created_at', { ascending: false });
+          budgetsQuery = budgetsQuery
+            .eq('family_id', profile.family_id)
+            .order('created_at', { ascending: false });
+        } else {
+          // Fetch only user's data
+          transQuery = transQuery
+            .eq('user_id', user.id)
+            .order('date', { ascending: false });
+          goalsQuery = goalsQuery
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+          budgetsQuery = budgetsQuery
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+        }
+        
         const [transResult, goalsResult, budgetsResult] = await Promise.all([
-          supabase.from('transactions_decrypted').select('*').eq('user_id', user.id).order('date', { ascending: false }),
-          supabase.from('goals_decrypted').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
-          supabase.from('budgets').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
+          transQuery,
+          goalsQuery,
+          budgetsQuery,
         ]);
         
         if (transResult.data) {
@@ -156,6 +201,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             type: t.type,
             category: t.category,
             date: t.date,
+            user_id: t.user_id,
+            family_id: t.family_id,
           })));
         }
 
@@ -169,6 +216,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             icon: g.icon || 'savings',
             goal_type: g.goal_type || 'savings',
             created_at: g.created_at,
+            user_id: g.user_id,
+            family_id: g.family_id,
           })));
         }
 
@@ -184,7 +233,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     };
 
     fetchData();
-  }, [user, isOnline]);
+  }, [user, isOnline, profile?.family_id]);
 
   const budgets = useMemo(() => {
     if (!budgetsRaw || budgetsRaw.length === 0) return [];
@@ -218,6 +267,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       type: t.type,
       category: t.category,
       date: t.date,
+      user_id: user.id,
+      family_id: profile?.family_id || null,
     };
     setTransactions(prev => [newTransaction, ...prev]);
 
@@ -233,17 +284,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const { error: insertError, data: newId } = await supabase
-        .rpc('insert_transaction', {
-          p_user_id: user.id,
-          p_description: t.description,
-          p_amount: t.amount,
-          p_type: t.type,
-          p_category: t.category,
-          p_date: t.date,
-        });
+      // Insert directly into transactions table
+      const { error: insertError, data } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          family_id: profile?.family_id || null,
+          description: t.description,
+          amount: t.amount,
+          type: t.type,
+          category: t.category,
+          date: t.date,
+        })
+        .select('id')
+        .single();
 
       if (insertError) throw insertError;
+      
+      const newId = data?.id;
       
       // Small delay to ensure DB is updated
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -277,6 +335,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
               type: insertedData.type,
               category: insertedData.category,
               date: insertedData.date,
+              user_id: insertedData.user_id,
+              family_id: insertedData.family_id,
             } : trans
           );
         });
@@ -621,6 +681,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       deadline: g.deadline,
       icon: g.icon || 'savings',
       goal_type: g.goal_type || 'savings',
+      user_id: user.id,
+      family_id: profile?.family_id || null,
     };
     setGoals(prev => [...prev, newGoal]);
 
@@ -638,15 +700,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     try {
       const { data: newId, error } = await supabase
-        .rpc('insert_goal', {
-          p_user_id: user.id,
-          p_name: g.name,
-          p_target_amount: g.target_amount,
-          p_current_amount: g.current_amount || 0,
-          p_deadline: g.deadline,
-          p_icon: g.icon || 'savings',
-          p_goal_type: g.goal_type || 'savings',
-        });
+        .from('goals')
+        .insert({
+          user_id: user.id,
+          family_id: profile?.family_id || null,
+          name: g.name,
+          target_amount: g.target_amount,
+          current_amount: g.current_amount || 0,
+          deadline: g.deadline,
+          icon: g.icon || 'savings',
+          goal_type: g.goal_type || 'savings',
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
       
@@ -666,6 +732,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             deadline: goalData.deadline,
             icon: goalData.icon || 'savings',
             goal_type: goalData.goal_type || 'savings',
+            user_id: goalData.user_id,
+            family_id: goalData.family_id,
           } : goal
         ));
       }
@@ -835,6 +903,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const newBudget = {
       id: tempId,
       user_id: user.id,
+      family_id: profile?.family_id || null,
       category: b.category,
       limit_amount: b.limit,
       month: currentMonth,
@@ -851,6 +920,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         .from('budgets')
         .insert({
           user_id: user.id,
+          family_id: profile?.family_id || null,
           category: b.category,
           limit_amount: b.limit,
           month: currentMonth,
