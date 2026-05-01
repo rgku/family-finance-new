@@ -19,9 +19,9 @@ export function getCustomMonthRange(billingDay: number, date: Date = new Date())
 }
 
 export function formatCustomMonth(billingDay: number, date: Date = new Date()): string {
-  const { endDate } = getCustomMonthRange(billingDay, date);
+  const { startDate } = getCustomMonthRange(billingDay, date);
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-  return `${monthNames[endDate.getMonth()]} ${endDate.getFullYear()}`;
+  return `${monthNames[startDate.getMonth()]} ${startDate.getFullYear()}`;
 }
 
 export function isDateInCustomMonth(dateStr: string, billingDay: number, year: number, month: number): boolean {
