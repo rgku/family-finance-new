@@ -28,13 +28,21 @@ export default function Dashboard() {
   
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
-    if (billingDay > 1) {
-      // Use the billing cycle: show the month that contains the end of current cycle
-      const { endDate } = getCustomMonthRange(billingDay, now);
-      return `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}`;
-    }
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    return currentMonth;
   });
+  
+  // Update selectedMonth when profile loads (billing cycle)
+  useEffect(() => {
+    if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
+      const now = new Date();
+      const { endDate } = getCustomMonthRange(profile.billing_cycle_day, now);
+      const correctMonth = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}`;
+      if (selectedMonth !== correctMonth) {
+        setSelectedMonth(correctMonth);
+      }
+    }
+  }, [profile?.billing_cycle_day]);
 
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const [year, month] = selectedMonth.split("-").map(Number);

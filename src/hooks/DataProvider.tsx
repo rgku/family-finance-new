@@ -227,13 +227,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (!budgetsRaw || budgetsRaw.length === 0) return [];
     
     return budgetsRaw.map(b => {
-      const monthTransactions = transactions.filter(t => 
-        t.category === b.category && 
-        t.type === 'expense' && 
-        t.date.startsWith(currentMonth)
-      );
+      let spent = 0;
       
-      const spent = monthTransactions.reduce((sum, t) => sum + t.amount, 0);
+      if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
+        // Custom billing cycle: filter by date range
+        const now = new Date();
+        const { startDate, endDate } = getCustomMonthRange(profile.billing_cycle_day, now);
+        const startStr = startDate.toISOString().split('T')[0];
+        const endStr = endDate.toISOString().split('T')[0];
+        
+        spent = transactions
+          .filter(t => 
+            t.category === b.category && 
+            t.type === 'expense' && 
+            t.date >= startStr && 
+            t.date <= endStr
+          )
+          .reduce((sum, t) => sum + t.amount, 0);
+      } else {
+        // Regular month: filter by month string
+        spent = transactions
+          .filter(t => 
+            t.category === b.category && 
+            t.type === 'expense' && 
+            t.date.startsWith(currentMonth)
+          )
+          .reduce((sum, t) => sum + t.amount, 0);
+      }
       
       return {
         id: b.id,
@@ -242,7 +262,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         spent,
       };
     });
-  }, [budgetsRaw, transactions, currentMonth]);
+  }, [budgetsRaw, transactions, currentMonth, profile?.billing_cycle_day]);
 
   const addTransaction = async (t: Omit<Transaction, "id">) => {
     if (!user) throw new Error("Must be logged in");
