@@ -26,21 +26,27 @@ export default function Dashboard() {
   
   const billingDay = profile?.billing_cycle_day || 1;
   
-  // ALWAYS use civil month initially (SSR-safe)
+  // Initialize with civil month
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
   
-  // Update to billing cycle month ONLY on client after profile loads
+  // Force update to billing cycle month when profile loads
   useEffect(() => {
-    if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
-      const now = new Date(); // Client date
+    if (!profile?.billing_cycle_day || profile.billing_cycle_day <= 1) return;
+    
+    // Use a timeout to ensure this runs AFTER SSR
+    const timer = setTimeout(() => {
+      const now = new Date();
+      console.log('[Dashboard] Updating to billing cycle. Billing day:', profile.billing_cycle_day, 'Current date:', now.toISOString());
       const { displayYear, displayMonth } = getCustomMonthRange(profile.billing_cycle_day, now);
       const correctMonth = `${displayYear}-${String(displayMonth + 1).padStart(2, "0")}`;
+      console.log('[Dashboard] Setting month to:', correctMonth);
       setSelectedMonth(correctMonth);
-    }
-    // Run ONLY once when billing_cycle_day changes
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [profile?.billing_cycle_day]);
 
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
