@@ -76,7 +76,8 @@ export const TransactionItem = memo(function TransactionItem({
             ))}
           </select>
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             value={editForm.amount}
             onChange={(e) => onFormChange("amount", e.target.value)}
             className="bg-surface-container-low border-none rounded px-3 py-2 text-on-surface text-sm w-full"

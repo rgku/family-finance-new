@@ -87,7 +87,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [user, supabase]);
+  }, [user, supabase, profile]);
 
   useEffect(() => {
     if (!user) {
@@ -101,102 +101,105 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     // Skip if already fetched for this user and family
-    if (lastFetchUserId.current === user.id && lastFetchFamilyId.current === profile?.family_id) {
+    if (lastFetchUserId.current === user.id && lastFetchFamilyId.current === (profile?.family_id || null)) {
       return;
     }
     lastFetchUserId.current = user.id;
     lastFetchFamilyId.current = profile?.family_id || null;
 
     const fetchData = async () => {
-      setLoading(true);
-      
-      // Try to load from IndexedDB first (for offline support)
-      const [cachedTransactions, cachedGoals, cachedBudgets] = await Promise.all([
-        offlineDB.getTransactions(user.id),
-        offlineDB.getGoals(user.id),
-        offlineDB.getBudgets(user.id),
-      ]);
-      
-      // Use cached data immediately
-      if (cachedTransactions.length > 0) {
-        setTransactions(cachedTransactions.map(t => ({
-          id: t.id,
-          description: t.description || '',
-          amount: parseFloat(t.amount) || 0,
-          type: t.type,
-          category: t.category,
-          date: t.date,
-          user_id: t.user_id,
-          family_id: t.family_id,
-        })));
-      }
-      
-      if (cachedGoals.length > 0) {
-        setGoals(cachedGoals.map(g => ({
-          id: g.id,
-          name: g.name,
-          target_amount: parseFloat(g.target_amount) || 0,
-          current_amount: parseFloat(g.current_amount) || 0,
-          deadline: g.deadline,
-          icon: g.icon || 'savings',
-          goal_type: g.goal_type || 'savings',
-          created_at: g.created_at,
-          user_id: g.user_id,
-          family_id: g.family_id,
-        })));
-      }
-      
-      if (cachedBudgets.length > 0) {
-        setBudgetsRaw(cachedBudgets);
-      }
-      
-      // If online, fetch fresh data from server
-      if (isOnline) {
-        // Build query: fetch user's data AND family data (if user has family)
-        // This ensures old records without family_id are still visible
-        let transQuery = supabase.from('transactions_decrypted').select('*');
-        let goalsQuery = supabase.from('goals_decrypted').select('*');
-        let budgetsQuery = supabase.from('budgets').select('*');
+      try {
+        setLoading(true);
         
-        if (profile?.family_id) {
-          // Fetch user's data OR family data (handles both old and new records)
-          transQuery = transQuery
-            .or(`user_id.eq.${user.id},family_id.eq.${profile.family_id}`)
-            .order('date', { ascending: false });
-          goalsQuery = goalsQuery
-            .or(`user_id.eq.${user.id},family_id.eq.${profile.family_id}`)
-            .order('created_at', { ascending: false });
-          budgetsQuery = budgetsQuery
-            .or(`user_id.eq.${user.id},family_id.eq.${profile.family_id}`)
-            .order('created_at', { ascending: false });
-        } else {
-          // Fetch only user's data
-          transQuery = transQuery
-            .eq('user_id', user.id)
-            .order('date', { ascending: false });
-          goalsQuery = goalsQuery
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
-          budgetsQuery = budgetsQuery
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false });
-        }
-        
-        const [transResult, goalsResult, budgetsResult] = await Promise.all([
-          transQuery,
-          goalsQuery,
-          budgetsQuery,
+        // Try to load from IndexedDB first (for offline support)
+        const [cachedTransactions, cachedGoals, cachedBudgets] = await Promise.all([
+          offlineDB.getTransactions(user.id),
+          offlineDB.getGoals(user.id),
+          offlineDB.getBudgets(user.id),
         ]);
         
-        if (transResult.data) {
-          const validTransactions = transResult.data.filter(t => 
-            t.description && t.description.trim() !== '' && 
-            t.amount && parseFloat(t.amount) > 0
-          );
-          setTransactions(validTransactions.map(t => ({
+        // Use cached data immediately
+        if (cachedTransactions.length > 0) {
+          setTransactions(cachedTransactions.map(t => ({
             id: t.id,
             description: t.description || '',
             amount: parseFloat(t.amount) || 0,
+            type: t.type,
+            category: t.category,
+            date: t.date,
+            user_id: t.user_id,
+            family_id: t.family_id,
+          })));
+        }
+        
+        if (cachedGoals.length > 0) {
+          setGoals(cachedGoals.map(g => ({
+            id: g.id,
+            name: g.name,
+            target_amount: parseFloat(g.target_amount) || 0,
+            current_amount: parseFloat(g.current_amount) || 0,
+            deadline: g.deadline,
+            icon: g.icon || 'savings',
+            goal_type: g.goal_type || 'savings',
+            created_at: g.created_at,
+            user_id: g.user_id,
+            family_id: g.family_id,
+          })));
+        }
+        
+        if (cachedBudgets.length > 0) {
+          setBudgetsRaw(cachedBudgets);
+        }
+        
+        // If online, fetch fresh data from server
+        if (isOnline) {
+          // Build query: fetch user's data AND family data (if user has family)
+          // This ensures old records without family_id are still visible
+          let transQuery = supabase.from('transactions_decrypted').select('*');
+          let goalsQuery = supabase.from('goals_decrypted').select('*');
+          let budgetsQuery = supabase.from('budgets').select('*');
+          
+          if (profile?.family_id) {
+            // Fetch user's data OR family data (handles both old and new records)
+            transQuery = transQuery
+              .or(`user_id.eq.${user.id},family_id.eq.${profile.family_id}`)
+              .order('date', { ascending: false });
+            goalsQuery = goalsQuery
+              .or(`user_id.eq.${user.id},family_id.eq.${profile.family_id}`)
+              .order('created_at', { ascending: false });
+            budgetsQuery = budgetsQuery
+              .or(`user_id.eq.${user.id},family_id.eq.${profile.family_id}`)
+              .order('created_at', { ascending: false });
+          } else {
+            // Fetch only user's data
+            transQuery = transQuery
+              .eq('user_id', user.id)
+              .order('date', { ascending: false });
+            goalsQuery = goalsQuery
+              .eq('user_id', user.id)
+              .order('created_at', { ascending: false });
+            budgetsQuery = budgetsQuery
+              .eq('user_id', user.id)
+              .order('created_at', { ascending: false });
+          }
+          
+          const [transResult, goalsResult, budgetsResult] = await Promise.all([
+            transQuery,
+            goalsQuery,
+            budgetsQuery,
+          ]);
+          
+          if (transResult.error) {
+            console.error('Error fetching transactions:', transResult.error);
+          } else if (transResult.data) {
+            const validTransactions = transResult.data.filter(t => 
+              t.description && t.description.trim() !== '' && 
+              t.amount && parseFloat(t.amount) > 0
+            );
+            setTransactions(validTransactions.map(t => ({
+              id: t.id,
+              description: t.description || '',
+              amount: parseFloat(t.amount) || 0,
             type: t.type,
             category: t.category,
             date: t.date,
@@ -227,8 +230,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         // Cache the fresh data
         await fetchAndCache();
       }
-
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
       setLoading(false);
+    }
     };
 
     fetchData();
