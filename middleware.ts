@@ -59,6 +59,7 @@ export async function middleware(request: NextRequest) {
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api/health') ||
+    pathname === '/manifest.json' ||
     pathname.includes('.')
   ) {
     console.log(`✅ [MIDDLEWARE ${timestamp}] Skipping static/health: ${pathname}`);

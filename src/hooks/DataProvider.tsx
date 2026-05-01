@@ -156,12 +156,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
           // Use views that filter by family_id in the database layer
           let transQuery = supabase.from('transactions_decrypted').select('*');
           let goalsQuery = supabase.from('goals_decrypted').select('*');
-          // For budgets, we need to filter by family_id explicitly since there's no view
-          let budgetsQuery = supabase.from('budgets').select('*').eq('family_id', profile?.family_id || '');
-          
-          // Apply ordering
-          transQuery = transQuery.order('date', { ascending: false });
-          goalsQuery = goalsQuery.order('created_at', { ascending: false });
+          // For budgets, filter by family_id only if available
+          let budgetsQuery = supabase.from('budgets').select('*');
+          if (profile?.family_id) {
+            budgetsQuery = budgetsQuery.eq('family_id', profile.family_id);
+          }
           budgetsQuery = budgetsQuery.order('created_at', { ascending: false });
           
           const [transResult, goalsResult, budgetsResult] = await Promise.all([
