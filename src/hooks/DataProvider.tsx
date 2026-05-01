@@ -4,6 +4,8 @@ import { createContext, useContext, useState, useEffect, useMemo, ReactNode, use
 import { useAuth } from "@/components/AuthProvider";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 import * as offlineDB from "@/lib/offline-db";
+import { getCustomMonthRange } from "@/lib/dateUtils";
+import { getCustomMonthRange } from "@/lib/dateUtils";
 
 export interface Transaction {
   id: string;
