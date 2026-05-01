@@ -26,21 +26,24 @@ export default function Dashboard() {
   
   const billingDay = profile?.billing_cycle_day || 1;
   
+  // Initialize selectedMonth based on billing cycle
+  // selectedMonth represents the DISPLAY month (end month of cycle)
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    return currentMonth;
+    if (billingDay > 1) {
+      const { displayYear, displayMonth } = getCustomMonthRange(billingDay, now);
+      return `${displayYear}-${String(displayMonth + 1).padStart(2, "0")}`;
+    }
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
   
-  // Update selectedMonth when profile loads (billing cycle)
+  // Update selectedMonth when profile/billingDay changes
   useEffect(() => {
     if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
       const now = new Date();
-      const { endDate } = getCustomMonthRange(profile.billing_cycle_day, now);
-      const correctMonth = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}`;
-      if (selectedMonth !== correctMonth) {
-        setSelectedMonth(correctMonth);
-      }
+      const { displayYear, displayMonth } = getCustomMonthRange(profile.billing_cycle_day, now);
+      const correctMonth = `${displayYear}-${String(displayMonth + 1).padStart(2, "0")}`;
+      setSelectedMonth(correctMonth);
     }
   }, [profile?.billing_cycle_day]);
 

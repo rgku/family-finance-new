@@ -231,7 +231,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       let spent = 0;
       
       if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
-        // Custom billing cycle: filter by date range
+        // Custom billing cycle: filter transactions by cycle date range
         const now = new Date();
         const { startDate, endDate } = getCustomMonthRange(profile.billing_cycle_day, now);
         const startStr = startDate.toISOString().split('T')[0];
