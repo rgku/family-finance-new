@@ -6,7 +6,8 @@ export const CURRENCY = {
 };
 
 export function formatCurrency(amount: number): string {
-  return amount.toLocaleString(CURRENCY.locale, {
+  const safeAmount = typeof amount === 'number' && !isNaN(amount) ? amount : 0;
+  return safeAmount.toLocaleString(CURRENCY.locale, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
