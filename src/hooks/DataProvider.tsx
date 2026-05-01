@@ -153,35 +153,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
         
         // If online, fetch fresh data from server
         if (isOnline) {
-          // Build query: fetch user's data AND family data (if user has family)
-          // This ensures old records without family_id are still visible
+          // Use views that filter by family_id in the database layer
           let transQuery = supabase.from('transactions_decrypted').select('*');
           let goalsQuery = supabase.from('goals_decrypted').select('*');
-          let budgetsQuery = supabase.from('budgets').select('*');
+          // For budgets, we need to filter by family_id explicitly since there's no view
+          let budgetsQuery = supabase.from('budgets').select('*').eq('family_id', profile?.family_id || '');
           
-          if (profile?.family_id) {
-            // Fetch user's data OR family data (handles both old and new records)
-            transQuery = transQuery
-              .or(`user_id.eq.${user.id},family_id.eq.${profile.family_id}`)
-              .order('date', { ascending: false });
-            goalsQuery = goalsQuery
-              .or(`user_id.eq.${user.id},family_id.eq.${profile.family_id}`)
-              .order('created_at', { ascending: false });
-            budgetsQuery = budgetsQuery
-              .or(`user_id.eq.${user.id},family_id.eq.${profile.family_id}`)
-              .order('created_at', { ascending: false });
-          } else {
-            // Fetch only user's data
-            transQuery = transQuery
-              .eq('user_id', user.id)
-              .order('date', { ascending: false });
-            goalsQuery = goalsQuery
-              .eq('user_id', user.id)
-              .order('created_at', { ascending: false });
-            budgetsQuery = budgetsQuery
-              .eq('user_id', user.id)
-              .order('created_at', { ascending: false });
-          }
+          // Apply ordering
+          transQuery = transQuery.order('date', { ascending: false });
+          goalsQuery = goalsQuery.order('created_at', { ascending: false });
+          budgetsQuery = budgetsQuery.order('created_at', { ascending: false });
           
           const [transResult, goalsResult, budgetsResult] = await Promise.all([
             transQuery,
@@ -192,9 +173,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
           if (transResult.error) {
             console.error('Error fetching transactions:', transResult.error);
           } else if (transResult.data) {
+            // SECURITY: Filter by family_id as extra layer (in case RLS/view fails)
+            const userFamilyId = profile?.family_id;
             const validTransactions = transResult.data.filter(t => 
               t.description && t.description.trim() !== '' && 
-              t.amount && parseFloat(t.amount) > 0
+              t.amount && parseFloat(t.amount) > 0 &&
+              (!userFamilyId || t.family_id === userFamilyId)
             );
             setTransactions(validTransactions.map(t => ({
               id: t.id,

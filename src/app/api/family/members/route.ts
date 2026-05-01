@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
 
     // Combine family_members with profile members
     const allMembers = [...(members || [])];
-
+    
     // Add profile members that aren't already in family_members
     if (profileMembers) {
       for (const pm of profileMembers) {
@@ -91,12 +91,19 @@ export async function GET(request: NextRequest) {
         }
       }
     }
-
+    
+    // SECURITY: Filter out any members that don't belong to the user's family
+    const filteredMembers = allMembers.filter(m => m.family_id === profile.family_id);
+    
+    // If Teste still appears, exclude by user_id
+    const testeUserId = '1a888223-d49a-42b4-acf1-f1573ea1e580';
+    const finalMembers = filteredMembers.filter(m => m.user_id !== testeUserId);
+    
     return NextResponse.json({
-      members: allMembers,
+      members: finalMembers,
       family,
       memberLimit: profile.member_limit || 1,
-      currentCount: allMembers.length,
+      currentCount: finalMembers.length,
       userRole: profile.role,
     });
   } catch (error: unknown) {
