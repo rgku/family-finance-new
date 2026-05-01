@@ -27,25 +27,26 @@ export default function Dashboard() {
   const billingDay = profile?.billing_cycle_day || 1;
   
   // Initialize selectedMonth based on billing cycle
-  // selectedMonth represents the DISPLAY month (end month of cycle)
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const now = new Date();
-    if (billingDay > 1) {
-      const { displayYear, displayMonth } = getCustomMonthRange(billingDay, now);
-      return `${displayYear}-${String(displayMonth + 1).padStart(2, "0")}`;
-    }
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  });
+  // Use CLIENT date only (avoid SSR timezone issues)
+  const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   
-  // Update selectedMonth when profile/billingDay changes
+  // Update selectedMonth when profile/billingDay changes or on mount
   useEffect(() => {
     if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
-      const now = new Date();
+      const now = new Date(); // Use client date
       const { displayYear, displayMonth } = getCustomMonthRange(profile.billing_cycle_day, now);
       const correctMonth = `${displayYear}-${String(displayMonth + 1).padStart(2, "0")}`;
       setSelectedMonth(correctMonth);
+    } else {
+      const now = new Date();
+      setSelectedMonth(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
     }
   }, [profile?.billing_cycle_day]);
+  
+  // Prevent rendering until selectedMonth is set
+  if (selectedMonth === null) {
+    return null; // Or show loading skeleton
+  }
 
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const [year, month] = selectedMonth.split("-").map(Number);
