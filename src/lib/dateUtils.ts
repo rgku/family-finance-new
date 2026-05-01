@@ -10,8 +10,6 @@ export function getCustomMonthRange(billingDay: number, date: Date = new Date())
   const month = date.getMonth(); // 0-indexed (0 = January, 4 = May)
   const currentDay = date.getDate();
   
-  console.log('[getCustomMonthRange] Input:', { billingDay, date: date.toISOString(), year, month, currentDay });
-  
   let cycleStartYear: number;
   let cycleStartMonth: number; // 0-indexed
   let cycleEndYear: number;
@@ -25,7 +23,6 @@ export function getCustomMonthRange(billingDay: number, date: Date = new Date())
     cycleStartMonth = month;
     cycleEndYear = month === 11 ? year + 1 : year;
     cycleEndMonth = month === 11 ? 0 : month + 1;
-    console.log('[getCustomMonthRange] Path: currentDay >= billingDay');
   } else {
     // We're BEFORE the billing day in current month
     // Cycle started PREVIOUS month on billingDay, ends THIS month on billingDay-1
@@ -34,19 +31,10 @@ export function getCustomMonthRange(billingDay: number, date: Date = new Date())
     cycleStartMonth = month === 0 ? 11 : month - 1;
     cycleEndYear = year;
     cycleEndMonth = month;
-    console.log('[getCustomMonthRange] Path: currentDay < billingDay');
   }
   
   const startDate = new Date(cycleStartYear, cycleStartMonth, billingDay);
   const endDate = new Date(cycleEndYear, cycleEndMonth, billingDay - 1);
-  
-  console.log('[getCustomMonthRange] Result:', {
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
-    displayMonth: cycleEndMonth,
-    displayYear: cycleEndYear,
-    displayMonthName: ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"][cycleEndMonth]
-  });
   
   // displayMonth is 0-indexed (the month where cycle ENDS)
   return { startDate, endDate, displayMonth: cycleEndMonth, displayYear: cycleEndYear };
