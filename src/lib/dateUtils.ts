@@ -25,9 +25,17 @@ export function formatCustomMonth(billingDay: number, date: Date = new Date()): 
 }
 
 export function isDateInCustomMonth(dateStr: string, billingDay: number, year: number, month: number): boolean {
-  // Use string comparison for DATE-only values (avoid timezone issues)
-  const { startDate, endDate } = getCustomMonthRange(billingDay, new Date(year, month - 1, billingDay));
-  const startStr = startDate.getFullYear() + '-' + String(startDate.getMonth() + 1).padStart(2, '0') + '-' + String(startDate.getDate()).padStart(2, '0');
-  const endStr = endDate.getFullYear() + '-' + String(endDate.getMonth() + 1).padStart(2, '0') + '-' + String(endDate.getDate()).padStart(2, '0');
+  // selectedMonth (year-month) is the END month of the cycle
+  // Cycle runs from (previous month)/billingDay to (current month)/billingDay-1
+  let startYear = year;
+  let startMonth = month - 1;
+  if (startMonth === 0) {
+    startMonth = 12;
+    startYear -= 1;
+  }
+  
+  const startStr = `${startYear}-${String(startMonth).padStart(2, '0')}-${String(billingDay).padStart(2, '0')}`;
+  const endStr = `${year}-${String(month).padStart(2, '0')}-${String(billingDay - 1).padStart(2, '0')}`;
+  
   return dateStr >= startStr && dateStr <= endStr;
 }
