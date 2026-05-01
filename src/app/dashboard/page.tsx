@@ -29,8 +29,9 @@ export default function Dashboard() {
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     if (billingDay > 1) {
-      const { startDate } = getCustomMonthRange(billingDay, now);
-      return `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}`;
+      // Use the billing cycle: show the month that contains the end of current cycle
+      const { endDate } = getCustomMonthRange(billingDay, now);
+      return `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, "0")}`;
     }
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
