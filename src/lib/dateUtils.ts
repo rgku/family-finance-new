@@ -25,7 +25,9 @@ export function formatCustomMonth(billingDay: number, date: Date = new Date()): 
 }
 
 export function isDateInCustomMonth(dateStr: string, billingDay: number, year: number, month: number): boolean {
-  const date = new Date(dateStr);
+  // Use string comparison for DATE-only values (avoid timezone issues)
   const { startDate, endDate } = getCustomMonthRange(billingDay, new Date(year, month - 1, billingDay));
-  return date >= startDate && date <= endDate;
+  const startStr = startDate.getFullYear() + '-' + String(startDate.getMonth() + 1).padStart(2, '0') + '-' + String(startDate.getDate()).padStart(2, '0');
+  const endStr = endDate.getFullYear() + '-' + String(endDate.getMonth() + 1).padStart(2, '0') + '-' + String(endDate.getDate()).padStart(2, '0');
+  return dateStr >= startStr && dateStr <= endStr;
 }
