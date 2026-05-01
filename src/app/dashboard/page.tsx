@@ -53,7 +53,7 @@ export default function Dashboard() {
   const [year, month] = selectedMonth.split("-").map(Number);
   
   const monthName = profile?.billing_cycle_day && profile.billing_cycle_day > 1
-    ? formatCustomMonth(billingDay, new Date(year, month - 1, billingDay))
+    ? formatCustomMonth(billingDay, new Date(year, month - 1, 1)) // Use day 1, not billingDay
     : monthNames[month - 1];
 
   const prevMonth = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
