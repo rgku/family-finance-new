@@ -98,26 +98,47 @@ function extractMerchant(lines: string[]): string {
 }
 
 function extractTotal(text: string): { total: number; confidence: number } {
-  const allMatches: Array<{ value: number; confidence: number; isExplicitTotal: boolean }> = [];
+  const allMatches: Array<{ value: number; confidence: number; isExplicitTotal: boolean; context: string }> = [];
   
-  const patterns = [
-    { regex: /(?:total\s*(?:geral)?|valor\s*(?:a\s*pagar)?|montante|importe|total\s*a\s*pagar)\s*[:.]?\s*([0-9]{1,3}(?:[.,\s][0-9]{3})*(?:[.,][0-9]{2})?)\s*(?:€|eur|euros)?/gi, priority: 1 },
-    { regex: /(?:€|EUR)\s*([0-9]{1,3}(?:[.,\s][0-9]{3})*(?:[.,][0-9]{2})?)/gi, priority: 2 },
-    { regex: /([0-9]{1,3}(?:[.,\s][0-9]{3})*(?:[.,][0-9]{2})?)\s*(?:€|eur)/gi, priority: 2 },
-    { regex: /\b([0-9]{1,3}[.,][0-9]{2})\b/g, priority: 3 },
-  ];
+  const lines = text.split('\n');
   
-  for (const { regex, priority } of patterns) {
-    const matches = text.matchAll(regex);
-    for (const match of matches) {
-      const value = parseMonetaryValue(match[1]);
-      
-      if (!isNaN(value) && value > OCR_CONFIG.MIN_TOTAL_VALUE && value < OCR_CONFIG.MAX_TOTAL_VALUE) {
-        allMatches.push({
-          value: Math.round(value * 100) / 100,
-          confidence: priority === 1 ? 0.95 : 0.7,
-          isExplicitTotal: priority === 1,
-        });
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const lowerLine = line.toLowerCase();
+    
+    // Ignorar linhas com "anterior", "pagamentos", "crédito", "débito anterior"
+    if (lowerLine.includes('anterior') || lowerLine.includes('pagamentos') || 
+        lowerLine.includes('crédito') || lowerLine.includes('credito') ||
+        lowerLine.includes('somos a luz')) {
+      continue;
+    }
+    
+    // Procurar por "Esta fatura será cobrada" ou "FT" (número da fatura)
+    const isCurrentInvoice = lowerLine.includes('esta fatura') || 
+                             lowerLine.includes('ft ') || 
+                             lowerLine.includes('ft2') ||
+                             lowerLine.includes('total a pagar');
+    
+    // Extrair valores da linha
+    const valuePatterns = [
+      /(?:€|EUR)\s*([0-9]{1,3}(?:[.,\s][0-9]{3})*(?:[.,][0-9]{2})?)/gi,
+      /([0-9]{1,3}(?:[.,\s][0-9]{3})*(?:[.,][0-9]{2})?)\s*(?:€|eur)/gi,
+      /\b([0-9]{1,3}[.,][0-9]{2})\s*€\b/g,
+    ];
+    
+    for (const pattern of valuePatterns) {
+      const matches = [...line.matchAll(pattern)];
+      for (const match of matches) {
+        const value = parseMonetaryValue(match[1]);
+        
+        if (!isNaN(value) && value > OCR_CONFIG.MIN_TOTAL_VALUE && value < OCR_CONFIG.MAX_TOTAL_VALUE) {
+          allMatches.push({
+            value: Math.round(value * 100) / 100,
+            confidence: isCurrentInvoice ? 0.95 : 0.7,
+            isExplicitTotal: isCurrentInvoice || lowerLine.includes('total a pagar'),
+            context: line.trim().substring(0, 50),
+          });
+        }
       }
     }
   }
@@ -126,12 +147,15 @@ function extractTotal(text: string): { total: number; confidence: number } {
     return { total: 0, confidence: 0 };
   }
   
+  // Priorizar totais explícitos da fatura atual
   const explicitTotals = allMatches.filter(m => m.isExplicitTotal);
   if (explicitTotals.length > 0) {
-    const highest = explicitTotals.reduce((max, m) => m.value > max.value ? m : max);
-    return { total: highest.value, confidence: highest.confidence };
+    // Se houver múltiplos totais explícitos, escolher o último (geralmente o mais relevante)
+    const lastTotal = explicitTotals[explicitTotals.length - 1];
+    return { total: lastTotal.value, confidence: lastTotal.confidence };
   }
   
+  // Se não houver totais explícitos, retornar o valor mais alto
   const highestValue = allMatches.reduce((max, m) => m.value > max.value ? m : max);
   return { total: highestValue.value, confidence: highestValue.confidence * 0.8 };
 }
