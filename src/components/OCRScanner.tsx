@@ -36,8 +36,11 @@ export function OCRScanner({ onDataExtracted, onCancel }: OCRScannerProps) {
 
   async function convertPdfToImages(file: File): Promise<ProcessedImage[]> {
     const pdfjsLib = await import("pdfjs-dist");
-    // Usar versão específica do worker que existe no CDN
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    // Usar worker local do package para garantir compatibilidade de versões
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      "pdfjs-dist/build/pdf.worker.min.mjs",
+      import.meta.url
+    ).href;
     
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
