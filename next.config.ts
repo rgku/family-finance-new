@@ -8,6 +8,17 @@ const nextConfig: NextConfig = {
       static: 60,
     },
   },
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        path: false,
+        canvas: false,
+      };
+    }
+    return config;
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
