@@ -114,7 +114,7 @@ export function OCRScanner({ onDataExtracted, onCancel }: OCRScannerProps) {
 }
 
     const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 2.0 });
+    const viewport = page.getViewport({ scale: 3.0 });
     
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -127,10 +127,46 @@ export function OCRScanner({ onDataExtracted, onCancel }: OCRScannerProps) {
       canvas: canvas,
     };
 
-    await page.render(renderContext).promise;
+    const renderTask = page.render(renderContext);
+    await renderTask.promise;
 
     images.push({ canvas, pageNumber: 1 });
     return images;
+  }
+
+  function preprocessImage(canvas: HTMLCanvasElement): HTMLCanvasElement {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return canvas;
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imageData.data;
+    
+    // Converter para grayscale
+    for (let i = 0; i < data.length; i += 4) {
+      const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+      data[i] = avg;
+      data[i + 1] = avg;
+      data[i + 2] = avg;
+    }
+    
+    // Aplicar threshold (binarização)
+    const threshold = 128;
+    for (let i = 0; i < data.length; i += 4) {
+      const value = data[i] < threshold ? 0 : 255;
+      data[i] = value;
+      data[i + 1] = value;
+      data[i + 2] = value;
+    }
+    
+    ctx.putImageData(imageData, 0, 0);
+    
+    const processedCanvas = document.createElement('canvas');
+    processedCanvas.width = canvas.width;
+    processedCanvas.height = canvas.height;
+    const processedCtx = processedCanvas.getContext('2d');
+    processedCtx?.drawImage(canvas, 0, 0);
+    
+    return processedCanvas;
   }
 
   async function handleFileUpload(file: File) {
