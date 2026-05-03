@@ -165,7 +165,19 @@ export function OCRScanner({ onDataExtracted, onCancel }: OCRScannerProps) {
       }
       imagesToProcess = [];
 
+      console.log("=== OCR Raw Text ===");
+      console.log(allText);
+      console.log("====================");
+
       const ocrResult = parseReceiptText(allText);
+      
+      console.log("=== OCR Parsed Result ===");
+      console.log("Merchant:", ocrResult.merchant);
+      console.log("Total:", ocrResult.total);
+      console.log("Date:", ocrResult.date);
+      console.log("Confidence:", ocrResult.confidence);
+      console.log("========================");
+      
       const suggestedCategory = suggestCategory(ocrResult.merchant, allText);
 
       setScanning(false);

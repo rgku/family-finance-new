@@ -98,28 +98,42 @@ function extractMerchant(lines: string[]): string {
 }
 
 function extractTotal(text: string): { total: number; confidence: number } {
+  const allMatches: Array<{ value: number; confidence: number; isExplicitTotal: boolean }> = [];
+  
   const patterns = [
-    /(?:total|valor|montante|importe)\s*[:.]?\s*([0-9]{1,3}(?:[.,\s][0-9]{3})*(?:[.,][0-9]{2})?)\s*(?:€|eur|euros)?/i,
-    /([0-9]{1,3}(?:[.,\s][0-9]{3})*(?:[.,][0-9]{2})?)\s*(?:€|eur)/i,
-    /(?:€|EUR)\s*([0-9]{1,3}(?:[.,\s][0-9]{3})*(?:[.,][0-9]{2})?)/i,
-    /\b([0-9]+[.,][0-9]{2})\b/,
+    { regex: /(?:total\s*(?:geral)?|valor\s*(?:a\s*pagar)?|montante|importe|total\s*a\s*pagar)\s*[:.]?\s*([0-9]{1,3}(?:[.,\s][0-9]{3})*(?:[.,][0-9]{2})?)\s*(?:€|eur|euros)?/i, priority: 1 },
+    { regex: /(?:€|EUR)\s*([0-9]{1,3}(?:[.,\s][0-9]{3})*(?:[.,][0-9]{2})?)/i, priority: 2 },
+    { regex: /([0-9]{1,3}(?:[.,\s][0-9]{3})*(?:[.,][0-9]{2})?)\s*(?:€|eur)/i, priority: 2 },
+    { regex: /\b([0-9]{1,3}[.,][0-9]{2})\b/g, priority: 3 },
   ];
   
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match) {
+  for (const { regex, priority } of patterns) {
+    const matches = text.matchAll(regex);
+    for (const match of matches) {
       const value = parseMonetaryValue(match[1]);
       
       if (!isNaN(value) && value > OCR_CONFIG.MIN_TOTAL_VALUE && value < OCR_CONFIG.MAX_TOTAL_VALUE) {
-        return {
-          total: Math.round(value * 100) / 100,
-          confidence: pattern === patterns[0] ? 0.9 : 0.7,
-        };
+        allMatches.push({
+          value: Math.round(value * 100) / 100,
+          confidence: priority === 1 ? 0.95 : 0.7,
+          isExplicitTotal: priority === 1,
+        });
       }
     }
   }
   
-  return { total: 0, confidence: 0 };
+  if (allMatches.length === 0) {
+    return { total: 0, confidence: 0 };
+  }
+  
+  const explicitTotals = allMatches.filter(m => m.isExplicitTotal);
+  if (explicitTotals.length > 0) {
+    const highest = explicitTotals.reduce((max, m) => m.value > max.value ? m : max);
+    return { total: highest.value, confidence: highest.confidence };
+  }
+  
+  const highestValue = allMatches.reduce((max, m) => m.value > max.value ? m : max);
+  return { total: highestValue.value, confidence: highestValue.confidence * 0.8 };
 }
 
 function extractDate(text: string): string {
