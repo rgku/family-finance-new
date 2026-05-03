@@ -23,6 +23,13 @@ interface ProcessedImage {
   pageNumber: number;
 }
 
+interface OCRWorker {
+  recognize: (image: HTMLImageElement | HTMLCanvasElement | Blob | ImageData) => Promise<{ data: { text: string; confidence: number } }>;
+  terminate: () => Promise<void>;
+  load: () => Promise<void>;
+  setParameters: (params: Record<string, any>) => Promise<void>;
+}
+
 export function OCRScanner({ onDataExtracted, onCancel }: OCRScannerProps) {
   const [scanning, setScanning] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -34,21 +41,76 @@ export function OCRScanner({ onDataExtracted, onCancel }: OCRScannerProps) {
   const supportedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
   const supportedPdfTypes = ['application/pdf'];
 
-  async function convertPdfToImages(file: File): Promise<ProcessedImage[]> {
-    const pdfjsLib = await import("pdfjs-dist");
-    // Usar worker local do package para garantir compatibilidade de versões
-    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-      "pdfjs-dist/build/pdf.worker.min.mjs",
-      import.meta.url
-    ).href;
-    
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-    const images: ProcessedImage[] = [];
+async function convertPdfToImages(file: File): Promise<ProcessedImage[]> {
+  const pdfjsLib = await import("pdfjs-dist");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/build/pdf.worker.min.mjs",
+    import.meta.url
+  ).href;
+  
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+  const images: ProcessedImage[] = [];
 
-    if (pdf.numPages === 0) {
-      return images;
-    }
+  if (pdf.numPages === 0) {
+    return images;
+  }
+
+  const page = await pdf.getPage(1);
+  const viewport = page.getViewport({ scale: 3.0 }); // Aumentar scale para melhor qualidade
+  
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  canvas.height = viewport.height;
+  canvas.width = viewport.width;
+
+  const renderContext = {
+    canvasContext: context!,
+    viewport: viewport,
+    canvas: canvas,
+  };
+
+  await page.render(renderContext).promise;
+
+  images.push({ canvas, pageNumber: 1 });
+  return images;
+}
+
+function preprocessImage(canvas: HTMLCanvasElement): HTMLCanvasElement {
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return canvas;
+
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+  
+  // Converter para grayscale
+  for (let i = 0; i < data.length; i += 4) {
+    const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
+    data[i] = avg;
+    data[i + 1] = avg;
+    data[i + 2] = avg;
+  }
+  
+  // Aplicar threshold (binarização)
+  const threshold = 128;
+  for (let i = 0; i < data.length; i += 4) {
+    const value = data[i] < threshold ? 0 : 255;
+    data[i] = value;
+    data[i + 1] = value;
+    data[i + 2] = value;
+  }
+  
+  ctx.putImageData(imageData, 0, 0);
+  
+  // Criar novo canvas com a imagem processada
+  const processedCanvas = document.createElement('canvas');
+  processedCanvas.width = canvas.width;
+  processedCanvas.height = canvas.height;
+  const processedCtx = processedCanvas.getContext('2d');
+  processedCtx?.drawImage(canvas, 0, 0);
+  
+  return processedCanvas;
+}
 
     const page = await pdf.getPage(1);
     const viewport = page.getViewport({ scale: 2.0 });
@@ -135,12 +197,21 @@ export function OCRScanner({ onDataExtracted, onCancel }: OCRScannerProps) {
     let worker: Awaited<ReturnType<typeof createWorker>> | null = null;
 
     try {
-      worker = await createWorker(['por', 'eng'], 1, {
+      // Criar worker com configurações otimizadas para recibos
+      worker = await createWorker('por+eng', 3, { // OEM 3 = LSTM only (mais accurate)
         logger: (m) => {
           if (m.status === 'recognizing text') {
             setProgress(Math.round(m.progress * 100));
           }
         },
+      });
+
+      // Configurar parâmetros avançados para melhor accuracy
+      await worker.setParameters({
+        tessedit_pageseg_mode: 3, // Fully automatic page segmentation, but no OSD
+        tessedit_ocr_engine_mode: 3, // LSTM only
+        preserve_interword_spaces: '1',
+        user_defined_dpi: '300', // DPI alto para melhor qualidade
       });
 
       const timeoutPromise = new Promise<never>((_, reject) => {
@@ -150,7 +221,10 @@ export function OCRScanner({ onDataExtracted, onCancel }: OCRScannerProps) {
       // Processar todas as imagens (páginas do PDF)
       let allText = '';
       for (const img of imagesToProcess) {
-        const recognizePromise = worker.recognize(img.canvas);
+        // Aplicar pré-processamento à imagem
+        const processedCanvas = preprocessImage(img.canvas);
+        
+        const recognizePromise = worker.recognize(processedCanvas);
         const { data } = await Promise.race([recognizePromise, timeoutPromise]);
         allText += data.text + '\n';
       }
@@ -170,6 +244,11 @@ export function OCRScanner({ onDataExtracted, onCancel }: OCRScannerProps) {
       console.log("====================");
 
       const ocrResult = parseReceiptText(allText);
+      
+      // Validação pós-OCR: se o valor for muito baixo (< 5€) e houver outros valores no texto, tentar encontrar valor mais provável
+      if (ocrResult.total < 5 && allText.includes('€')) {
+        console.warn("⚠️ Valor extraído muito baixo. Verificar raw text para valores alternativos.");
+      }
       
       console.log("=== OCR Parsed Result ===");
       console.log("Merchant:", ocrResult.merchant);
