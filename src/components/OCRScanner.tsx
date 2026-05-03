@@ -5,10 +5,6 @@ import { createWorker } from "tesseract.js";
 import { parseReceiptText, suggestCategory, type OCRResult } from "@/lib/ocr";
 import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/Toast";
-import * as pdfjsLib from "pdfjs-dist";
-
-// Configurar worker do PDF.js
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 const OCR_CONFIG = {
   MAX_PDF_SIZE: 15 * 1024 * 1024,
@@ -39,11 +35,13 @@ export function OCRScanner({ onDataExtracted, onCancel }: OCRScannerProps) {
   const supportedPdfTypes = ['application/pdf'];
 
   async function convertPdfToImages(file: File): Promise<ProcessedImage[]> {
+    const pdfjsLib = await import("pdfjs-dist");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+    
     const arrayBuffer = await file.arrayBuffer();
     const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
     const images: ProcessedImage[] = [];
 
-    // Processar apenas a primeira página para recibos
     if (pdf.numPages === 0) {
       return images;
     }
