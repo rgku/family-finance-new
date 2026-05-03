@@ -113,28 +113,43 @@ export function OCRScanner({ onDataExtracted, onCancel }: OCRScannerProps) {
   return processedCanvas;
 }
 
-    const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 3.0 });
-    
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
+async function convertPdfToImages(file: File): Promise<ProcessedImage[]> {
+  const pdfjsLib = await import("pdfjs-dist");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/build/pdf.worker.min.mjs",
+    import.meta.url
+  ).href;
+  
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+  const images: ProcessedImage[] = [];
 
-    const renderContext = {
-      canvasContext: context!,
-      viewport: viewport,
-      canvas: canvas,
-    };
-
-    const renderTask = page.render(renderContext);
-    await renderTask.promise;
-
-    images.push({ canvas, pageNumber: 1 });
+  if (pdf.numPages === 0) {
     return images;
   }
 
-  function preprocessImage(canvas: HTMLCanvasElement): HTMLCanvasElement {
+  const page = await pdf.getPage(1);
+  const viewport = page.getViewport({ scale: 3.0 });
+  
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  canvas.height = viewport.height;
+  canvas.width = viewport.width;
+
+  const renderContext = {
+    canvasContext: context!,
+    viewport: viewport,
+    canvas: canvas,
+  };
+
+  const renderTask: any = page.render(renderContext);
+  await renderTask.promise;
+
+  images.push({ canvas, pageNumber: 1 });
+  return images;
+}
+
+function preprocessImage(canvas: HTMLCanvasElement): HTMLCanvasElement {
     const ctx = canvas.getContext('2d');
     if (!ctx) return canvas;
 
