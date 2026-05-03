@@ -189,8 +189,6 @@ export function OCRScanner({ onDataExtracted, onCancel }: OCRScannerProps) {
 
       // Configurar parâmetros avançados para melhor accuracy
       await worker.setParameters({
-        tessedit_pageseg_mode: 3, // Fully automatic page segmentation, but no OSD
-        tessedit_ocr_engine_mode: 3, // LSTM only
         preserve_interword_spaces: '1',
         user_defined_dpi: '300', // DPI alto para melhor qualidade
       });
