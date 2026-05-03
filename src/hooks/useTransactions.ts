@@ -22,10 +22,10 @@ export function useTransactions(userId?: string, month?: string, limit = 50) {
         throw new Error('userId is required');
       }
       
+      // Use view that already filters by family_id via RLS
       let query = supabase
         .from('transactions_decrypted')
         .select('*', { count: 'exact' })
-        .eq('user_id', userId)
         .order('date', { ascending: false })
         .limit(limit);
       

@@ -8,7 +8,11 @@ const nextConfig: NextConfig = {
       static: 60,
     },
   },
-  turbopack: {},
+  turbopack: {
+    resolveAlias: {
+      'pdfjs-dist': 'pdfjs-dist',
+    },
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
