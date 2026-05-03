@@ -13,6 +13,16 @@ const nextConfig: NextConfig = {
       'pdfjs-dist': 'pdfjs-dist',
     },
   },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = [
+        ...(Array.isArray(config.externals) ? config.externals : []),
+        'pdfjs-dist',
+        'canvas',
+      ];
+    }
+    return config;
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     remotePatterns: [
