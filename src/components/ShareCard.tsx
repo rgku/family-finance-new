@@ -51,13 +51,6 @@ export function ShareCard({
       const canvas = await html2canvas(cardRef.current, {
         logging: false,
         useCORS: true,
-        imageTimeout: 0,
-        ignoreElements: (element) => {
-          if (element.classList.contains('no-capture')) {
-            return true;
-          }
-          return false;
-        },
       });
 
       const blob = await new Promise<Blob>((resolve) => {
