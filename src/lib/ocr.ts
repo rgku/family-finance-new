@@ -102,8 +102,8 @@ function extractTotal(text: string): { total: number; confidence: number } {
   
   const patterns = [
     { regex: /(?:total\s*(?:geral)?|valor\s*(?:a\s*pagar)?|montante|importe|total\s*a\s*pagar)\s*[:.]?\s*([0-9]{1,3}(?:[.,\s][0-9]{3})*(?:[.,][0-9]{2})?)\s*(?:€|eur|euros)?/i, priority: 1 },
-    { regex: /(?:€|EUR)\s*([0-9]{1,3}(?:[.,\s][0-9]{3})*(?:[.,][0-9]{2})?)/i, priority: 2 },
-    { regex: /([0-9]{1,3}(?:[.,\s][0-9]{3})*(?:[.,][0-9]{2})?)\s*(?:€|eur)/i, priority: 2 },
+    { regex: /(?:€|EUR)\s*([0-9]{1,3}(?:[.,\s][0-9]{3})*(?:[.,][0-9]{2})?)/gi, priority: 2 },
+    { regex: /([0-9]{1,3}(?:[.,\s][0-9]{3})*(?:[.,][0-9]{2})?)\s*(?:€|eur)/gi, priority: 2 },
     { regex: /\b([0-9]{1,3}[.,][0-9]{2})\b/g, priority: 3 },
   ];
   
