@@ -520,8 +520,6 @@ export function downloadShareCard(props: ShareCardProps): Promise<void> {
 
     import("html2canvas").then(({ default: html2canvas }) => {
       html2canvas(cardElement, {
-        scale: 2,
-        backgroundColor: null,
         logging: false,
         useCORS: true,
       })
