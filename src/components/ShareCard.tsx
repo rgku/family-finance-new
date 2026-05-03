@@ -49,10 +49,10 @@ export function ShareCard({
 
     try {
       const canvas = await html2canvas(cardRef.current, {
-        scale: 2,
         backgroundColor: null,
         logging: false,
         useCORS: true,
+        imageTimeout: 0,
       });
 
       const blob = await new Promise<Blob>((resolve) => {
