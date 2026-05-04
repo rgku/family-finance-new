@@ -27,69 +27,59 @@ export function useSpendingPower(): SpendingPower {
     const billingDay = profile?.billing_cycle_day || 1;
     
     const { startDate, endDate } = getCustomMonthRange(billingDay, now);
-    const currentMonth = startDate.getMonth();
-    const currentYear = startDate.getFullYear();
+    const periodYear = startDate.getFullYear();
+    const periodMonth = startDate.getMonth() + 1; // 1-indexed para isDateInCustomMonth
     
     const daysInPeriod = billingDay > 1 
       ? Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
-      : new Date(currentYear, currentMonth + 1, 0).getDate();
+      : new Date(periodYear, periodMonth, 0).getDate();
     const currentDay = billingDay > 1
       ? Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
       : now.getDate();
     const remainingDays = Math.max(0, daysInPeriod - currentDay);
 
-    const monthlyTransactions = transactions.filter((t) => {
-      const date = new Date(t.date);
+    // Filtrar transações do período atual
+    const periodTransactions = transactions.filter((t) => {
       if (billingDay > 1) {
-        return isDateInCustomMonth(t.date, billingDay, currentYear, currentMonth + 1);
+        return isDateInCustomMonth(t.date, billingDay, periodYear, periodMonth);
       }
-      return date.getFullYear() === currentYear && date.getMonth() === currentMonth;
+      const date = new Date(t.date);
+      return date.getFullYear() === periodYear && date.getMonth() === periodMonth - 1;
     });
 
-    const income = monthlyTransactions
+    const income = periodTransactions
       .filter((t) => t.type === "income")
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const expenses = monthlyTransactions
+    const expenses = periodTransactions
       .filter((t) => t.type === "expense" && t.category !== "Investimentos")
       .reduce((sum, t) => sum + t.amount, 0);
 
-    const balance = income - expenses;
-
-    const activeGoals = goals.filter((g) => {
-      const progress = g.target_amount > 0 ? (g.current_amount / g.target_amount) * 100 : 0;
-      return progress < 100;
-    });
-    
-    const goalsAllocated = activeGoals.reduce((sum, g) => {
-      if (g.goal_type === 'savings' && g.created_at) {
-        const goalCreated = new Date(g.created_at);
-        if (billingDay > 1) {
-          if (!isDateInCustomMonth(g.created_at, billingDay, currentYear, currentMonth + 1)) {
-            return sum;
-          }
-        } else {
-          if (goalCreated.getFullYear() !== currentYear || goalCreated.getMonth() !== currentMonth) {
-            return sum;
-          }
-        }
-        return sum + g.current_amount;
-      }
-      return sum;
-    }, 0);
-
-    const monthlyBudgets = budgets.filter((b) => b.limit > 0);
-    const totalBudget = monthlyBudgets.reduce((sum, b) => sum + b.limit, 0);
-    const totalSpent = monthlyBudgets.reduce((sum, b) => sum + b.spent, 0);
+    // Usar budgets já calculados (o spent vem do DataProvider)
+    const totalBudget = budgets.filter(b => b.limit > 0).reduce((sum, b) => sum + b.limit, 0);
+    const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
     const budgetRemaining = totalBudget - totalSpent;
 
+    // Calcular poupança alocada este mês
+    const goalsAllocated = goals.filter(g => {
+      if (g.goal_type !== 'savings' || !g.created_at) return false;
+      const goalCreated = new Date(g.created_at);
+      if (billingDay > 1) {
+        return isDateInCustomMonth(g.created_at, billingDay, periodYear, periodMonth);
+      }
+      return goalCreated.getFullYear() === periodYear && goalCreated.getMonth() === periodMonth - 1;
+    }).reduce((sum, g) => sum + g.current_amount, 0);
+
+    // In My Pocket = Saldo disponível - metas alocadas
+    const balance = income - expenses;
+    const available = balance - goalsAllocated;
+    
     const breakdown = [
       { label: "Receitas este mês", amount: income, type: "income" as const },
       { label: "Despesas este mês", amount: expenses, type: "expense" as const },
       { label: "Metas alocadas", amount: goalsAllocated, type: "expense" as const },
     ];
 
-    const available = balance - goalsAllocated;
     const dailyBudget = remainingDays > 0 ? available / remainingDays : 0;
 
     let status: "good" | "warning" | "danger" = "good";
