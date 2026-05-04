@@ -266,7 +266,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [budgetsRaw, transactions, currentMonth, profile?.billing_cycle_day]);
 
   const addTransaction = async (t: Omit<Transaction, "id">) => {
-    if (!user) throw new Error("Must be logged in");
+    if (!user) {
+      console.error('[DataProvider] addTransaction: No user logged in');
+      throw new Error("Must be logged in");
+    }
+
+    console.log('[DataProvider] addTransaction:', {
+      userId: user.id,
+      profileFamilyId: profile?.family_id,
+      hasProfile: !!profile,
+      transaction: t,
+    });
+
+    if (!profile) {
+      console.error('[DataProvider] addTransaction: No profile found for user', user.id);
+      throw new Error("Profile not found. Please complete your profile first.");
+    }
 
     const tempId = `temp_${Date.now()}`;
     const newTransaction = {
@@ -293,6 +308,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      console.log('[DataProvider] Inserting transaction to Supabase...');
       // Insert directly into transactions table
       const { error: insertError, data } = await supabase
         .from('transactions')
@@ -308,7 +324,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         .select('id')
         .single();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('[DataProvider] Insert error:', insertError);
+        throw insertError;
+      }
+      
+      console.log('[DataProvider] Insert successful, ID:', data?.id);
       
       const newId = data?.id;
       
@@ -324,9 +345,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         .limit(5);
 
       if (fetchError) {
-        console.error('Failed to fetch transactions:', fetchError);
-        // Keep optimistic update
-      } else if (recentTransactions && recentTransactions.length > 0) {
+        console.error('[DataProvider] Fetch error:', fetchError);
+      } else {
+        console.log('[DataProvider] Fetch successful, found:', recentTransactions?.length, 'transactions');
+      }
+      
+      if (recentTransactions && recentTransactions.length > 0) {
         const insertedData = recentTransactions.find(trans => 
           trans.id === newId ||
           (trans.type === t.type &&
@@ -355,10 +379,31 @@ export function DataProvider({ children }: { children: ReactNode }) {
           await checkBudgetAlerts(t.category, t.amount);
         }
       }
-    } catch (error) {
-      console.error('Error adding transaction:', error);
+    } catch (error: any) {
+      console.error('[DataProvider] Error adding transaction:', {
+        error,
+        userId: user.id,
+        transaction: t,
+        message: error?.message,
+        details: error?.details,
+        hint: error?.hint,
+        code: error?.code,
+      });
+      
+      // Rollback optimistic update
       setTransactions(prev => prev.filter(trans => trans.id !== tempId));
-      throw error;
+      
+      // Show user-friendly error message
+      let errorMsg = 'Erro ao adicionar transação. ';
+      if (error?.code === 'PGRST301') {
+        errorMsg += 'Verifica as tuas permissões na base de dados.';
+      } else if (error?.message?.includes('profile')) {
+        errorMsg += 'Perfil não encontrado.';
+      } else {
+        errorMsg += error?.message || 'Tenta novamente.';
+      }
+      
+      throw new Error(errorMsg);
     }
   };
 
