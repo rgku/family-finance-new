@@ -10,6 +10,8 @@ import { Icon } from "@/components/Icon";
 import { TransactionItem, allCategories } from "@/components/TransactionItem";
 import { GoalContributionList } from "@/components/GoalContributionList";
 import { useToast } from "@/components/Toast";
+import { CSVImport, type ParsedTransaction } from "@/components/CSVImport";
+import { Upload } from "lucide-react";
 
 type Tab = "transactions" | "contributions";
 
@@ -24,6 +26,7 @@ export default function TransactionsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ description: "", amount: "", type: "expense" as "income" | "expense", category: "", date: "" });
   const [contributionEditForm, setContributionEditForm] = useState({ amount: "", date: "" });
+  const [showCSVImport, setShowCSVImport] = useState(false);
   const isMobile = useDeviceType();
 
   const [dateRange, setDateRange] = useState<{ start: string; end: string } | null>(null);
@@ -119,6 +122,22 @@ export default function TransactionsPage() {
 
   const handleCancel = () => {
     setEditingId(null);
+  };
+
+  const handleImportCSV = async (parsedTransactions: ParsedTransaction[]) => {
+    const { addTransaction } = await import('@/hooks/DataProvider');
+    const dataProvider = await import('@/hooks/DataProvider');
+    
+    for (const t of parsedTransactions) {
+      await dataProvider.addTransaction({
+        description: t.description,
+        amount: t.amount,
+        type: t.type,
+        category: t.category || 'Outros',
+        date: t.date,
+        recurring: false,
+      });
+    }
   };
 
   const handleContributionEdit = (id: string) => {
@@ -231,7 +250,14 @@ export default function TransactionsPage() {
                 Limpar filtro
               </button>
             )}
-            <span className="ml-auto text-sm text-on-surface-variant">
+            <button
+              onClick={() => setShowCSVImport(true)}
+              className="ml-auto flex items-center gap-2 px-4 py-2 bg-secondary text-on-secondary rounded-lg text-sm font-semibold hover:brightness-110 transition-all"
+            >
+              <Upload className="w-4 h-4" />
+              Importar CSV
+            </button>
+            <span className="text-sm text-on-surface-variant">
               {filteredTransactions.length} de {transactions.length} transações
             </span>
           </div>
@@ -392,6 +418,13 @@ export default function TransactionsPage() {
             onCancel={handleContributionCancel}
           />
         </div>
+      )}
+
+      {showCSVImport && (
+        <CSVImport
+          onImport={handleImportCSV}
+          onClose={() => setShowCSVImport(false)}
+        />
       )}
     </div>
   );

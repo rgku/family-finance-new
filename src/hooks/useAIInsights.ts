@@ -35,9 +35,20 @@ export interface AIAlert {
   severity?: "high" | "medium" | "low";
 }
 
+export interface SpendingAnomalyAlert {
+  type: "anomaly";
+  category: string;
+  currentAmount: number;
+  previousAmount: number;
+  percentageChange: number;
+  severity: "high" | "medium" | "low";
+  description: string;
+}
+
 export function useAIInsights(month: string): AIInsightsState & {
   savingsTips: SavingsTip[];
   alerts: AIAlert[];
+  spendingAnomalies: SpendingAnomalyAlert[];
   currentSavingsRate?: number;
 } {
   const { supabase } = useAuth();
@@ -99,6 +110,23 @@ export function useAIInsights(month: string): AIInsightsState & {
     );
   }, [insights]);
 
+  // Extract spending anomalies from insights
+  const spendingAnomalies = useMemo<SpendingAnomalyAlert[]>(() => {
+    return insights.filter((i): i is SpendingAnomalyAlert => 
+      i.type === "anomaly" ||
+      (i.type === "alert" && i.severity === "high") ||
+      (i.type === "warning" && i.severity === "medium" && i.percentage !== undefined && i.percentage > 30)
+    ).map(i => ({
+      type: "anomaly" as const,
+      category: i.category || "Desconhecida",
+      currentAmount: i.amount || 0,
+      previousAmount: i.previousAmount || 0,
+      percentageChange: i.percentage || 0,
+      severity: i.severity || "medium",
+      description: i.description,
+    }));
+  }, [insights]);
+
   // Calculate current savings rate from insights
   const currentSavingsRate = useMemo<number | undefined>(() => {
     const savingsInsight = insights.find(i => 
@@ -117,6 +145,7 @@ export function useAIInsights(month: string): AIInsightsState & {
     refetch: (month?: string, forceRefresh?: boolean) => fetchInsights(month || "", forceRefresh),
     savingsTips,
     alerts,
+    spendingAnomalies,
     currentSavingsRate,
   };
 }

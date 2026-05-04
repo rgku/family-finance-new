@@ -12,6 +12,34 @@ export const AI_PROVIDER_CONFIG = {
 
 export type AIProvider = "groq" | "cohere";
 
+export interface SpendingAnomaly {
+  category: string;
+  currentAmount: number;
+  previousAmount: number;
+  percentageChange: number;
+  severity: "high" | "medium" | "low";
+  description: string;
+}
+
+export interface SubscriptionData {
+  totalMonthly: number;
+  totalYearly: number;
+  activeCount: number;
+  zombieCount: number;
+  potentialSavings: number;
+  zombieInsight?: {
+    name: string;
+    amount: number;
+    daysSinceLastCharge: number;
+  };
+  allSubscriptions?: Array<{
+    name: string;
+    amount: number;
+    lastDate: string;
+    daysSinceLastCharge: number;
+  }>;
+}
+
 export interface AIInsightItem {
   type: "info" | "warning" | "success" | "tip" | "alert";
   title: string;
@@ -19,7 +47,9 @@ export interface AIInsightItem {
   category?: string;
   amount?: number;
   percentage?: number;
+  previousAmount?: number;
   confidence?: "high" | "medium" | "low";
+  severity?: "high" | "medium" | "low";
 }
 
 export interface AIForecastItem {
@@ -53,6 +83,7 @@ export interface AIInsightsPayload {
   previousMonthSpending?: Record<string, number>;
   billingCycleDay: number;
   subscriptions?: SubscriptionData;
+  spendingAnomalies?: SpendingAnomaly[];
   metadata?: {
     dataQuality: "high" | "medium" | "low";
     outliersCount: number;
@@ -60,19 +91,6 @@ export interface AIInsightsPayload {
     dayOfMonth: number;
     daysRemaining: number;
     isWeekend: boolean;
-  };
-}
-
-export interface SubscriptionData {
-  totalMonthly: number;
-  totalYearly: number;
-  activeCount: number;
-  zombieCount: number;
-  potentialSavings: number;
-  zombieInsight?: {
-    name: string;
-    amount: number;
-    daysSinceLastCharge: number;
   };
 }
 

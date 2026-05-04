@@ -164,6 +164,13 @@ export async function GET(request: NextRequest) {
     // Detect subscriptions from transactions
     const subscriptionData = detectSubscriptions(transResult.data || []);
 
+    // Detect spending anomalies
+    const spendingAnomalies = detectSpendingAnomalies(
+      monthTransactions,
+      previousMonthSpending,
+      categorySpending
+    );
+
     // Data Quality Validation
     const basePayload: AIInsightsPayload = {
       month: monthParam,
@@ -178,6 +185,7 @@ export async function GET(request: NextRequest) {
       previousMonthSpending: Object.keys(previousMonthSpending).length > 0 ? previousMonthSpending : undefined,
       billingCycleDay: billingDay,
       subscriptions: subscriptionData.activeCount > 0 ? subscriptionData : undefined,
+      spendingAnomalies: spendingAnomalies.length > 0 ? spendingAnomalies : undefined,
     };
 
     // Validate data quality
@@ -316,6 +324,38 @@ const overBudget = data.budgets.filter(b => b.limit > 0 && (b.spent / b.limit) >
     });
   }
 
+  // Spending anomalies insights
+  if (data.spendingAnomalies && data.spendingAnomalies.length > 0) {
+    const highSeverity = data.spendingAnomalies.filter(a => a.severity === "high");
+    const mediumSeverity = data.spendingAnomalies.filter(a => a.severity === "medium");
+    
+    highSeverity.slice(0, 2).forEach(anomaly => {
+      insights.push({
+        type: "alert" as const,
+        title: `⚠️ ${anomaly.category} - Aumento significativo`,
+        description: anomaly.description,
+        category: anomaly.category,
+        amount: anomaly.currentAmount,
+        previousAmount: anomaly.previousAmount,
+        percentage: anomaly.percentageChange,
+        severity: "high" as const,
+      });
+    });
+    
+    mediumSeverity.slice(0, 2).forEach(anomaly => {
+      insights.push({
+        type: "warning" as const,
+        title: `${anomaly.category} - Aumento`,
+        description: anomaly.description,
+        category: anomaly.category,
+        amount: anomaly.currentAmount,
+        previousAmount: anomaly.previousAmount,
+        percentage: anomaly.percentageChange,
+        severity: "medium" as const,
+      });
+    });
+  }
+
   return insights;
 }
 
@@ -331,6 +371,9 @@ const SUBSCRIPTION_KEYWORDS = [
   "netflix", "spotify", "disney", "hbo", "amazon prime", "apple tv",
   "youtube premium", "youtube music", "tidal", "deezer", "xbox", "playstation",
   "adobe", "microsoft 365", "dropbox", "icloud", "google one", "vpn", "nordvpn",
+  "gympass", "holmes", "fitness", "nos", "vodafone", "meo", "nowo",
+  "kindle", "audible", "scribd", "medium", "substack", "patreon",
+  "uber one", "glovo", "foodinho", "eatclub", "the fork",
 ];
 
 function detectSubscriptions(transactions: TransactionRow[]): {
@@ -340,6 +383,7 @@ function detectSubscriptions(transactions: TransactionRow[]): {
   zombieCount: number;
   potentialSavings: number;
   zombieInsight?: { name: string; amount: number; daysSinceLastCharge: number };
+  allSubscriptions: Array<{ name: string; amount: number; lastDate: string; daysSinceLastCharge: number }>;
 } {
   const now = new Date();
 
@@ -351,7 +395,7 @@ function detectSubscriptions(transactions: TransactionRow[]): {
   });
 
   if (subscriptionTransactions.length === 0) {
-    return { activeCount: 0, totalMonthly: 0, totalYearly: 0, zombieCount: 0, potentialSavings: 0 };
+    return { activeCount: 0, totalMonthly: 0, totalYearly: 0, zombieCount: 0, potentialSavings: 0, allSubscriptions: [] };
   }
 
   const grouped = new Map<string, { amount: number; lastDate: string; count: number }>();
@@ -379,12 +423,20 @@ function detectSubscriptions(transactions: TransactionRow[]): {
   let zombieCount = 0;
   let potentialSavings = 0;
   let oldestZombie: { name: string; amount: number; daysSinceLastCharge: number } | undefined;
+  const allSubscriptions: Array<{ name: string; amount: number; lastDate: string; daysSinceLastCharge: number }> = [];
 
   grouped.forEach((data, name) => {
     if (data.count > 1) activeCount++;
     const daysSinceLastCharge = Math.floor(
       (now.getTime() - new Date(data.lastDate).getTime()) / (1000 * 60 * 60 * 24)
     );
+
+    allSubscriptions.push({
+      name: name.split(" ")[0],
+      amount: data.amount,
+      lastDate: data.lastDate,
+      daysSinceLastCharge,
+    });
 
     if (daysSinceLastCharge > 60 || data.count === 1) {
       zombieCount++;
@@ -401,6 +453,8 @@ function detectSubscriptions(transactions: TransactionRow[]): {
     totalMonthly += data.amount;
   });
 
+  allSubscriptions.sort((a, b) => b.daysSinceLastCharge - a.daysSinceLastCharge);
+
   return {
     activeCount,
     totalMonthly,
@@ -408,5 +462,87 @@ function detectSubscriptions(transactions: TransactionRow[]): {
     zombieCount,
     potentialSavings,
     zombieInsight: oldestZombie,
+    allSubscriptions,
   };
+}
+
+function detectSpendingAnomalies(
+  currentMonthTransactions: TransactionRow[],
+  previousMonthSpending: Record<string, number>,
+  currentMonthSpending: Record<string, number>
+): Array<{
+  category: string;
+  currentAmount: number;
+  previousAmount: number;
+  percentageChange: number;
+  severity: "high" | "medium" | "low";
+  description: string;
+}> {
+  const anomalies: Array<{
+    category: string;
+    currentAmount: number;
+    previousAmount: number;
+    percentageChange: number;
+    severity: "high" | "medium" | "low";
+    description: string;
+  }> = [];
+
+  const categories = new Set([
+    ...Object.keys(currentMonthSpending),
+    ...Object.keys(previousMonthSpending),
+  ]);
+
+  categories.forEach(category => {
+    const current = currentMonthSpending[category] || 0;
+    const previous = previousMonthSpending[category] || 0;
+
+    if (previous === 0 && current > 50) {
+      anomalies.push({
+        category,
+        currentAmount: current,
+        previousAmount: 0,
+        percentageChange: 100,
+        severity: "medium",
+        description: `Novo gasto de €${current.toFixed(2)} em ${category} (não existia no mês anterior)`,
+      });
+      return;
+    }
+
+    if (previous === 0 || current === 0) return;
+
+    const percentageChange = ((current - previous) / previous) * 100;
+
+    if (percentageChange > 100) {
+      anomalies.push({
+        category,
+        currentAmount: current,
+        previousAmount: previous,
+        percentageChange,
+        severity: "high",
+        description: `${category} aumentou ${Math.round(percentageChange)}% (€${previous.toFixed(2)} → €${current.toFixed(2)})`,
+      });
+    } else if (percentageChange > 50) {
+      anomalies.push({
+        category,
+        currentAmount: current,
+        previousAmount: previous,
+        percentageChange,
+        severity: "medium",
+        description: `${category} aumentou ${Math.round(percentageChange)}% (€${previous.toFixed(2)} → €${current.toFixed(2)})`,
+      });
+    } else if (percentageChange > 30) {
+      anomalies.push({
+        category,
+        currentAmount: current,
+        previousAmount: previous,
+        percentageChange,
+        severity: "low",
+        description: `${category} aumentou ${Math.round(percentageChange)}%`,
+      });
+    }
+  });
+
+  anomalies.sort((a, b) => b.percentageChange - a.percentageChange);
+
+  return anomalies.slice(0, 5);
 }

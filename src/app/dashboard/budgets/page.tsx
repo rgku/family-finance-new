@@ -254,6 +254,24 @@ export default function BudgetsPage() {
         </div>
       </div>
 
+      {/* Envelope Method CTA */}
+      <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg p-5 text-white shadow-lg">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex-1">
+            <h3 className="font-bold text-lg mb-1">📊 Método Envelope</h3>
+            <p className="text-sm text-white/90">
+              Visualiza os teus orçamentos como envelopes físicos e controla melhor os gastos!
+            </p>
+          </div>
+          <a
+            href="/dashboard/budgets/envelope"
+            className="px-5 py-3 bg-white text-green-600 font-bold rounded-full hover:bg-green-50 transition-colors shrink-0"
+          >
+            Ver Envelopes →
+          </a>
+        </div>
+      </div>
+
       {/* AI Suggestions Panel */}
       {showAiPanel && (
         <div className="bg-gradient-to-br from-secondary/10 to-secondary-container/20 rounded-lg p-6 border border-secondary/30 space-y-4">
