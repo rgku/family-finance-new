@@ -27,12 +27,15 @@ export function useSpendingPower(): SpendingPower {
     const billingDay = profile?.billing_cycle_day || 1;
     
     const { startDate, endDate } = getCustomMonthRange(billingDay, now);
-    const periodYear = startDate.getFullYear();
-    const periodMonth = startDate.getMonth() + 1; // 1-indexed para isDateInCustomMonth
+    
+    // Usar o mês da data atual como referência (não o mês de início)
+    const periodYear = now.getFullYear();
+    const periodMonth = now.getMonth() + 1; // 1-indexed (1-12)
     
     console.log('[SpendingPower] Billing day:', billingDay);
     console.log('[SpendingPower] Período:', periodYear, '-', periodMonth);
     console.log('[SpendingPower] Start:', startDate, 'End:', endDate);
+    console.log('[SpendingPower] Now:', now);
     console.log('[SpendingPower] Total transações:', transactions.length);
     console.log('[SpendingPower] Total budgets:', budgets.length);
     console.log('[SpendingPower] Total goals:', goals.length);
