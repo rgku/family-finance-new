@@ -22,6 +22,7 @@ import { AIInsightItem } from "@/lib/ai/types";
 import { GoalsProgressCard } from "@/components/GoalsProgressCard";
 import { SavingsTipsCard } from "@/components/SavingsTipsCard";
 import { AIAlertsCard } from "@/components/AIAlertCard";
+import { BudgetVsActualTable } from "@/components/BudgetVsActualTable";
 
 export default function AnalyticsPage() {
   const { transactions, goals: dataGoals, budgets } = useData();
@@ -103,13 +104,17 @@ export default function AnalyticsPage() {
   const budgetComparison = useMemo(() => {
     if (!budgets || budgets.length === 0) return null;
     
-    const totalBudget = budgets.reduce((sum, b) => sum + b.limit, 0);
-    const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
+    // Filter budgets by selected month
+    const filteredBudgets = budgets.filter(b => b.month === selectedMonth);
+    if (filteredBudgets.length === 0) return null;
+    
+    const totalBudget = filteredBudgets.reduce((sum, b) => sum + b.limit, 0);
+    const totalSpent = filteredBudgets.reduce((sum, b) => sum + b.spent, 0);
     const difference = totalBudget - totalSpent;
     const percentageUsed = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
     
     // Find category with biggest difference
-    const categoryDiffs = budgets.map(b => ({
+    const categoryDiffs = filteredBudgets.map(b => ({
       category: b.category,
       budget: b.limit,
       spent: b.spent,
@@ -133,7 +138,7 @@ export default function AnalyticsPage() {
       worstCategory,
       bestCategory,
     };
-  }, [budgets]);
+  }, [budgets, selectedMonth]);
 
   // Savings trend (last 3 months)
   const savingsTrend = useMemo(() => {
@@ -467,6 +472,9 @@ const pageContent = (
           )}
         </div>
       )}
+
+      {/* Budget vs Actual Detailed Table */}
+      <BudgetVsActualTable budgets={budgets} month={selectedMonth} />
 
       {/* Monthly Comparison Card */}
       {monthComparison && (

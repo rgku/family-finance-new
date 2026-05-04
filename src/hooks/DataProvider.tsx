@@ -35,6 +35,7 @@ export interface Budget {
   category: string;
   limit: number;
   spent: number;
+  month?: string;
   user_id?: string;
   family_id?: string | null;
 }
@@ -226,14 +227,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const budgets = useMemo(() => {
     if (!budgetsRaw || budgetsRaw.length === 0) return [];
-    
+
     return budgetsRaw.map(b => {
       let spent = 0;
+      // Normalize month to YYYY-MM format
+      const budgetMonth = b.month ? b.month.slice(0, 7) : currentMonth;
       
       if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
         // Custom billing cycle: filter transactions by cycle date range
-        const now = new Date();
-        const { startDate, endDate } = getCustomMonthRange(profile.billing_cycle_day, now);
+        // Use budget's month to calculate the correct date range
+        const budgetDate = b.month ? new Date(b.month) : new Date();
+        const { startDate, endDate } = getCustomMonthRange(profile.billing_cycle_day, budgetDate);
         const startStr = startDate.toISOString().split('T')[0];
         const endStr = endDate.toISOString().split('T')[0];
         
@@ -246,12 +250,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
           )
           .reduce((sum, t) => sum + t.amount, 0);
       } else {
-        // Regular month: filter by month string
+        // Regular month: filter by month string (YYYY-MM format)
         spent = transactions
           .filter(t => 
             t.category === b.category && 
             t.type === 'expense' && 
-            t.date.startsWith(currentMonth)
+            t.date.startsWith(budgetMonth)
           )
           .reduce((sum, t) => sum + t.amount, 0);
       }
@@ -261,6 +265,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         category: b.category,
         limit: Number(b.limit_amount),
         spent,
+        month: budgetMonth,
       };
     });
   }, [budgetsRaw, transactions, currentMonth, profile?.billing_cycle_day]);
@@ -954,7 +959,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addBudget = async (b: Omit<Budget, "id" | "spent">) => {
     if (!user) throw new Error("Must be logged in");
 
-    const currentMonth = new Date().toISOString().slice(0, 7) + '-01';
+    const defaultMonth = new Date().toISOString().slice(0, 7);
+    const budgetMonth = b.month || defaultMonth;
     
     // Optimistic update
     const tempId = `temp_${Date.now()}`;
@@ -964,12 +970,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       family_id: profile?.family_id || null,
       category: b.category,
       limit_amount: b.limit,
-      month: currentMonth,
+      month: budgetMonth,
     };
     setBudgetsRaw(prev => [...prev, newBudget]);
 
     if (!isOnline) {
-      await saveOffline('budgets', { ...b, month: currentMonth }, 'create');
+      await saveOffline('budgets', { ...b, month: budgetMonth }, 'create');
       return;
     }
 
@@ -981,7 +987,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           family_id: profile?.family_id || null,
           category: b.category,
           limit_amount: b.limit,
-          month: currentMonth,
+          month: budgetMonth,
         })
         .select()
         .single();
