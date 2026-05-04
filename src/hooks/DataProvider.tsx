@@ -959,11 +959,28 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addBudget = async (b: Omit<Budget, "id" | "spent">) => {
     if (!user) throw new Error("Must be logged in");
 
-    // defaultMonth is already in YYYY-MM-01 format
-    const defaultMonth = new Date().toISOString().slice(0, 7) + '-01';
-    // b.month should already be in YYYY-MM-01 format from the caller
-    // Don't add '-01' again to avoid YYYY-MM-01-01
-    const budgetMonth = b.month || defaultMonth;
+    // Force month to YYYY-MM-DD format for Supabase DATE column
+    let budgetMonth: string;
+    if (b.month) {
+      const parts = b.month.split('-');
+      if (parts.length === 2) {
+        // YYYY-MM format
+        budgetMonth = `${b.month}-01`;
+      } else if (parts.length === 3 && parts[2].length === 2) {
+        // Already YYYY-MM-DD
+        budgetMonth = b.month;
+      } else {
+        // Parse as date
+        const d = new Date(b.month);
+        budgetMonth = isNaN(d.getTime()) 
+          ? new Date().toISOString().slice(0, 10)
+          : d.toISOString().slice(0, 10);
+      }
+    } else {
+      budgetMonth = new Date().toISOString().slice(0, 10);
+    }
+    
+    console.log('[addBudget] Input b.month:', JSON.stringify(b.month), '-> Final budgetMonth:', budgetMonth);
     
       // Optimistic update
       const tempId = `temp_${Date.now()}`;
@@ -983,14 +1000,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
 
       try {
+        // Force YYYY-MM-DD format for Supabase DATE column
+        const m = b.month || '';
+        let finalMonth: string;
+        
+        // Check if already YYYY-MM-DD (10 chars with dashes at pos 4 and 7)
+        if (m.length === 10 && m[4] === '-' && m[7] === '-') {
+          finalMonth = m.slice(0, 10);
+        } else if (m.length === 7 && m[4] === '-') {
+          // YYYY-MM format, add -01
+          finalMonth = m + '-01';
+        } else {
+          // Fallback to current month
+          const now = new Date();
+          finalMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+        }
+
         const budgetData = {
           user_id: user.id,
           family_id: profile?.family_id || null,
           category: b.category,
           limit_amount: b.limit,
-          month: budgetMonth,
+          month: finalMonth,
         };
-        console.log('[addBudget] Inserting budget:', JSON.stringify(budgetData, null, 2));
+        console.log('[addBudget] FINAL DATA:', JSON.stringify(budgetData));
         
         const { data, error } = await supabase
           .from('budgets')

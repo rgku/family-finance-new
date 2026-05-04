@@ -78,7 +78,7 @@ export default function BudgetsPage() {
           await addBudget({
             category: selectedCategory,
             limit: parseFloat(limitAmount),
-            month: selectedMonth + '-01',
+            month: selectedMonth, // YYYY-MM format, DataProvider will add -01
           });
           showToast("Orçamento criado com sucesso!", "success");
         }
