@@ -89,12 +89,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!mounted) return;
         
         if (session?.user) {
+          console.log('[AuthProvider] Session user found:', session.user.email, 'Confirmed:', !!session.user.email_confirmed_at);
           if (session.user.email_confirmed_at) {
             setUser(session.user);
             await fetchProfile(session.user.id);
           } else {
-            await supabase.auth.signOut();
-            setUser(null);
+            // Email not confirmed - try refreshing session
+            console.log('[AuthProvider] Email not confirmed, trying refresh...');
+            const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+            if (refreshedSession?.user?.email_confirmed_at) {
+              console.log('[AuthProvider] Refresh successful, email now confirmed!');
+              setUser(refreshedSession.user);
+              await fetchProfile(refreshedSession.user.id);
+            } else {
+              console.log('[AuthProvider] Refresh failed, signing out');
+              await supabase.auth.signOut();
+              setUser(null);
+            }
           }
         } else {
           const { data: { user: serverUser } } = await supabase.auth.getUser();
@@ -126,6 +137,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!initialized && event === 'INITIAL_SESSION') {
           setInitialized(true);
           return;
+        }
+        
+        // Handle email confirmation
+        if (event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
+          console.log('[AuthProvider] Auth event:', event, 'Refreshing session...');
+          // Refresh session to get updated user metadata
+          const { data: { session: refreshedSession } } = await supabase.auth.getSession();
+          if (refreshedSession?.user?.email_confirmed_at) {
+            console.log('[AuthProvider] Email confirmed after refresh!');
+            setUser(refreshedSession.user);
+            await fetchProfile(refreshedSession.user.id);
+            return;
+          }
         }
         
         if (session?.user?.email_confirmed_at) {
