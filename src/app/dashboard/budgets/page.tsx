@@ -74,13 +74,14 @@ export default function BudgetsPage() {
           limit: parseFloat(limitAmount),
         });
         showToast("Orçamento atualizado!", "success");
-      } else {
-        await addBudget({
-          category: selectedCategory,
-          limit: parseFloat(limitAmount),
-        });
-        showToast("Orçamento criado com sucesso!", "success");
-      }
+        } else {
+          await addBudget({
+            category: selectedCategory,
+            limit: parseFloat(limitAmount),
+            month: selectedMonth,
+          });
+          showToast("Orçamento criado com sucesso!", "success");
+        }
       
       resetForm();
     } catch (error) {
@@ -132,15 +133,15 @@ export default function BudgetsPage() {
     }
   };
 
-  const handleApplySuggestion = (suggestion: AIBudgetSuggestion) => {
-    const existingBudget = budgets.find(b => b.category === suggestion.category);
-    if (existingBudget) {
-      updateBudget(existingBudget.id, { limit: suggestion.suggestedLimit });
-    } else {
-      addBudget({ category: suggestion.category, limit: suggestion.suggestedLimit });
-    }
-    setAiSuggestions(prev => prev.filter(s => s !== suggestion));
-  };
+    const handleApplySuggestion = (suggestion: AIBudgetSuggestion) => {
+      const existingBudget = budgets.find(b => b.category === suggestion.category);
+      if (existingBudget) {
+        updateBudget(existingBudget.id, { limit: suggestion.suggestedLimit });
+      } else {
+        addBudget({ category: suggestion.category, limit: suggestion.suggestedLimit, month: selectedMonth });
+      }
+      setAiSuggestions(prev => prev.filter(s => s !== suggestion));
+    };
 
   const totalBudget = budgets.reduce((sum, b) => sum + b.limit, 0);
   const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
