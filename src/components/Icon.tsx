@@ -137,14 +137,17 @@ interface IconProps {
 export function Icon({ name, className = '', size = 24, fill = false }: IconProps) {
   const LucideIcon = iconMap[name] || iconMap['folder'];
   
-  return (
-    <LucideIcon 
-      className={className} 
-      size={size} 
-      fill={fill ? 'currentColor' : 'none'}
-      strokeWidth={fill ? 1.5 : 2}
-    />
-  );
+  const props: React.SVGProps<SVGSVGElement> & { size?: number } = {
+    className,
+    size,
+    strokeWidth: fill ? 1.5 : 2,
+  };
+  
+  if (fill) {
+    props.fill = 'currentColor';
+  }
+  
+  return <LucideIcon {...props} />;
 }
 
 export { iconMap };

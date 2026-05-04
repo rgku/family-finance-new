@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { formatCurrencyWithSymbol } from '@/lib/currency';
 import { EXPENSE_CATEGORIES } from '@/lib/constants';
+import { Icon } from '@/components/Icon';
 import { Eye, EyeOff, TrendingDown, TrendingUp, AlertTriangle, Edit2, Trash2 } from 'lucide-react';
 
 interface Budget {
@@ -35,7 +36,7 @@ function EnvelopeCard({ category, limit, spent, isVisible, onEdit, onDelete }: E
   const isOverBudget = spent > limit;
   
   const categoryInfo = EXPENSE_CATEGORIES.find(c => c.value === category);
-  const Icon = categoryInfo?.icon;
+  const iconName = categoryInfo?.icon;
   
   // Cores baseadas na percentagem
   const getEnvelopeColor = () => {
@@ -96,7 +97,7 @@ function EnvelopeCard({ category, limit, spent, isVisible, onEdit, onDelete }: E
       {/* Info da categoria */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          {Icon && <Icon className="w-5 h-5 text-on-surface-variant" />}
+          {iconName && <Icon name={iconName} className="w-5 h-5 text-on-surface-variant" />}
           <span className="font-semibold text-on-surface">{category}</span>
         </div>
         <div className="flex gap-1">

@@ -112,19 +112,21 @@ export function useAIInsights(month: string): AIInsightsState & {
 
   // Extract spending anomalies from insights
   const spendingAnomalies = useMemo<SpendingAnomalyAlert[]>(() => {
-    return insights.filter((i): i is SpendingAnomalyAlert => 
-      i.type === "anomaly" ||
-      (i.type === "alert" && i.severity === "high") ||
-      (i.type === "warning" && i.severity === "medium" && i.percentage !== undefined && i.percentage > 30)
-    ).map(i => ({
-      type: "anomaly" as const,
-      category: i.category || "Desconhecida",
-      currentAmount: i.amount || 0,
-      previousAmount: i.previousAmount || 0,
-      percentageChange: i.percentage || 0,
-      severity: i.severity || "medium",
-      description: i.description,
-    }));
+    return insights
+      .filter(i => 
+        i.type === "anomaly" ||
+        (i.type === "alert" && i.severity === "high") ||
+        (i.type === "warning" && i.severity === "medium" && i.percentage !== undefined && i.percentage > 30)
+      )
+      .map(i => ({
+        type: "anomaly" as const,
+        category: i.category || "Desconhecida",
+        currentAmount: i.amount || 0,
+        previousAmount: i.previousAmount || 0,
+        percentageChange: i.percentage || 0,
+        severity: i.severity || "medium",
+        description: i.description,
+      }));
   }, [insights]);
 
   // Calculate current savings rate from insights

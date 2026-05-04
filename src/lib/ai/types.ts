@@ -41,7 +41,7 @@ export interface SubscriptionData {
 }
 
 export interface AIInsightItem {
-  type: "info" | "warning" | "success" | "tip" | "alert";
+  type: "info" | "warning" | "success" | "tip" | "alert" | "anomaly";
   title: string;
   description: string;
   category?: string;
