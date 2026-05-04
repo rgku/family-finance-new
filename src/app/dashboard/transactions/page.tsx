@@ -10,7 +10,7 @@ import { Icon } from "@/components/Icon";
 import { TransactionItem, allCategories } from "@/components/TransactionItem";
 import { GoalContributionList } from "@/components/GoalContributionList";
 import { useToast } from "@/components/Toast";
-import { CSVImport, type ParsedTransaction } from "@/components/CSVImport";
+import { CSVImport } from "@/components/CSVImport";
 import { Upload } from "lucide-react";
 
 type Tab = "transactions" | "contributions";
@@ -122,22 +122,6 @@ export default function TransactionsPage() {
 
   const handleCancel = () => {
     setEditingId(null);
-  };
-
-  const handleImportCSV = async (parsedTransactions: ParsedTransaction[]) => {
-    const { addTransaction } = await import('@/hooks/DataProvider');
-    const dataProvider = await import('@/hooks/DataProvider');
-    
-    for (const t of parsedTransactions) {
-      await dataProvider.addTransaction({
-        description: t.description,
-        amount: t.amount,
-        type: t.type,
-        category: t.category || 'Outros',
-        date: t.date,
-        recurring: false,
-      });
-    }
   };
 
   const handleContributionEdit = (id: string) => {
@@ -421,10 +405,7 @@ export default function TransactionsPage() {
       )}
 
       {showCSVImport && (
-        <CSVImport
-          onImport={handleImportCSV}
-          onClose={() => setShowCSVImport(false)}
-        />
+        <CSVImport onClose={() => setShowCSVImport(false)} />
       )}
     </div>
   );

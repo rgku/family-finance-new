@@ -1,24 +1,40 @@
 'use client';
 
 import { useState } from 'react';
-import { useData } from '@/hooks/DataProvider';
-import { formatCurrencyWithSymbol } from '@/lib/utils';
-import { CATEGORIES } from '@/lib/constants';
-import { Eye, EyeOff, TrendingDown, TrendingUp, AlertTriangle } from 'lucide-react';
+import { formatCurrencyWithSymbol } from '@/lib/currency';
+import { EXPENSE_CATEGORIES } from '@/lib/constants';
+import { Eye, EyeOff, TrendingDown, TrendingUp, AlertTriangle, Edit2, Trash2 } from 'lucide-react';
+
+interface Budget {
+  id: string;
+  category: string;
+  limit: number;
+  spent: number;
+}
+
+interface EnvelopeVisualizationProps {
+  budgets: Budget[];
+  filterMode: 'all' | 'critical' | 'ok';
+  showAmounts: boolean;
+  onEdit: (budget: Budget) => void;
+  onDelete: (id: string) => void;
+}
 
 interface EnvelopeCardProps {
   category: string;
   limit: number;
   spent: number;
   isVisible: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-function EnvelopeCard({ category, limit, spent, isVisible }: EnvelopeCardProps) {
+function EnvelopeCard({ category, limit, spent, isVisible, onEdit, onDelete }: EnvelopeCardProps) {
   const remaining = limit - spent;
   const percentage = Math.min((spent / limit) * 100, 100);
   const isOverBudget = spent > limit;
   
-  const categoryInfo = CATEGORIES.find(c => c.name === category);
+  const categoryInfo = EXPENSE_CATEGORIES.find(c => c.value === category);
   const Icon = categoryInfo?.icon;
   
   // Cores baseadas na percentagem
@@ -83,12 +99,26 @@ function EnvelopeCard({ category, limit, spent, isVisible }: EnvelopeCardProps) 
           {Icon && <Icon className="w-5 h-5 text-on-surface-variant" />}
           <span className="font-semibold text-on-surface">{category}</span>
         </div>
-        <button
-          onClick={() => {}}
-          className="text-on-surface-variant hover:text-on-surface"
-        >
-          {isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-        </button>
+        <div className="flex gap-1">
+          {onEdit && (
+            <button
+              onClick={onEdit}
+              className="p-1.5 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+              title="Editar"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={onDelete}
+              className="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors"
+              title="Apagar"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
       
       {/* Barra de progresso */}
@@ -130,18 +160,14 @@ function EnvelopeCard({ category, limit, spent, isVisible }: EnvelopeCardProps) 
   );
 }
 
-export function EnvelopeVisualization() {
-  const { budgets } = useData();
-  const [showAmounts, setShowAmounts] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'critical' | 'ok'>('all');
-  
+export function EnvelopeVisualization({ budgets, filterMode, showAmounts, onEdit, onDelete }: EnvelopeVisualizationProps) {
   // Filtrar orçamentos válidos (com limite > 0)
   const validBudgets = budgets.filter(b => b.limit > 0);
   
   // Aplicar filtro
   const filteredBudgets = validBudgets.filter(b => {
-    if (filter === 'critical') return b.spent >= b.limit * 0.8;
-    if (filter === 'ok') return b.spent < b.limit * 0.8;
+    if (filterMode === 'critical') return b.spent >= b.limit * 0.8;
+    if (filterMode === 'ok') return b.spent < b.limit * 0.8;
     return true;
   });
   
@@ -157,108 +183,25 @@ export function EnvelopeVisualization() {
   const totalRemaining = totalLimit - totalSpent;
   
   return (
-    <div className="space-y-6">
-      {/* Header com resumo */}
-      <div className="bg-primary-container rounded-2xl p-6 text-center">
-        <h2 className="text-2xl font-bold text-on-primary-container mb-2">
-          Método Envelope
-        </h2>
-        <p className="text-on-primary-container/80 mb-4">
-          Cada categoria é um envelope com dinheiro limitado
-        </p>
-        
-        <div className="grid grid-cols-3 gap-4 mt-4">
-          <div>
-            <p className="text-2xl font-bold">{formatCurrencyWithSymbol(totalLimit)}</p>
-            <p className="text-sm opacity-80">Orçamento Total</p>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-red-600">{formatCurrencyWithSymbol(totalSpent)}</p>
-            <p className="text-sm opacity-80">Gasto</p>
-          </div>
-          <div>
-            <p className={`text-2xl font-bold ${totalRemaining >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {formatCurrencyWithSymbol(totalRemaining)}
-            </p>
-            <p className="text-sm opacity-80">Resta</p>
-          </div>
-        </div>
-      </div>
-      
-      {/* Filtros e controles */}
-      <div className="flex flex-wrap gap-2 justify-between items-center">
-        <div className="flex gap-2">
-          <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filter === 'all' 
-                ? 'bg-primary text-on-primary' 
-                : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
-            }`}
-          >
-            Todos ({validBudgets.length})
-          </button>
-          <button
-            onClick={() => setFilter('critical')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filter === 'critical' 
-                ? 'bg-red-500 text-white' 
-                : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
-            }`}
-          >
-            ⚠️ Críticos ({validBudgets.filter(b => b.spent >= b.limit * 0.8).length})
-          </button>
-          <button
-            onClick={() => setFilter('ok')}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              filter === 'ok' 
-                ? 'bg-green-500 text-white' 
-                : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
-            }`}
-          >
-            ✅ OK ({validBudgets.filter(b => b.spent < b.limit * 0.8).length})
-          </button>
-        </div>
-        
-        <button
-          onClick={() => setShowAmounts(!showAmounts)}
-          className="flex items-center gap-2 px-4 py-2 bg-surface-container rounded-lg hover:bg-surface-container-high transition-colors"
-        >
-          {showAmounts ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          <span className="text-sm">{showAmounts ? 'Ocultar' : 'Mostrar'} valores</span>
-        </button>
-      </div>
-      
-      {/* Grid de Envelopes */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       {sortedBudgets.length === 0 ? (
-        <div className="text-center py-12 text-on-surface-variant">
-          <p className="text-lg mb-2">📭 Nenhum orçamento encontrado</p>
-          <p>Cria orçamentos primeiro para usar o Método Envelope</p>
+        <div className="col-span-full text-center py-12 text-on-surface-variant">
+          <p className="text-lg mb-2">📭 {filterMode === 'all' ? 'Nenhum orçamento encontrado' : filterMode === 'critical' ? 'Nenhum orçamento crítico' : 'Nenhum orçamento OK'}</p>
+          <p>{filterMode === 'all' ? 'Cria orçamentos primeiro para usar o Método Envelope' : 'Tenta outro filtro'}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {sortedBudgets.map(budget => (
-            <EnvelopeCard
-              key={budget.id}
-              category={budget.category}
-              limit={budget.limit}
-              spent={budget.spent}
-              isVisible={showAmounts}
-            />
-          ))}
-        </div>
+        sortedBudgets.map(budget => (
+          <EnvelopeCard
+            key={budget.id}
+            category={budget.category}
+            limit={budget.limit}
+            spent={budget.spent}
+            isVisible={showAmounts}
+            onEdit={() => onEdit?.(budget)}
+            onDelete={() => onDelete?.(budget.id)}
+          />
+        ))
       )}
-      
-      {/* Dica educativa */}
-      <div className="bg-tertiary-container rounded-xl p-4 text-on-tertiary-container">
-        <h3 className="font-semibold mb-2">💡 Como funciona o Método Envelope?</h3>
-        <p className="text-sm">
-          Imagina que tens envelopes físicos para cada categoria de gastos. 
-          Quando o dinheiro acaba no envelope, não podes gastar mais nessa categoria 
-          até ao próximo mês. Esta visualização ajuda-te a ver exatamente quanto 
-          "dinheiro" ainda tens em cada envelope!
-        </p>
-      </div>
     </div>
   );
 }

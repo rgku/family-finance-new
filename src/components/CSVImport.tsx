@@ -3,8 +3,9 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useToast } from '@/components/Toast';
+import { useData } from '@/hooks/DataProvider';
 import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X } from 'lucide-react';
-import { formatCurrencyWithSymbol } from '@/lib/utils';
+import { formatCurrencyWithSymbol } from '@/lib/currency';
 
 export interface ParsedTransaction {
   date: string;
@@ -14,11 +15,6 @@ export interface ParsedTransaction {
   category?: string;
   subcategory?: string;
   notes?: string;
-}
-
-interface CSVImportProps {
-  onImport: (transactions: ParsedTransaction[]) => Promise<void>;
-  onClose: () => void;
 }
 
 const CATEGORY_KEYWORDS: Record<string, string[]> = {
@@ -99,8 +95,13 @@ function parseCSVContent(content: string): ParsedTransaction[] {
   return transactions;
 }
 
-export function CSVImport({ onImport, onClose }: CSVImportProps) {
+interface CSVImportProps {
+  onClose: () => void;
+}
+
+export function CSVImport({ onClose }: CSVImportProps) {
   const { showToast } = useToast();
+  const { addTransaction } = useData();
   const [parsing, setParsing] = useState(false);
   const [parsed, setParsed] = useState<ParsedTransaction[] | null>(null);
   const [importing, setImporting] = useState(false);
@@ -146,7 +147,15 @@ export function CSVImport({ onImport, onClose }: CSVImportProps) {
 
     setImporting(true);
     try {
-      await onImport(parsed);
+      for (const t of parsed) {
+        await addTransaction({
+          description: t.description,
+          amount: t.amount,
+          type: t.type,
+          category: t.category || 'Outros',
+          date: t.date,
+        });
+      }
       showToast(`${parsed.length} transações importadas!`, 'success');
       onClose();
     } catch (error) {

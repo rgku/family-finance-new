@@ -11,8 +11,13 @@ import { Icon } from "@/components/Icon";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
 import { AIBudgetSuggestion } from "@/lib/ai/types";
 import { useToast } from "@/components/Toast";
+import { EnvelopeVisualization } from "@/components/EnvelopeVisualization";
+import { Eye, EyeOff, LayoutList, Grid3X3 } from "lucide-react";
 
 const categories = EXPENSE_CATEGORIES.filter(c => c.value !== "Outros");
+
+type ViewMode = "list" | "envelopes";
+type FilterMode = "all" | "critical" | "ok";
 
 export default function BudgetsPage() {
   const { budgets, setCurrentBudgetMonth, addBudget, updateBudget, deleteBudget } = useData();
@@ -22,6 +27,9 @@ export default function BudgetsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [filterMode, setFilterMode] = useState<FilterMode>("all");
+  const [showAmounts, setShowAmounts] = useState(true);
   
   const [selectedCategory, setSelectedCategory] = useState("");
   const [limitAmount, setLimitAmount] = useState("");
@@ -239,7 +247,7 @@ export default function BudgetsPage() {
       )}
 
       {/* Summary */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <div className="bg-surface-container rounded-lg p-5 text-center">
           <p className="text-xs text-on-surface-variant">Total Orçamento</p>
           <p className="font-headline text-3xl font-bold text-on-surface mt-1">
@@ -252,24 +260,89 @@ export default function BudgetsPage() {
             {formatCurrencyWithSymbol(totalSpent)}
           </p>
         </div>
+        <div className="bg-surface-container rounded-lg p-5 text-center">
+          <p className="text-xs text-on-surface-variant">Resta</p>
+          <p className={`font-headline text-3xl font-bold mt-1 ${totalBudget - totalSpent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {formatCurrencyWithSymbol(totalBudget - totalSpent)}
+          </p>
+        </div>
       </div>
 
-      {/* Envelope Method CTA */}
-      <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg p-5 text-white shadow-lg">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <h3 className="font-bold text-lg mb-1">📊 Método Envelope</h3>
-            <p className="text-sm text-white/90">
-              Visualiza os teus orçamentos como envelopes físicos e controla melhor os gastos!
-            </p>
-          </div>
-          <a
-            href="/dashboard/budgets/envelope"
-            className="px-5 py-3 bg-white text-green-600 font-bold rounded-full hover:bg-green-50 transition-colors shrink-0"
+      {/* View Mode Toggle & Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex bg-surface-container rounded-full p-1">
+          <button
+            onClick={() => setViewMode("list")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              viewMode === "list"
+                ? "bg-primary text-on-primary shadow-sm"
+                : "text-on-surface-variant hover:text-on-surface"
+            }`}
           >
-            Ver Envelopes →
-          </a>
+            <LayoutList className="w-4 h-4" />
+            Lista
+          </button>
+          <button
+            onClick={() => setViewMode("envelopes")}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              viewMode === "envelopes"
+                ? "bg-primary text-on-primary shadow-sm"
+                : "text-on-surface-variant hover:text-on-surface"
+            }`}
+          >
+            <Grid3X3 className="w-4 h-4" />
+            Envelopes
+          </button>
         </div>
+
+        {viewMode === "envelopes" && (
+          <>
+            <div className="flex bg-surface-container rounded-full p-1">
+              <button
+                onClick={() => setFilterMode("all")}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  filterMode === "all"
+                    ? "bg-surface-container-high text-on-surface"
+                    : "text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                Todos ({budgets.filter(b => b.limit > 0).length})
+              </button>
+              <button
+                onClick={() => setFilterMode("critical")}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  filterMode === "critical"
+                    ? "bg-red-500 text-white"
+                    : "text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                ⚠️ Críticos ({budgets.filter(b => b.limit > 0 && b.spent >= b.limit * 0.8).length})
+              </button>
+              <button
+                onClick={() => setFilterMode("ok")}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                  filterMode === "ok"
+                    ? "bg-green-500 text-white"
+                    : "text-on-surface-variant hover:text-on-surface"
+                }`}
+              >
+                ✅ OK ({budgets.filter(b => b.limit > 0 && b.spent < b.limit * 0.8).length})
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShowAmounts(!showAmounts)}
+              className="flex items-center gap-2 px-4 py-2 bg-surface-container rounded-full hover:bg-surface-container-high transition-colors text-sm font-medium"
+            >
+              {showAmounts ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              {showAmounts ? "Ocultar" : "Mostrar"}
+            </button>
+          </>
+        )}
+
+        <span className="ml-auto text-sm text-on-surface-variant">
+          {budgets.length} orçamentos
+        </span>
       </div>
 
       {/* AI Suggestions Panel */}
@@ -349,56 +422,69 @@ export default function BudgetsPage() {
         </div>
       )}
 
-      {/* Budget List */}
-      <div className="space-y-3">
-        {budgets.map((budget) => {
-          const percentage = budget.limit > 0 ? (budget.spent / budget.limit) * 100 : 0;
-          const isOver = percentage >= 100;
-          const isWarning = percentage >= 80 && percentage < 100;
-          
-          const categoryIcon = categories.find(c => c.value === budget.category)?.icon || "help";
-          
-          return (
-            <div 
-              key={budget.id}
-              className={`bg-surface-container rounded-lg p-5 ${isOver ? "border border-error/50" : ""}`}
-            >
-              <div className="flex justify-between items-center mb-3">
-                <div className="flex items-center gap-3">
-                  <Icon name={categoryIcon} size={20} className={isOver ? "text-error" : isWarning ? "text-tertiary" : "text-primary"} />
-                  <div>
-                    <p className="font-semibold">{budget.category}</p>
-                    <p className="text-xs text-on-surface-variant">
-                      {formatCurrencyWithSymbol(budget.spent)} de {formatCurrencyWithSymbol(budget.limit)}
-                    </p>
+      {/* View Mode: List */}
+      {viewMode === "list" && (
+        <div className="space-y-3">
+          {budgets.map((budget) => {
+            const percentage = budget.limit > 0 ? (budget.spent / budget.limit) * 100 : 0;
+            const isOver = percentage >= 100;
+            const isWarning = percentage >= 80 && percentage < 100;
+            
+            const categoryIcon = categories.find(c => c.value === budget.category)?.icon || "help";
+            
+            return (
+              <div 
+                key={budget.id}
+                className={`bg-surface-container rounded-lg p-5 ${isOver ? "border border-error/50" : ""}`}
+              >
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex items-center gap-3">
+                    <Icon name={categoryIcon} size={20} className={isOver ? "text-error" : isWarning ? "text-tertiary" : "text-primary"} />
+                    <div>
+                      <p className="font-semibold">{budget.category}</p>
+                      <p className="text-xs text-on-surface-variant">
+                        {formatCurrencyWithSymbol(budget.spent)} de {formatCurrencyWithSymbol(budget.limit)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleEdit(budget)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary/20 hover:text-primary transition-colors text-xs font-medium">
+                      <Icon name="edit" size={16} className="text-base" />
+                      Editar
+                    </button>
+                    <button onClick={() => handleDelete(budget.id)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-error/20 hover:text-error transition-colors text-xs font-medium">
+                      <Icon name="delete" size={16} className="text-base" />
+                      Apagar
+                    </button>
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={() => handleEdit(budget)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-primary/20 hover:text-primary transition-colors text-xs font-medium">
-                    <Icon name="edit" size={16} className="text-base" />
-                    Editar
-                  </button>
-                  <button onClick={() => handleDelete(budget.id)} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-container-high text-on-surface-variant hover:bg-error/20 hover:text-error transition-colors text-xs font-medium">
-                    <Icon name="delete" size={16} className="text-base" />
-                    Apagar
-                  </button>
+                
+                <div className="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
+                  <div 
+                    className={`h-full rounded-full transition-all ${isOver ? "bg-error" : isWarning ? "bg-tertiary" : "bg-primary"}`}
+                    style={{ width: `${Math.min(percentage, 100)}%` }}
+                  ></div>
                 </div>
+                
+                <p className="text-xs text-on-surface-variant mt-2 text-right">
+                  {Math.round(percentage)}% usado
+                </p>
               </div>
-              
-              <div className="w-full bg-surface-container-highest h-2 rounded-full overflow-hidden">
-                <div 
-                  className={`h-full rounded-full transition-all ${isOver ? "bg-error" : isWarning ? "bg-tertiary" : "bg-primary"}`}
-                  style={{ width: `${Math.min(percentage, 100)}%` }}
-                ></div>
-              </div>
-              
-              <p className="text-xs text-on-surface-variant mt-2 text-right">
-                {Math.round(percentage)}% usado
-              </p>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* View Mode: Envelopes */}
+      {viewMode === "envelopes" && (
+        <EnvelopeVisualization
+          budgets={budgets}
+          filterMode={filterMode}
+          showAmounts={showAmounts}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      )}
     </>
   );
 
