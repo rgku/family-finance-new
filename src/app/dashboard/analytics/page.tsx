@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
@@ -31,12 +31,18 @@ export default function AnalyticsPage() {
   
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
-    if (billingDay > 1) {
-      const { startDate } = getCustomMonthRange(billingDay, now);
-      return `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}`;
-    }
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
+
+  // Corrigir mês se houver ciclo de faturação personalizado
+  useEffect(() => {
+    if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
+      const now = new Date();
+      const { displayYear, displayMonth } = getCustomMonthRange(profile.billing_cycle_day, now);
+      const correctMonth = `${displayYear}-${String(displayMonth + 1).padStart(2, "0")}`;
+      setSelectedMonth(correctMonth);
+    }
+  }, [profile?.billing_cycle_day]);
 
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const [year, month] = selectedMonth.split("-").map(Number);
