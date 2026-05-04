@@ -78,16 +78,23 @@ export default function BudgetsPage() {
           await addBudget({
             category: selectedCategory,
             limit: parseFloat(limitAmount),
-            month: selectedMonth,
+            month: selectedMonth + '-01',
           });
           showToast("Orçamento criado com sucesso!", "success");
         }
       
       resetForm();
-    } catch (error) {
-      console.error("Error saving budget:", error);
-      showToast("Erro ao guardar o orçamento. Tenta novamente.", "error");
-    } finally {
+      } catch (error: any) {
+        console.error("Error saving budget:", {
+          error,
+          message: error?.message,
+          details: error?.details,
+          hint: error?.hint,
+          code: error?.code,
+        });
+        const errorMsg = error?.message || error?.details || "Erro ao guardar o orçamento. Tenta novamente.";
+        showToast(errorMsg, "error");
+      } finally {
       setLoading(false);
     }
   };
@@ -138,7 +145,7 @@ export default function BudgetsPage() {
       if (existingBudget) {
         updateBudget(existingBudget.id, { limit: suggestion.suggestedLimit });
       } else {
-        addBudget({ category: suggestion.category, limit: suggestion.suggestedLimit, month: selectedMonth });
+        addBudget({ category: suggestion.category, limit: suggestion.suggestedLimit, month: selectedMonth + '-01' });
       }
       setAiSuggestions(prev => prev.filter(s => s !== suggestion));
     };

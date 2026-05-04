@@ -959,40 +959,61 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addBudget = async (b: Omit<Budget, "id" | "spent">) => {
     if (!user) throw new Error("Must be logged in");
 
-    const defaultMonth = new Date().toISOString().slice(0, 7);
+    // defaultMonth is already in YYYY-MM-01 format
+    const defaultMonth = new Date().toISOString().slice(0, 7) + '-01';
+    // b.month should already be in YYYY-MM-01 format from the caller
+    // Don't add '-01' again to avoid YYYY-MM-01-01
     const budgetMonth = b.month || defaultMonth;
     
-    // Optimistic update
-    const tempId = `temp_${Date.now()}`;
-    const newBudget = {
-      id: tempId,
-      user_id: user.id,
-      family_id: profile?.family_id || null,
-      category: b.category,
-      limit_amount: b.limit,
-      month: budgetMonth,
-    };
-    setBudgetsRaw(prev => [...prev, newBudget]);
+      // Optimistic update
+      const tempId = `temp_${Date.now()}`;
+      const newBudget = {
+        id: tempId,
+        user_id: user.id,
+        family_id: profile?.family_id || null,
+        category: b.category,
+        limit_amount: b.limit,
+        month: budgetMonth,
+      };
+      setBudgetsRaw(prev => [...prev, newBudget]);
 
-    if (!isOnline) {
-      await saveOffline('budgets', { ...b, month: budgetMonth }, 'create');
-      return;
-    }
+      if (!isOnline) {
+        await saveOffline('budgets', { ...b, month: budgetMonth }, 'create');
+        return;
+      }
 
-    try {
-      const { data, error } = await supabase
-        .from('budgets')
-        .insert({
+      try {
+        const budgetData = {
           user_id: user.id,
           family_id: profile?.family_id || null,
           category: b.category,
           limit_amount: b.limit,
           month: budgetMonth,
-        })
-        .select()
-        .single();
+        };
+        console.log('[addBudget] Inserting budget:', JSON.stringify(budgetData, null, 2));
+        
+        const { data, error } = await supabase
+          .from('budgets')
+          .insert(budgetData)
+          .select()
+          .single();
 
-      if (error) throw error;
+        if (error) {
+          console.error('[addBudget] Supabase error:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            budgetData,
+          });
+          
+          // Check for duplicate budget error (unique violation)
+          if (error.code === '23505') {
+            throw new Error(`Já existe um orçamento para ${b.category} neste mês. Edite o existente em vez de criar um novo.`);
+          }
+          
+          throw error;
+        }
       
       if (data) {
         setBudgetsRaw(prev => prev.map(budget => 
