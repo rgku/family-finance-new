@@ -168,6 +168,9 @@ export default function AnalyticsPage() {
       const d = new Date(year, month - 1 - i, 15);
       const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       const monthTransactions = transactions.filter(t => {
+        if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
+          return isDateInCustomMonth(t.date, billingDay, d.getFullYear(), d.getMonth() + 1);
+        }
         const transDate = new Date(t.date);
         return transDate.getFullYear() === d.getFullYear() && transDate.getMonth() === d.getMonth();
       });
