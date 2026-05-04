@@ -30,6 +30,13 @@ export function useSpendingPower(): SpendingPower {
     const periodYear = startDate.getFullYear();
     const periodMonth = startDate.getMonth() + 1; // 1-indexed para isDateInCustomMonth
     
+    console.log('[SpendingPower] Billing day:', billingDay);
+    console.log('[SpendingPower] Período:', periodYear, '-', periodMonth);
+    console.log('[SpendingPower] Start:', startDate, 'End:', endDate);
+    console.log('[SpendingPower] Total transações:', transactions.length);
+    console.log('[SpendingPower] Total budgets:', budgets.length);
+    console.log('[SpendingPower] Total goals:', goals.length);
+    
     const daysInPeriod = billingDay > 1 
       ? Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
       : new Date(periodYear, periodMonth, 0).getDate();
@@ -47,6 +54,8 @@ export function useSpendingPower(): SpendingPower {
       return date.getFullYear() === periodYear && date.getMonth() === periodMonth - 1;
     });
 
+    console.log('[SpendingPower] Transações no período:', periodTransactions.length);
+    
     const income = periodTransactions
       .filter((t) => t.type === "income")
       .reduce((sum, t) => sum + t.amount, 0);
@@ -55,10 +64,14 @@ export function useSpendingPower(): SpendingPower {
       .filter((t) => t.type === "expense" && t.category !== "Investimentos")
       .reduce((sum, t) => sum + t.amount, 0);
 
+    console.log('[SpendingPower] Income:', income, 'Expenses:', expenses);
+
     // Usar budgets já calculados (o spent vem do DataProvider)
     const totalBudget = budgets.filter(b => b.limit > 0).reduce((sum, b) => sum + b.limit, 0);
     const totalSpent = budgets.reduce((sum, b) => sum + b.spent, 0);
     const budgetRemaining = totalBudget - totalSpent;
+
+    console.log('[SpendingPower] Budgets:', totalBudget, 'Spent:', totalSpent, 'Remaining:', budgetRemaining);
 
     // Calcular poupança alocada este mês
     const goalsAllocated = goals.filter(g => {
@@ -70,9 +83,13 @@ export function useSpendingPower(): SpendingPower {
       return goalCreated.getFullYear() === periodYear && goalCreated.getMonth() === periodMonth - 1;
     }).reduce((sum, g) => sum + g.current_amount, 0);
 
+    console.log('[SpendingPower] Goals allocated:', goalsAllocated);
+
     // In My Pocket = Saldo disponível - metas alocadas
     const balance = income - expenses;
     const available = balance - goalsAllocated;
+    
+    console.log('[SpendingPower] Balance:', balance, 'Available:', available);
     
     const breakdown = [
       { label: "Receitas este mês", amount: income, type: "income" as const },
@@ -81,6 +98,8 @@ export function useSpendingPower(): SpendingPower {
     ];
 
     const dailyBudget = remainingDays > 0 ? available / remainingDays : 0;
+
+    console.log('[SpendingPower] Daily budget:', dailyBudget, 'Remaining days:', remainingDays);
 
     let status: "good" | "warning" | "danger" = "good";
     let message = "";
@@ -98,6 +117,8 @@ export function useSpendingPower(): SpendingPower {
       status = "good";
       message = `Podes gastar ~${dailyBudget.toFixed(2)}€/dia`;
     }
+
+    console.log('[SpendingPower] Final:', { available, dailyBudget, status, message });
 
     return {
       available,
