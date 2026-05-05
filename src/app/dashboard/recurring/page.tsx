@@ -174,7 +174,7 @@ export default function RecurringPage() {
                     }`}
                     title={rec.enabled ? "Desativar" : "Ativar"}
                   >
-                    <Icon name={rec.enabled ? "pause_circle_filled" : "play_circle_filled"} size={20} />
+                    <Icon name={rec.enabled ? "pause_circle" : "play_circle"} size={20} />
                   </button>
                   <button
                     onClick={() => handleDelete(rec.id)}
@@ -265,7 +265,7 @@ export default function RecurringPage() {
                           className="p-2 rounded-full bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
                           title="Ativar"
                         >
-                          <Icon name="play_circle_filled" size={20} />
+                          <Icon name="play_circle" size={20} />
                         </button>
                         <button
                           onClick={() => handleDelete(rec.id)}
