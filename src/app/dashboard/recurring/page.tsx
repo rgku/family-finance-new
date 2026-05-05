@@ -18,6 +18,10 @@ export default function RecurringPage() {
   const deleteMutation = useDeleteRecurring();
   const toggleMutation = useToggleRecurring();
 
+  // Separate active and inactive recurring transactions
+  const activeRecurring = recurring?.filter(r => r.enabled) || [];
+  const inactiveRecurring = recurring?.filter(r => !r.enabled) || [];
+
   const handleDelete = async (id: string) => {
     if (confirm("Tens a certeza que queres eliminar esta recorrência?")) {
       await deleteMutation.mutateAsync(id);
@@ -93,8 +97,16 @@ export default function RecurringPage() {
           </button>
         </div>
       ) : (
-        <div className="space-y-4">
-          {recurring.map((rec) => (
+        <div className="space-y-6">
+          {/* Active Recurring Transactions */}
+          {activeRecurring.length > 0 && (
+            <div>
+              <h2 className="text-lg font-bold text-on-surface mb-3 flex items-center gap-2">
+                <Icon name="check_circle" size={20} className="text-primary" />
+                Ativas ({activeRecurring.length})
+              </h2>
+              <div className="space-y-4">
+                {activeRecurring.map((rec) => (
             <div
               key={rec.id}
               className={`bg-surface-container rounded-2xl p-4 sm:p-6 ${
@@ -174,7 +186,101 @@ export default function RecurringPage() {
                 </div>
               </div>
             </div>
-          ))}
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Inactive Recurring Transactions */}
+          {inactiveRecurring.length > 0 && (
+            <div className="mt-8">
+              <h2 className="text-lg font-bold text-on-surface mb-3 flex items-center gap-2">
+                <Icon name="pause_circle" size={20} className="text-on-surface-variant" />
+                Desativadas ({inactiveRecurring.length})
+              </h2>
+              <div className="space-y-4">
+                {inactiveRecurring.map((rec) => (
+                  <div
+                    key={rec.id}
+                    className="bg-surface-container rounded-2xl p-4 sm:p-6 opacity-60 border-2 border-dashed border-on-surface-variant/20"
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center ${
+                          rec.type === "income" ? "bg-primary/10" : "bg-tertiary/10"
+                        }`}>
+                          <Icon
+                            name={rec.type === "income" ? "payments" : "shopping_bag"}
+                            size={20}
+                            className={rec.type === "income" ? "text-primary" : "text-tertiary"}
+                          />
+                        </div>
+                        <div>
+                          <h3 className="font-bold text-on-surface">{rec.description}</h3>
+                          <p className="text-sm text-on-surface-variant">{rec.category}</p>
+                          <span className="inline-flex items-center gap-1 text-xs text-on-surface-variant mt-1">
+                            <Icon name="pause" size={12} />
+                            Desativada
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className={`font-bold text-lg ${
+                          rec.type === "income" ? "text-primary" : "text-tertiary"
+                        }`}>
+                          {rec.type === "income" ? "+" : "-"}{formatCurrencyWithSymbol(rec.amount)}
+                        </p>
+                        <p className="text-xs text-on-surface-variant">
+                          {rec.frequency === "weekly" && "Semanal"}
+                          {rec.frequency === "biweekly" && "Quinzenal"}
+                          {rec.frequency === "monthly" && "Mensal"}
+                          {rec.frequency === "quarterly" && "Trimestral"}
+                          {rec.frequency === "yearly" && "Anual"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-surface-container-highest">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-on-surface-variant">
+                        <div className="flex items-center gap-2">
+                          <Icon name="calendar_today" size={16} />
+                          <span>Próxima: {getNextRunLabel(rec.next_run)}</span>
+                        </div>
+                        {rec.auto_create ? (
+                          <div className="flex items-center gap-2 text-sm text-primary">
+                            <Icon name="automation" size={16} />
+                            <span>Automático</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 text-sm text-on-surface-variant">
+                            <Icon name="notifications" size={16} />
+                            <span>Notificar</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-auto">
+                        <button
+                          onClick={() => handleToggle(rec.id, rec.enabled)}
+                          className="p-2 rounded-full bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+                          title="Ativar"
+                        >
+                          <Icon name="play_arrow" size={20} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(rec.id)}
+                          className="p-2 rounded-full bg-error/20 text-error hover:bg-error/30 transition-colors"
+                          title="Eliminar"
+                        >
+                          <Icon name="delete" size={20} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

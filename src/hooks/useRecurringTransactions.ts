@@ -31,7 +31,7 @@ export function useRecurringTransactions(userId?: string) {
         .from('recurring_transactions')
         .select('*')
         .eq('user_id', userId!)
-        .eq('enabled', true)
+        .order('enabled', { ascending: false }) // Ativas primeiro
         .order('next_run', { ascending: true });
       
       if (error) throw error;
