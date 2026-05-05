@@ -107,15 +107,31 @@ export async function GET(request: NextRequest) {
     }
 
     const monthTransactions = transResult.data?.filter(t => isInMonth(t.date)) || [];
-    const income = monthTransactions.filter(t => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
+    
+    // Fallback: if no transactions found, use ALL transactions to avoid empty insights
+    const hasTransactions = monthTransactions.length > 0;
+    const transactionsToUse = hasTransactions ? monthTransactions : (transResult.data || []);
+    
+    if (!hasTransactions && transResult.data && transResult.data.length > 0) {
+      console.warn('[AI Insights] No transactions in filtered month, using all transactions as fallback');
+    }
+    
+    const income = transactionsToUse.filter(t => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
 
-    const investmentExpenses = monthTransactions
+    const investmentExpenses = transactionsToUse
       .filter(t => t.type === "expense" && t.category === "Investimentos")
       .reduce((s, t) => s + Number(t.amount), 0);
 
-    const normalExpenses = monthTransactions
+    const normalExpenses = transactionsToUse
       .filter(t => t.type === "expense" && t.category !== "Investimentos")
       .reduce((s, t) => s + Number(t.amount), 0);
+    
+    // Debug logging
+    console.log('[AI Insights] Month:', monthParam, 'Billing day:', billingDay);
+    console.log('[AI Insights] Total transactions:', transResult.data?.length || 0);
+    console.log('[AI Insights] Filtered transactions:', monthTransactions.length);
+    console.log('[AI Insights] Using transactions:', transactionsToUse.length);
+    console.log('[AI Insights] Income:', income, 'Expenses:', normalExpenses);
 
     const savingsAllocated = (goalsResult.data || [])
       .filter((g) => g.goal_type === "savings")
@@ -127,14 +143,14 @@ export async function GET(request: NextRequest) {
     const balance = income - normalExpenses;
 
     const categorySpending: Record<string, number> = {};
-    monthTransactions.filter(t => t.type === "expense").forEach(t => {
+    transactionsToUse.filter(t => t.type === "expense").forEach(t => {
       categorySpending[t.category] = (categorySpending[t.category] || 0) + Number(t.amount);
     });
 
     const budgets = budgetsResult.data?.map(b => ({
       category: b.category,
       limit: Number(b.limit_amount),
-      spent: monthTransactions.filter(t => t.category === b.category && t.type === "expense").reduce((s, t) => s + Number(t.amount), 0),
+      spent: transactionsToUse.filter(t => t.category === b.category && t.type === "expense").reduce((s, t) => s + Number(t.amount), 0),
     })) || [];
 
     const goals = (goalsResult.data || []).map((g) => ({
@@ -182,7 +198,7 @@ export async function GET(request: NextRequest) {
       categorySpending,
       budgets,
       goals,
-      transactionsCount: monthTransactions.length,
+      transactionsCount: transactionsToUse.length,
       previousMonthSpending: Object.keys(previousMonthSpending).length > 0 ? previousMonthSpending : undefined,
       billingCycleDay: billingDay,
       subscriptions: subscriptionData.activeCount > 0 ? subscriptionData : undefined,
@@ -257,14 +273,28 @@ function generateFallbackInsights(data: AIInsightsPayload): AIInsightItem[] {
   const hasExpenses = data.expenses > 0;
   const hasIncome = data.income > 0;
   
-  // If no transactions at all, show helpful message
+  console.log('[Fallback Insights] Has transactions:', hasTransactions, 'Expenses:', hasExpenses, 'Income:', hasIncome);
+  
+  // If no transactions at all, show helpful message but also show balance
   if (!hasTransactions) {
-    return [{
+    const messages: AIInsightItem[] = [{
       type: "info",
       title: "Sem transações neste mês",
       description: "Começa por adicionar as tuas transações para ver insights personalizados.",
       confidence: "high",
     }];
+    
+    // Still show balance if there is one
+    if (data.balance !== 0) {
+      messages.push({
+        type: data.balance >= 0 ? "success" : "warning",
+        title: data.balance >= 0 ? "Saldo positivo" : "Saldo negativo",
+        description: `Saldo: €${data.balance.toFixed(2)}`,
+        confidence: "high",
+      });
+    }
+    
+    return messages;
   }
 
   if (data.balance >= 0) {
