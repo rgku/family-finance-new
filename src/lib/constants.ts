@@ -26,7 +26,7 @@ export const GOAL_ICONS = [
   "school",
   "celebration",
   "diamond",
-  "局部",
+  "shopping_bag",
   "build",
 ] as const;
 
