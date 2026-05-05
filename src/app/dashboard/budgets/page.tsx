@@ -255,22 +255,22 @@ export default function BudgetsPage() {
       )}
 
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-surface-container rounded-lg p-5 text-center">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="bg-surface-container rounded-lg p-4 text-center">
           <p className="text-xs text-on-surface-variant">Total Orçamento</p>
-          <p className="font-headline text-3xl font-bold text-on-surface mt-1">
+          <p className="font-headline text-2xl sm:text-3xl font-bold text-on-surface mt-1">
             {formatCurrencyWithSymbol(totalBudget)}
           </p>
         </div>
-        <div className="bg-surface-container rounded-lg p-5 text-center">
+        <div className="bg-surface-container rounded-lg p-4 text-center">
           <p className="text-xs text-on-surface-variant">Total Gasto</p>
-          <p className="font-headline text-3xl font-bold text-tertiary mt-1">
+          <p className="font-headline text-2xl sm:text-3xl font-bold text-tertiary mt-1">
             {formatCurrencyWithSymbol(totalSpent)}
           </p>
         </div>
-        <div className="bg-surface-container rounded-lg p-5 text-center">
+        <div className="bg-surface-container rounded-lg p-4 text-center">
           <p className="text-xs text-on-surface-variant">Resta</p>
-          <p className={`font-headline text-3xl font-bold mt-1 ${totalBudget - totalSpent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <p className={`font-headline text-2xl sm:text-3xl font-bold mt-1 ${totalBudget - totalSpent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
             {formatCurrencyWithSymbol(totalBudget - totalSpent)}
           </p>
         </div>
