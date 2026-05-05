@@ -123,7 +123,8 @@ export async function GET(request: NextRequest) {
 
     const pouparanca = savingsAllocated + investmentExpenses;
     const expenses = normalExpenses;
-    const balance = income - normalExpenses - pouparanca;
+    // Saldo = Receitas - Despesas Normais (a poupança NÃO é despesa, é dinheiro alocado)
+    const balance = income - normalExpenses;
 
     const categorySpending: Record<string, number> = {};
     monthTransactions.filter(t => t.type === "expense").forEach(t => {
