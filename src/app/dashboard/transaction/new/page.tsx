@@ -8,8 +8,6 @@ import { CURRENCY } from "@/lib/currency";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/constants";
 import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/Toast";
-import { OCRScanner } from "@/components/OCRScanner";
-import type { OCRResult } from "@/lib/ocr";
 
 const ALL_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES]
   .map(c => c.value)
@@ -36,7 +34,6 @@ export default function NewTransaction() {
   const [loading, setLoading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState("");
-  const [showScanner, setShowScanner] = useState(false);
   
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
@@ -67,27 +64,9 @@ export default function NewTransaction() {
 
   const debouncedCategorize = useRef(debounce(categorizeDescription, 500)).current;
 
-  const handleOCRDataExtracted = (data: OCRResult & { suggestedCategory: string }) => {
-    if (data.merchant) {
-      setDescription(data.merchant);
-    }
-    if (data.total > 0) {
-      setAmount(data.total.toFixed(2));
-    }
-    if (data.date) {
-      setDate(data.date);
-    }
-    if (data.suggestedCategory) {
-      setCategory(data.suggestedCategory);
-    }
-    setShowScanner(false);
-  };
-
   const handleDescriptionChange = (value: string) => {
     setDescription(value);
-    if (value.length > 3 && type === "expense") {
-      debouncedCategorize(value);
-    }
+    debouncedCategorize(value);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -141,8 +120,8 @@ export default function NewTransaction() {
       </header>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* OCR Scanner Section */}
-        {showScanner ? (
+        {/* OCR Scanner Section - Hidden until fully developed */}
+        {/* {showScanner ? (
           <div id="ocr-scanner-section">
             <OCRScanner
               onDataExtracted={handleOCRDataExtracted}
@@ -160,7 +139,7 @@ export default function NewTransaction() {
             <Icon name="camera_alt" size={24} />
             <span>📷 Scan de Recibo - Tira uma foto e preenchemos automaticamente</span>
           </button>
-        )}
+        )} */}
 
         <div className="flex gap-2 bg-surface-container rounded-full p-1">
           <button
