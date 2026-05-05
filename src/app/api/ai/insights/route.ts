@@ -112,10 +112,6 @@ export async function GET(request: NextRequest) {
     const hasTransactions = monthTransactions.length > 0;
     const transactionsToUse = hasTransactions ? monthTransactions : (transResult.data || []);
     
-    if (!hasTransactions && transResult.data && transResult.data.length > 0) {
-      console.warn('[AI Insights] No transactions in filtered month, using all transactions as fallback');
-    }
-    
     const income = transactionsToUse.filter(t => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
 
     const investmentExpenses = transactionsToUse
@@ -125,13 +121,6 @@ export async function GET(request: NextRequest) {
     const normalExpenses = transactionsToUse
       .filter(t => t.type === "expense" && t.category !== "Investimentos")
       .reduce((s, t) => s + Number(t.amount), 0);
-    
-    // Debug logging
-    console.log('[AI Insights] Month:', monthParam, 'Billing day:', billingDay);
-    console.log('[AI Insights] Total transactions:', transResult.data?.length || 0);
-    console.log('[AI Insights] Filtered transactions:', monthTransactions.length);
-    console.log('[AI Insights] Using transactions:', transactionsToUse.length);
-    console.log('[AI Insights] Income:', income, 'Expenses:', normalExpenses);
 
     const savingsAllocated = (goalsResult.data || [])
       .filter((g) => g.goal_type === "savings")
@@ -222,7 +211,7 @@ export async function GET(request: NextRequest) {
       }
     };
 
-    // Log data quality issues (monitoring)
+    // Log data quality issues
     if (dataQuality.issues.length > 0) {
       console.log("Data quality issues:", dataQuality.issues);
     }
@@ -272,8 +261,6 @@ function generateFallbackInsights(data: AIInsightsPayload): AIInsightItem[] {
   const hasTransactions = data.transactionsCount > 0;
   const hasExpenses = data.expenses > 0;
   const hasIncome = data.income > 0;
-  
-  console.log('[Fallback Insights] Has transactions:', hasTransactions, 'Expenses:', hasExpenses, 'Income:', hasIncome);
   
   // If no transactions at all, show helpful message but also show balance
   if (!hasTransactions) {
