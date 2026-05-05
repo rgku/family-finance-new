@@ -1,50 +1,86 @@
 "use client";
 
-import { useState } from "react";
-import { useCreateRecurring } from "@/hooks/useRecurringTransactions";
+import { useState, useEffect } from "react";
+import { useCreateRecurring, useUpdateRecurring, type RecurringTransaction } from "@/hooks/useRecurringTransactions";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/constants";
 import { Icon } from "@/components/Icon";
 
 interface RecurringTransactionFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
+  initialData?: RecurringTransaction;
 }
 
-export function RecurringTransactionForm({ onSuccess, onCancel }: RecurringTransactionFormProps) {
+export function RecurringTransactionForm({ onSuccess, onCancel, initialData }: RecurringTransactionFormProps) {
   const createMutation = useCreateRecurring();
+  const updateMutation = useUpdateRecurring();
   const [loading, setLoading] = useState(false);
+  const isEditing = !!initialData;
+  
   const [formData, setFormData] = useState({
     description: "",
     amount: "",
     category: "",
     type: "expense" as "income" | "expense",
-    frequency: "monthly" as const,
+    frequency: "monthly" as "weekly" | "biweekly" | "monthly" | "quarterly" | "yearly",
     start_date: new Date().toISOString().split("T")[0],
     day_of_month: new Date().getDate(),
     auto_create: true,
   });
+
+  // Populate form when editing
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        description: initialData.description,
+        amount: initialData.amount.toString(),
+        category: initialData.category,
+        type: initialData.type,
+        frequency: initialData.frequency,
+        start_date: initialData.start_date,
+        day_of_month: initialData.day_of_month ?? new Date().getDate(),
+        auto_create: initialData.auto_create,
+      });
+    }
+  }, [initialData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      await createMutation.mutateAsync({
-        description: formData.description,
-        amount: parseFloat(formData.amount),
-        category: formData.category,
-        type: formData.type,
-        frequency: formData.frequency,
-        start_date: formData.start_date,
-        day_of_month: formData.frequency === "monthly" ? formData.day_of_month : undefined,
-        auto_create: formData.auto_create,
-        enabled: true,
-      });
+      if (isEditing && initialData) {
+        // Update existing
+        await updateMutation.mutateAsync({
+          id: initialData.id,
+          description: formData.description,
+          amount: parseFloat(formData.amount),
+          category: formData.category,
+          type: formData.type,
+          frequency: formData.frequency,
+          start_date: formData.start_date,
+          day_of_month: formData.frequency === "monthly" ? formData.day_of_month : undefined,
+          auto_create: formData.auto_create,
+        });
+      } else {
+        // Create new
+        await createMutation.mutateAsync({
+          description: formData.description,
+          amount: parseFloat(formData.amount),
+          category: formData.category,
+          type: formData.type,
+          frequency: formData.frequency,
+          start_date: formData.start_date,
+          day_of_month: formData.frequency === "monthly" ? formData.day_of_month : undefined,
+          auto_create: formData.auto_create,
+          enabled: true,
+        });
+      }
 
       onSuccess?.();
     } catch (error) {
-      console.error("Error creating recurring transaction:", error);
-      alert("Erro ao criar despesa recorrente. Tenta novamente.");
+      console.error("Error saving recurring transaction:", error);
+      alert(`Erro ao ${isEditing ? 'atualizar' : 'criar'} transação recorrente. Tenta novamente.`);
     } finally {
       setLoading(false);
     }
@@ -220,10 +256,10 @@ export function RecurringTransactionForm({ onSuccess, onCancel }: RecurringTrans
         )}
         <button
           type="submit"
-          disabled={loading || createMutation.isPending}
+          disabled={loading || (isEditing ? updateMutation.isPending : createMutation.isPending)}
           className="flex-1 py-4 bg-primary text-on-primary font-bold rounded-full hover:brightness-110 shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100"
         >
-          {loading ? "A criar..." : "Criar Recorrência"}
+          {loading ? (isEditing ? "A atualizar..." : "A criar...") : (isEditing ? "Guardar Alterações" : "Criar Recorrência")}
         </button>
       </div>
     </form>

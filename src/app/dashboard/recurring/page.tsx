@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { useRecurringTransactions, useDeleteRecurring, useToggleRecurring } from "@/hooks/useRecurringTransactions";
+import { useRecurringTransactions, useDeleteRecurring, useToggleRecurring, type RecurringTransaction } from "@/hooks/useRecurringTransactions";
 import { RecurringTransactionForm } from "@/components/RecurringTransactionForm";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import { Icon } from "@/components/Icon";
@@ -13,6 +13,7 @@ export default function RecurringPage() {
   const { user, signOut } = useAuth();
   const isMobile = useDeviceType();
   const [showForm, setShowForm] = useState(false);
+  const [editingRecurring, setEditingRecurring] = useState<RecurringTransaction | null>(null);
   
   const { data: recurring, isLoading } = useRecurringTransactions(user?.id);
   const deleteMutation = useDeleteRecurring();
@@ -30,6 +31,21 @@ export default function RecurringPage() {
 
   const handleToggle = async (id: string, enabled: boolean) => {
     await toggleMutation.mutateAsync({ id, enabled: !enabled });
+  };
+
+  const handleEdit = (rec: RecurringTransaction) => {
+    setEditingRecurring(rec);
+    setShowForm(true);
+  };
+
+  const handleFormSuccess = () => {
+    setShowForm(false);
+    setEditingRecurring(null);
+  };
+
+  const handleFormCancel = () => {
+    setShowForm(false);
+    setEditingRecurring(null);
   };
 
   const getNextRunLabel = (nextRun: string) => {
@@ -64,17 +80,23 @@ export default function RecurringPage() {
         <div className="max-w-2xl">
           <div className="mb-6">
             <button
-              onClick={() => setShowForm(false)}
+              onClick={() => {
+                setShowForm(false);
+                setEditingRecurring(null);
+              }}
               className="text-primary hover:underline text-sm"
             >
               ← Voltar
             </button>
           </div>
           <div className="bg-surface-container rounded-2xl p-6">
-            <h2 className="text-xl font-bold text-on-surface mb-6">Nova Transação Recorrente</h2>
+            <h2 className="text-xl font-bold text-on-surface mb-6">
+              {editingRecurring ? 'Editar Transação Recorrente' : 'Nova Transação Recorrente'}
+            </h2>
             <RecurringTransactionForm
-              onSuccess={() => setShowForm(false)}
-              onCancel={() => setShowForm(false)}
+              onSuccess={handleFormSuccess}
+              onCancel={handleFormCancel}
+              initialData={editingRecurring || undefined}
             />
           </div>
         </div>
@@ -165,6 +187,13 @@ export default function RecurringPage() {
                 </div>
 
                 <div className="flex items-center gap-2 self-end sm:self-auto">
+                  <button
+                    onClick={() => handleEdit(rec)}
+                    className="p-2 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors"
+                    title="Editar"
+                  >
+                    <Icon name="edit" size={20} />
+                  </button>
                   <button
                     onClick={() => handleToggle(rec.id, rec.enabled)}
                     className={`p-2 rounded-full transition-colors ${
@@ -260,6 +289,13 @@ export default function RecurringPage() {
                       </div>
 
                       <div className="flex items-center gap-2 self-end sm:self-auto">
+                        <button
+                          onClick={() => handleEdit(rec)}
+                          className="p-2 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest transition-colors"
+                          title="Editar"
+                        >
+                          <Icon name="edit" size={20} />
+                        </button>
                         <button
                           onClick={() => handleToggle(rec.id, rec.enabled)}
                           className="p-2 rounded-full bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
