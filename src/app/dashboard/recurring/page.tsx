@@ -174,7 +174,7 @@ export default function RecurringPage() {
                     }`}
                     title={rec.enabled ? "Desativar" : "Ativar"}
                   >
-                    <Icon name={rec.enabled ? "pause" : "play_arrow"} size={20} />
+                    <Icon name={rec.enabled ? "pause_circle_filled" : "play_circle_filled"} size={20} />
                   </button>
                   <button
                     onClick={() => handleDelete(rec.id)}
@@ -195,7 +195,7 @@ export default function RecurringPage() {
           {inactiveRecurring.length > 0 && (
             <div className="mt-8">
               <h2 className="text-lg font-bold text-on-surface mb-3 flex items-center gap-2">
-                <Icon name="pause_circle" size={20} className="text-on-surface-variant" />
+                <Icon name="pause_circle_outline" size={20} className="text-on-surface-variant" />
                 Desativadas ({inactiveRecurring.length})
               </h2>
               <div className="space-y-4">
@@ -265,7 +265,7 @@ export default function RecurringPage() {
                           className="p-2 rounded-full bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
                           title="Ativar"
                         >
-                          <Icon name="play_arrow" size={20} />
+                          <Icon name="play_circle_filled" size={20} />
                         </button>
                         <button
                           onClick={() => handleDelete(rec.id)}
