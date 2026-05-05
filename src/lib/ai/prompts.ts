@@ -102,6 +102,9 @@ ${prevEntries}`;
 | Saldo Final | €${balance.toFixed(2)} | ${balance >= 0 ? "POSITIVO ✅" : "NEGATIVO ⚠️"} |
 | Transações | ${transactionsCount} | - |
 
+${expenses === 0 && transactionsCount === 0 ? '\n⚠️ ATENÇÃO: Sem transações registadas este mês. Insights limitados.\n' : ''}
+${expenses === 0 && transactionsCount > 0 ? '\nℹ️ NOTA: Transações existentes mas sem despesas (apenas receitas ou investimentos).\n' : ''}
+
 ## 🎯 PRINCIPAIS GASTOS
 Top 3 categorias: ${top3Categories || "Sem dados"}
 
@@ -144,11 +147,14 @@ ${criticalAlerts.length > 0 ? `
 ${criticalAlerts.join('\n')}
 ` : ''}
 
-## ⚠️ REGRAS
+## ⚠️ REGRAS CRÍTICAS
 1. Usa APENAS categorias: ${data.metadata?.categoriesUsed.slice(0, 8).join(', ') || 'ver dados'}
 2. NUNCA inventes números ou categorias
-3. Se dados insuficientes: diz "Dados insuficientes", NÃO adivinhes
-4. Máximo 6 insights
+3. Se despesas = 0: NÃO digas "não registaste despesas" - o utilizador PODE ter despesas
+4. Se dados insuficientes: diz "Dados insuficientes", NÃO adivinhes
+5. Máximo 6 insights
+6. NÃO repitas o mesmo insight em variações diferentes
+7. Foca em dados REAIS: saldo, budgets >80%, metas, anomalias detetadas
 
 ## 🧠 PROCESSO:
 1. Verifica categorias existem nos dados

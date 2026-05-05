@@ -256,6 +256,21 @@ export async function GET(request: NextRequest) {
 function generateFallbackInsights(data: AIInsightsPayload): AIInsightItem[] {
   const insights: AIInsightItem[] = [];
 
+  // Check if there's enough data
+  const hasTransactions = data.transactionsCount > 0;
+  const hasExpenses = data.expenses > 0;
+  const hasIncome = data.income > 0;
+  
+  // If no transactions at all, show helpful message
+  if (!hasTransactions) {
+    return [{
+      type: "info",
+      title: "Sem transações neste mês",
+      description: "Começa por adicionar as tuas transações para ver insights personalizados.",
+      confidence: "high",
+    }];
+  }
+
   if (data.balance >= 0) {
     insights.push({
       type: "success",
