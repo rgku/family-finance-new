@@ -58,9 +58,9 @@ export function validateDataQuality(data: AIInsightsPayload): DataQualityReport 
     });
   }
   
-  // Check 4: Savings rate anómalo
+  // Check 4: Savings rate anómalo (só se for EXTREMAMENTE alto)
   const savingsRate = data.income > 0 ? (data.pouparanca / data.income) * 100 : 0;
-  if (savingsRate > 80) {
+  if (savingsRate > 150) {
     issues.push({
       severity: "warning",
       category: "outlier",

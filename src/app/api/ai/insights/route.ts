@@ -213,23 +213,19 @@ export async function GET(request: NextRequest) {
 
     let insights: AIInsightItem[];
     try {
-      // If data quality is low, use fallback only
-      if (dataQuality.overall === "low") {
-        console.warn("Data quality low, using fallback only");
+      // Always try AI first, regardless of data quality
+      // Low quality just adds a warning to the prompt
+      insights = await generateInsights(payload);
+      
+      // Validate AI output
+      const validation = validateInsights(insights, payload);
+      
+      if (!validation.valid) {
+        console.warn("AI output validation failed", validation.errors);
         insights = generateFallbackInsights(payload);
-      } else {
-        insights = await generateInsights(payload);
-        
-        // Validate AI output
-        const validation = validateInsights(insights, payload);
-        
-        if (!validation.valid) {
-          console.warn("AI output validation failed", validation.errors);
-          insights = generateFallbackInsights(payload);
-        } else if (validation.warnings.length > 0) {
-          console.log("AI output warnings:", validation.warnings);
-          // Use insights but log warnings
-        }
+      } else if (validation.warnings.length > 0) {
+        console.log("AI output warnings:", validation.warnings);
+        // Use insights but log warnings
       }
     } catch (aiError) {
       console.warn("AI insights generation failed, using fallback:", aiError);

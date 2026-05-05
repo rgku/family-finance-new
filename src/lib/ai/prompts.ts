@@ -147,6 +147,13 @@ ${criticalAlerts.length > 0 ? `
 ${criticalAlerts.join('\n')}
 ` : ''}
 
+${data.metadata?.dataQuality === 'low' ? `
+## ⚠️ QUALIDADE DE DADOS BAIXA
+- Dados podem estar incompletos ou inconsistentes
+- Foca nos números REAIS que tens
+- Se não tens certeza, diz "Dados insuficientes"
+` : ''}
+
 ## ⚠️ REGRAS CRÍTICAS
 1. Usa APENAS categorias: ${data.metadata?.categoriesUsed.slice(0, 8).join(', ') || 'ver dados'}
 2. NUNCA inventes números ou categorias
