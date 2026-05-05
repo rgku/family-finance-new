@@ -235,7 +235,7 @@ export default function ExportPage() {
         <div className="space-y-3">
           <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider">Dia de início do ciclo</label>
           <div className="grid grid-cols-7 gap-2">
-            {Array.from({ length: 28 }, (_, i) => i + 1).map(day => (
+            {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
               <button
                 key={day}
                 onClick={() => handleCycleDayChange(day)}
