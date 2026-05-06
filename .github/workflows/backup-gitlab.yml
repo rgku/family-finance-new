@@ -19,10 +19,8 @@ jobs:
 
       - name: Push to GitLab
         run: |
-          git remote add gitlab https://gitlab.com/bernardo.ferreira2-group/family-finance-new.git
+          git remote add gitlab https://${{ secrets.GITLAB_USERNAME }}:${{ secrets.GITLAB_PASSWORD }}@gitlab.com/bernardo.ferreira2-group/family-finance-new.git
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git push --all gitlab --force
           git push --tags gitlab --force
-        env:
-          GITLAB_TOKEN: ${{ secrets.GITLAB_PASSWORD }}
