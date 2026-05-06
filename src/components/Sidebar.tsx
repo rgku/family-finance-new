@@ -21,15 +21,16 @@ const navItemsSecondary = [
 
 const navItemsDesktop = [
   { href: "/dashboard", icon: "home", label: "Home" },
-  { href: "/dashboard/transactions", icon: "receipt_long", label: "Transações" },
+  { href: "/dashboard/transactions", icon: "receipt_long", label: "Histórico" },
   { href: "/dashboard/recurring", icon: "repeat", label: "Recorrentes" },
+  { href: "/dashboard/savings", icon: "savings", label: "Poupança" },
+  { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
+  { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
   { href: "/dashboard/analytics", icon: "trending_up", label: "Análise" },
   { href: "/dashboard/reports", icon: "assessment", label: "Relatórios" },
   { href: "/dashboard/profile", icon: "person", label: "Perfil" },
-  { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
-  { href: "/dashboard/budgets", icon: "pie_chart", label: "Orçamentos" },
-  { href: "/dashboard/alerts", icon: "notifications", label: "Alertas" },
   { href: "/dashboard/family", icon: "group", label: "Família" },
+  { href: "/dashboard/alerts", icon: "notifications", label: "Alertas" },
   { href: "/dashboard/settings", icon: "settings", label: "Definições" },
 ];
 
@@ -41,7 +42,7 @@ export function DesktopSidebar({ onSignOut }: DesktopSidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="fixed left-0 top-0 bottom-0 z-50 flex flex-col h-screen w-64 border-r border-slate-800/50 bg-slate-950/80 backdrop-blur-xl" role="navigation" aria-label="Navegação principal">
+    <aside className="hidden md:block fixed left-0 top-0 bottom-0 z-50 flex flex-col h-screen w-64 border-r border-slate-800/50 bg-slate-950/80 backdrop-blur-xl" role="navigation" aria-label="Navegação principal">
       <div className="p-8">
         <div className="flex items-center justify-between">
           <div>
@@ -116,7 +117,7 @@ const MobileNavComponent = function MobileNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-1 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]" role="navigation" aria-label="Navegação principal">
+      <nav className="md:hidden fixed bottom-0 left-0 w-full z-50 flex justify-between items-center px-1 pb-6 pt-2 bg-surface/80 backdrop-blur-xl rounded-t-[2rem]" role="navigation" aria-label="Navegação principal">
         {navItemsMobile.map((item) => (
           <NavItemMemo key={item.href} {...item} isActive={pathname === item.href} />
         ))}
@@ -140,7 +141,7 @@ const MobileNavComponent = function MobileNav() {
       </nav>
       
       {showMore && (
-        <div className="fixed bottom-20 left-0 right-0 z-40 mx-4 bg-surface-container rounded-2xl p-4 shadow-xl">
+        <div className="md:hidden fixed bottom-20 left-0 right-0 z-40 mx-4 bg-surface-container rounded-2xl p-4 shadow-xl">
           <div className="grid grid-cols-4 gap-3">
             {navItemsSecondary.map((item) => (
               <NavItemSecondaryMemo 
@@ -164,7 +165,7 @@ const MobileHeaderComponent = function MobileHeader({ hideNotifications = false,
   const pathname = usePathname();
   
   return (
-    <header className="fixed top-0 w-full z-50 bg-surface flex justify-between items-center px-4 py-3">
+    <header className="md:hidden fixed top-0 w-full z-50 bg-surface flex justify-between items-center px-4 py-3">
       <div className="flex-1">
         <span className="text-lg font-bold text-primary">FamFlow</span>
       </div>
@@ -182,7 +183,7 @@ const MobileHeaderComponent = function MobileHeader({ hideNotifications = false,
       </div>
       
       {menuOpen && (
-        <div className="absolute top-full right-4 mt-2 w-48 bg-surface-container rounded-2xl shadow-xl py-2 z-50">
+        <div className="md:hidden absolute top-full right-4 mt-2 w-48 bg-surface-container rounded-2xl shadow-xl py-2 z-50">
           <Link
             href="/dashboard/profile"
             onClick={() => setMenuOpen(false)}

@@ -12,10 +12,10 @@ export function useInfiniteTransactions(userId?: string, month?: string) {
       const from = pageParam * PAGE_SIZE;
       const to = from + PAGE_SIZE - 1;
       
+      // View já tem SECURITY DEFINER - retorna transações da família automaticamente
       let query = supabase
         .from('transactions_decrypted')
         .select('*', { count: 'exact' })
-        .eq('user_id', userId!)
         .order('date', { ascending: false })
         .range(from, to);
       

@@ -67,8 +67,106 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const lastFetchUserId = useRef<string | null>(null);
 
+  const fetchData = async () => {
+    if (!user) return;
+    
+    setLoading(true);
+    
+    try {
+      console.log('[DataProvider] Fetching data for user:', user.id);
+      
+      // Fetch user's family_id
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('family_id')
+        .eq('id', user.id)
+        .single();
+      
+      if (profileError) {
+        console.error('[DataProvider] Error fetching profile:', profileError);
+      }
+      
+      const familyId = profile?.family_id;
+      console.log('[DataProvider] Profile family_id:', familyId);
+      
+      // Fetch data filtered by family_id (or user_id if no family)
+      const filterId = familyId || user.id;
+      const filterType = familyId ? 'family_id' : 'user_id';
+      console.log('[DataProvider] Fetching with filter:', filterType, '=', filterId);
+      
+      const [transactionsData, goalsData, budgetsData] = await Promise.all([
+        supabase
+          .from('transactions_decrypted')
+          .select('*')
+          .eq('family_id', filterId)
+          .order('date', { ascending: false }),
+        
+        supabase
+          .from('goals_decrypted')
+          .select('*')
+          .eq('family_id', filterId)
+          .order('created_at', { ascending: false }),
+        
+        supabase
+          .from('budgets')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('month', { ascending: false }),
+      ]);
+      
+      if (transactionsData.error) {
+        console.error('[DataProvider] Error fetching transactions:', transactionsData.error);
+      } else {
+        console.log('[DataProvider] Fetched', transactionsData.data?.length, 'transactions');
+      }
+      
+      if (transactionsData.data) {
+        const mapped = transactionsData.data.map(t => {
+          const parsedAmount = parseFloat(t.amount) || 0;
+          if (parsedAmount === 0 && t.amount !== '0') {
+            console.warn('[DataProvider] Transaction with invalid amount:', { id: t.id, rawAmount: t.amount, description: t.description });
+          }
+          return {
+            id: t.id,
+            description: t.description || 'Outros',
+            amount: parsedAmount,
+            type: t.type,
+            category: t.category || 'Outros',
+            date: t.date,
+          };
+        });
+        setTransactions(mapped);
+      }
+      
+      if (goalsData.data) {
+        setGoals(goalsData.data.map(g => ({
+          id: g.id,
+          name: g.name,
+          target_amount: parseFloat(g.target_amount),
+          current_amount: parseFloat(g.current_amount),
+          deadline: g.deadline,
+          icon: g.icon,
+          goal_type: g.goal_type,
+          created_at: g.created_at,
+        })));
+      }
+      
+      if (budgetsData.data) {
+        setBudgetsRaw(budgetsData.data);
+      }
+    } catch (error) {
+      console.error('[DataProvider] Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
+    console.log('[DataProvider useEffect] user:', user?.id);
+    console.log('[DataProvider useEffect] isOnline:', isOnline);
+    
     if (!user) {
+      console.log('[DataProvider] No user, clearing data');
       setTransactions([]);
       setGoals([]);
       setBudgetsRaw([]);
@@ -78,96 +176,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     if (lastFetchUserId.current === user.id) {
+      console.log('[DataProvider] Already fetched for this user, skipping');
       return;
     }
     lastFetchUserId.current = user.id;
 
-    const fetchData = async () => {
-      setLoading(true);
-      
-      // Try to load from IndexedDB first (for offline support)
-      const [cachedTransactions, cachedGoals, cachedBudgets] = await Promise.all([
-        offlineDB.getTransactions(user.id),
-        offlineDB.getGoals(user.id),
-        offlineDB.getBudgets(user.id),
-      ]);
-      
-      // Use cached data immediately
-      if (cachedTransactions.length > 0) {
-        setTransactions(cachedTransactions.map(t => ({
-          id: t.id,
-          description: t.description || '',
-          amount: parseFloat(t.amount) || 0,
-          type: t.type,
-          category: t.category,
-          date: t.date,
-        })));
-      }
-      
-      if (cachedGoals.length > 0) {
-        setGoals(cachedGoals.map(g => ({
-          id: g.id,
-          name: g.name,
-          target_amount: parseFloat(g.target_amount) || 0,
-          current_amount: parseFloat(g.current_amount) || 0,
-          deadline: g.deadline,
-          icon: g.icon || 'savings',
-          goal_type: g.goal_type || 'savings',
-          created_at: g.created_at,
-        })));
-      }
-      
-      if (cachedBudgets.length > 0) {
-        setBudgetsRaw(cachedBudgets);
-      }
-      
-      // If online, fetch fresh data from server
-      if (isOnline) {
-        const [transResult, goalsResult, budgetsResult] = await Promise.all([
-          supabase.from('transactions_decrypted').select('*').eq('user_id', user.id).order('date', { ascending: false }),
-          supabase.from('goals_decrypted').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
-          supabase.from('budgets').select('*').eq('user_id', user.id).order('created_at', { ascending: false }),
-        ]);
-        
-        if (transResult.data) {
-          const validTransactions = transResult.data.filter(t => 
-            t.description && t.description.trim() !== '' && 
-            t.amount && parseFloat(t.amount) > 0
-          );
-          setTransactions(validTransactions.map(t => ({
-            id: t.id,
-            description: t.description || '',
-            amount: parseFloat(t.amount) || 0,
-            type: t.type,
-            category: t.category,
-            date: t.date,
-          })));
-        }
-
-        if (goalsResult.data) {
-          setGoals(goalsResult.data.map(g => ({
-            id: g.id,
-            name: g.name,
-            target_amount: parseFloat(g.target_amount) || 0,
-            current_amount: parseFloat(g.current_amount) || 0,
-            deadline: g.deadline,
-            icon: g.icon || 'savings',
-            goal_type: g.goal_type || 'savings',
-            created_at: g.created_at,
-          })));
-        }
-
-        if (budgetsResult.data) {
-          setBudgetsRaw(budgetsResult.data);
-        }
-        
-        // Cache the fresh data
-        await fetchAndCache();
-      }
-
-      setLoading(false);
-    };
-
+    console.log('[DataProvider] Calling fetchData...');
     fetchData();
   }, [user, isOnline]);
 
@@ -218,6 +232,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      console.log('[addTransaction] Calling RPC with:', { p_user_id: user.id, p_amount: t.amount, p_description: t.description });
+      
       const { error: insertError, data: newId } = await supabase
         .rpc('insert_transaction', {
           p_user_id: user.id,
@@ -228,7 +244,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
           p_date: t.date,
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('[addTransaction] RPC error:', insertError);
+        throw insertError;
+      }
+      
+      console.log('[addTransaction] RPC success, newId:', newId);
       
       // Small delay to ensure DB is updated
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -237,7 +258,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const { data: recentTransactions, error: fetchError } = await supabase
         .from('transactions_decrypted')
         .select('*')
-        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(5);
 
@@ -386,7 +406,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const { data: spentTransactions, error: spentError } = await supabase
         .from('transactions_decrypted')
         .select('amount')
-        .eq('user_id', user.id)
         .eq('type', 'expense')
         .eq('category', category)
         .gte('date', startDateStr)

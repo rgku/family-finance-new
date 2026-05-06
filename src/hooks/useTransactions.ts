@@ -22,10 +22,12 @@ export function useTransactions(userId?: string, month?: string, limit = 50) {
         throw new Error('userId is required');
       }
       
+      console.log('[useTransactions] Querying for userId:', userId, 'month:', month);
+      
+      // View já tem SECURITY DEFINER - retorna transações da família automaticamente
       let query = supabase
         .from('transactions_decrypted')
         .select('*', { count: 'exact' })
-        .eq('user_id', userId)
         .order('date', { ascending: false })
         .limit(limit);
       
@@ -34,6 +36,10 @@ export function useTransactions(userId?: string, month?: string, limit = 50) {
       }
       
       const { data, error } = await query;
+      
+      console.log('[useTransactions] Results:', data?.length || 0, 'transactions');
+      console.log('[useTransactions] Error:', error);
+      
       if (error) throw error;
       return data;
     },

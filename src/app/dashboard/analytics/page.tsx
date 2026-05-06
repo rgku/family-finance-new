@@ -10,7 +10,7 @@ import { useSpendingPower } from "@/hooks/useSpendingPower";
 import { useFiscalSnapshot } from "@/hooks/useFiscalSnapshot";
 import { useSubscriptionTracker } from "@/hooks/useSubscriptionTracker";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
-import { isDateInCustomMonth, formatCustomMonth, getCustomMonthRange } from "@/lib/dateUtils";
+import { isDateInCustomMonth, formatCustomMonth, getCustomMonthForSelection } from "@/lib/dateUtils";
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
 import { MonthlyTrendChart } from "@/components/charts/MonthlyTrendChart";
 import { ExpenseChart } from "@/components/charts/ExpenseChart";
@@ -28,8 +28,7 @@ export default function AnalyticsPage() {
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     if (billingDay > 1) {
-      const { startDate } = getCustomMonthRange(billingDay, now);
-      return `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}`;
+      return getCustomMonthForSelection(billingDay, now);
     }
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
@@ -470,21 +469,53 @@ const pageContent = (
             <Icon name="flag" size={20} className="text-secondary" />
             Metas
           </h3>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="space-y-4">
             {dataGoals.map((goal) => {
               const progress = goal.target_amount > 0 ? (goal.current_amount / goal.target_amount) * 100 : 0;
               const isCompleted = progress >= 100;
+              const remaining = goal.target_amount - goal.current_amount;
+              const monthlySavings = goal.deadline ? (remaining / 12) : 0;
+              
+              const deadlineDate = goal.deadline ? new Date(goal.deadline) : null;
+              const deadlineStr = deadlineDate ? `Até ${String(deadlineDate.getMonth() + 1).padStart(2, "0")}/${deadlineDate.getFullYear()}` : '';
+              
               return (
-                <div key={goal.id} className="flex flex-col items-center">
-                  <ProgressRing
-                    progress={progress}
-                    size={80}
-                    strokeWidth={6}
-                    color={isCompleted ? "#10b981" : "#8b5cf6"}
-                    showPercentage={true}
-                  />
-                  <p className="text-xs text-center mt-2 font-medium truncate w-full">{goal.name}</p>
-                  <p className="text-xs text-on-surface-variant">{formatCurrencyWithSymbol(goal.current_amount)}</p>
+                <div key={goal.id} className="bg-surface-container-high rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex-1">
+                      <h4 className="font-bold text-on-surface">{goal.name}</h4>
+                      <p className="text-xs text-on-surface-variant mt-0.5">
+                        {formatCurrencyWithSymbol(goal.current_amount)} de {formatCurrencyWithSymbol(goal.target_amount)}
+                      </p>
+                    </div>
+                    <span className={`text-sm font-bold ${isCompleted ? 'text-green-500' : 'text-red-500'}`}>
+                      {Math.round(progress)}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-surface-container-highest h-3 rounded-full overflow-hidden mb-3">
+                    <div 
+                      className={`h-full rounded-full transition-all duration-500 ${isCompleted ? 'bg-green-500' : 'bg-red-500'}`} 
+                      style={{ width: `${progress}%` }} 
+                    />
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-1 text-on-surface-variant">
+                      <Icon name="trending_up" size={14} />
+                      <span>Faltam {formatCurrencyWithSymbol(remaining)}</span>
+                    </div>
+                    {deadlineStr && (
+                      <div className="flex items-center gap-1 text-on-surface-variant">
+                        <Icon name="calendar" size={14} />
+                        <span>{deadlineStr}</span>
+                      </div>
+                    )}
+                    {monthlySavings > 0 && (
+                      <div className="flex items-center gap-1 text-primary">
+                        <Icon name="lightbulb" size={14} />
+                        <span>Poupa {formatCurrencyWithSymbol(monthlySavings)}/mês</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -501,7 +532,8 @@ const pageContent = (
 
       <FiscalSnapshotCard />
 
-      <SubscriptionTrackerCard />
+      {/* TODO: Hide SubscriptionTrackerCard until further development */}
+      {/* <SubscriptionTrackerCard /> */}
 
       <div className="bg-surface-container rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">

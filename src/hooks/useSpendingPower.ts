@@ -42,14 +42,7 @@ export function useSpendingPower(): SpendingPower {
 
     const balance = income - expenses;
 
-    const activeGoals = goals.filter((g) => {
-      const progress = g.target_amount > 0 ? (g.current_amount / g.target_amount) * 100 : 0;
-      return progress < 100;
-    });
-    const goalsAllocated = activeGoals.reduce((sum, g) => {
-      const monthlyContribution = g.target_amount / 12;
-      return sum + Math.min(monthlyContribution, g.target_amount - g.current_amount);
-    }, 0);
+    const goalsAllocated = goals.reduce((sum, g) => sum + g.current_amount, 0);
 
     const monthlyBudgets = budgets.filter((b) => b.limit > 0);
     const totalBudget = monthlyBudgets.reduce((sum, b) => sum + b.limit, 0);

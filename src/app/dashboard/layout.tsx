@@ -13,7 +13,7 @@ export default function DashboardLayout({
   return (
     <>
       <DesktopSidebar onSignOut={signOut} />
-      <div className="ml-64 min-h-screen bg-surface">
+      <div className="md:ml-64 min-h-screen bg-surface">
         {children}
       </div>
       <MobileNav />

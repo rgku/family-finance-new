@@ -2,11 +2,11 @@
 
 import { useState, useMemo, Suspense } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { useData } from "@/hooks/DataProvider";
+import { useData, type Transaction } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol, calculatePercentage, calculateMonthChange } from "@/lib/currency";
 import { useSpendingPower } from "@/hooks/useSpendingPower";
-import { isDateInCustomMonth, formatCustomMonth, getCustomMonthRange } from "@/lib/dateUtils";
+import { isDateInCustomMonth, formatCustomMonth, getCustomMonthForSelection } from "@/lib/dateUtils";
 import Link from "next/link";
 
 import { MobileHeader } from "@/components/Sidebar";
@@ -29,8 +29,7 @@ export default function Dashboard() {
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     if (billingDay > 1) {
-      const { startDate } = getCustomMonthRange(billingDay, now);
-      return `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}`;
+      return getCustomMonthForSelection(billingDay, now);
     }
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
@@ -48,14 +47,18 @@ export default function Dashboard() {
   const canGoNext = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);
 
   const filteredTransactions = useMemo(() => {
+    let filtered: Transaction[] = [];
     if (!transactions.length) return [];
     if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
-      return transactions.filter(t => isDateInCustomMonth(t.date, billingDay, year, month));
+      filtered = transactions.filter(t => isDateInCustomMonth(t.date, billingDay, year, month));
+    } else {
+      filtered = transactions.filter(t => {
+        const transDate = new Date(t.date);
+        return transDate.getFullYear() === year && transDate.getMonth() === month - 1;
+      });
     }
-    return transactions.filter(t => {
-      const transDate = new Date(t.date);
-      return transDate.getFullYear() === year && transDate.getMonth() === month - 1;
-    });
+    // Sort by date descending (most recent first)
+    return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [transactions, year, month, profile?.billing_cycle_day, billingDay]);
 
   const { totalIncome, totalExpenses, totalPoupanca, balance, savingsGoals, expenseGoals, expenseByCategory } = useMemo(() => {
@@ -317,6 +320,8 @@ export default function Dashboard() {
                 <p className="text-lg sm:text-xl font-bold text-secondary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.poupar)}</p>
               </div>
             </div>
+
+            <InMyPocketSmallCard />
           </div>
 
           <div className="space-y-6">
