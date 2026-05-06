@@ -1,0 +1,30 @@
+name: Backup to GitLab
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - test
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Mirror to GitLab
+        uses: pixta-dev/repository-mirroring-action@v1
+        with:
+          target_repo_url:
+            https://gitlab.com/bernardo.ferreira2-group/family-finance-new.git
+          gitlab_url:
+            https://gitlab.com
+        env:
+          GITLAB_USERNAME: bernardo.ferreira2-group
+          GITLAB_PASSWORD: ${{ secrets.GITLAB_PASSWORD }}
