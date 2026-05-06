@@ -10,7 +10,7 @@ import { useSpendingPower } from "@/hooks/useSpendingPower";
 import { useFiscalSnapshot } from "@/hooks/useFiscalSnapshot";
 import { useSubscriptionTracker } from "@/hooks/useSubscriptionTracker";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
-import { isDateInCustomMonth, formatCustomMonth, getCustomMonthRange } from "@/lib/dateUtils";
+import { isDateInCustomMonth, formatCustomMonth, getCustomMonthForSelection } from "@/lib/dateUtils";
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
 import { MonthlyTrendChart } from "@/components/charts/MonthlyTrendChart";
 import { ExpenseChart } from "@/components/charts/ExpenseChart";
@@ -28,8 +28,7 @@ export default function AnalyticsPage() {
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     if (billingDay > 1) {
-      const { startDate } = getCustomMonthRange(billingDay, now);
-      return `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}`;
+      return getCustomMonthForSelection(billingDay, now);
     }
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });

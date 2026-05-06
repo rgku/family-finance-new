@@ -6,7 +6,7 @@ import { useData } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol, calculatePercentage, calculateMonthChange } from "@/lib/currency";
 import { useSpendingPower } from "@/hooks/useSpendingPower";
-import { isDateInCustomMonth, formatCustomMonth, getCustomMonthRange } from "@/lib/dateUtils";
+import { isDateInCustomMonth, formatCustomMonth, getCustomMonthForSelection } from "@/lib/dateUtils";
 import Link from "next/link";
 
 import { MobileHeader } from "@/components/Sidebar";
@@ -29,8 +29,7 @@ export default function Dashboard() {
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     if (billingDay > 1) {
-      const { startDate } = getCustomMonthRange(billingDay, now);
-      return `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, "0")}`;
+      return getCustomMonthForSelection(billingDay, now);
     }
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
