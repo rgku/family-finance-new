@@ -16,15 +16,13 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: false
 
-      - name: Mirror to GitLab
-        uses: pixta-dev/repository-mirroring-action@v1
-        with:
-          target_repo_url:
-            https://gitlab.com/bernardo.ferreira2-group/family-finance-new.git
-          gitlab_url:
-            https://gitlab.com
+      - name: Push to GitLab
+        run: |
+          git remote add gitlab https://gitlab.com/bernardo.ferreira2-group/family-finance-new.git
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git push --all gitlab --force
+          git push --tags gitlab --force
         env:
-          GITLAB_USERNAME: bernardo.ferreira2-group
-          GITLAB_PASSWORD: ${{ secrets.GITLAB_PASSWORD }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_PASSWORD }}
