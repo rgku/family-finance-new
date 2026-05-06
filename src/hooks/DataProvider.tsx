@@ -232,6 +232,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     try {
+      console.log('[addTransaction] Calling RPC with:', { p_user_id: user.id, p_amount: t.amount, p_description: t.description });
+      
       const { error: insertError, data: newId } = await supabase
         .rpc('insert_transaction', {
           p_user_id: user.id,
@@ -242,7 +244,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
           p_date: t.date,
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('[addTransaction] RPC error:', insertError);
+        throw insertError;
+      }
+      
+      console.log('[addTransaction] RPC success, newId:', newId);
       
       // Small delay to ensure DB is updated
       await new Promise(resolve => setTimeout(resolve, 300));
