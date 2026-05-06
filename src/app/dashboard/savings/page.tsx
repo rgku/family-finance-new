@@ -62,13 +62,13 @@ export default function SavingsPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6 px-4 md:px-0">
           <div>
-            <label className="block text-sm font-medium text-on-surface-variant mb-2">
+            <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
               Meta
             </label>
             <select
               value={selectedGoalId}
               onChange={(e) => setSelectedGoalId(e.target.value)}
-              className="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface"
               required
             >
               <option value="">Selecione uma meta</option>
@@ -85,10 +85,10 @@ export default function SavingsPage() {
             </select>
 
             {selectedGoal && (
-              <div className="mt-3 bg-surface-container rounded-lg p-4 space-y-3">
+              <div className="mt-3 bg-surface-container rounded-2xl p-5 space-y-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                    <Icon name={selectedGoal.icon as any || "target"} size={20} className="text-primary" />
+                  <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center">
+                    <Icon name={selectedGoal.icon as any || "target"} size={24} className="text-primary" />
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-on-surface">{selectedGoal.name}</h3>
@@ -113,11 +113,11 @@ export default function SavingsPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-on-surface-variant mb-2">
+            <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
               Valor (€)
             </label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">€</span>
+              <span className="absolute left-5 top-1/2 -translate-y-1/2 text-on-surface-variant font-bold">€</span>
               <input
                 type="number"
                 step="0.01"
@@ -125,27 +125,27 @@ export default function SavingsPage() {
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0,00"
-                className="w-full bg-surface border border-surface-variant rounded-lg pl-8 pr-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full bg-surface-container-low border-none rounded-2xl pl-12 pr-5 py-4 text-on-surface"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-on-surface-variant mb-2">
+            <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
               Data
             </label>
             <input
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface [color-scheme:dark]"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-on-surface-variant mb-2">
+            <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
               Descrição (opcional)
             </label>
             <input
@@ -153,14 +153,14 @@ export default function SavingsPage() {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Ex: Mais um passo para as férias..."
-              className="w-full bg-surface border border-surface-variant rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-primary"
+              className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary hover:bg-primary/90 disabled:bg-slate-700 text-on-primary font-bold py-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-primary hover:bg-primary/90 disabled:bg-slate-700 text-on-primary font-bold py-4 rounded-2xl transition-colors flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
