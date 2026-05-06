@@ -117,7 +117,12 @@ export async function GET(request: NextRequest) {
       .filter(t => t.type === "expense" && t.category !== "Investimentos")
       .reduce((s, t) => s + Number(t.amount), 0);
 
-    const savingsAllocated = (goalsResult.data || [])
+    const monthGoals = (goalsResult.data || []).filter((g) => {
+      if (!g.created_at) return false;
+      return isInMonth(g.created_at);
+    });
+
+    const savingsAllocated = monthGoals
       .filter((g) => g.goal_type === "savings")
       .reduce((s, g) => s + Number(g.current_amount), 0);
 
