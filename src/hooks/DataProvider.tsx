@@ -123,10 +123,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (transactionsData.data) {
         setTransactions(transactionsData.data.map(t => ({
           id: t.id,
-          description: t.description,
-          amount: parseFloat(t.amount),
+          description: t.description || 'Outros',
+          amount: parseFloat(t.amount) || 0,
           type: t.type,
-          category: t.category,
+          category: t.category || 'Outros',
           date: t.date,
         })));
       }
