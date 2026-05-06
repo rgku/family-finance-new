@@ -48,6 +48,9 @@ export function useSubscriptionTracker(): SubscriptionTracker {
       )
     );
 
+    // Sort by date descending (most recent first)
+    streamingTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
     const detectedSubscriptions = new Map<string, Subscription>();
 
     streamingTransactions.forEach((t) => {
@@ -58,10 +61,6 @@ export function useSubscriptionTracker(): SubscriptionTracker {
       const transDate = new Date(t.date);
 
       if (existing) {
-        if (transDate > new Date(existing.lastCharged)) {
-          existing.lastCharged = t.date;
-          existing.amount = t.amount;
-        }
         existing.totalCharged += t.amount;
       } else {
         detectedSubscriptions.set(key, {
