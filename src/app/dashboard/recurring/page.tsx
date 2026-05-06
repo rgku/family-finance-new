@@ -26,7 +26,7 @@ export default function RecurringPage() {
     }
   };
 
-  const handleEdit = (rec: typeof recurring[number]) => {
+  const handleEdit = (rec: RecurringTransaction) => {
     setEditingRec(rec);
     setShowForm(true);
   };
