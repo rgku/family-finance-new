@@ -54,7 +54,13 @@ export function useSubscriptionTracker(): SubscriptionTracker {
     const detectedSubscriptions = new Map<string, Subscription>();
 
     streamingTransactions.forEach((t) => {
-      const key = t.category || t.description;
+      // Extract service name from description or category (e.g., "Netflix" from "Netflix Lazer")
+      const matchedService = STREAMING_CATEGORIES.find((cat) =>
+        t.description?.toLowerCase().includes(cat.toLowerCase()) ||
+        t.category?.toLowerCase().includes(cat.toLowerCase())
+      );
+      
+      const key = matchedService || t.category || t.description;
       if (!key) return;
 
       const existing = detectedSubscriptions.get(key);
