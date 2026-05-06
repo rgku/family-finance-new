@@ -53,6 +53,8 @@ import {
   PartyPopper,
   Gamepad2,
   RefreshCw,
+  Play,
+  Pause,
   type LucideProps,
 } from 'lucide-react';
 
@@ -125,6 +127,9 @@ const iconMap: Record<string, React.FC<LucideProps>> = {
   celebration: PartyPopper,
   sports_esports: Gamepad2,
   refresh: RefreshCw,
+  play_arrow: Play,
+  play: Play,
+  pause: Pause,
 };
 
 interface IconProps {
