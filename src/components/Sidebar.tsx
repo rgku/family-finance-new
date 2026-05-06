@@ -8,7 +8,6 @@ import { NotificationBell } from "./NotificationBell";
 
 const navItemsMobile = [
   { href: "/dashboard", icon: "home", label: "Home" },
-  { href: "/dashboard/goals", icon: "track_changes", label: "Metas" },
 ];
 
 const navItemsSecondary = [

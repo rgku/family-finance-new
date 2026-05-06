@@ -320,6 +320,8 @@ export default function Dashboard() {
                 <p className="text-lg sm:text-xl font-bold text-secondary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.poupar)}</p>
               </div>
             </div>
+
+            <InMyPocketSmallCard />
           </div>
 
           <div className="space-y-6">
