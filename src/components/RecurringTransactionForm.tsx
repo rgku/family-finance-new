@@ -21,7 +21,7 @@ export function RecurringTransactionForm({ recurring, onSuccess, onCancel }: Rec
     amount: "",
     category: "",
     type: "expense" as "income" | "expense",
-    frequency: "monthly" as const,
+    frequency: "monthly" as RecurringTransaction["frequency"],
     start_date: new Date().toISOString().split("T")[0],
     day_of_month: new Date().getDate(),
     auto_create: true,
