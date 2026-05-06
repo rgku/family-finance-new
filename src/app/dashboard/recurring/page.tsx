@@ -8,12 +8,13 @@ import { formatCurrencyWithSymbol } from "@/lib/currency";
 import { Icon } from "@/components/Icon";
 import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
 import { useDeviceType } from "@/hooks/useDeviceType";
+import type { RecurringTransaction } from "@/hooks/useRecurringTransactions";
 
 export default function RecurringPage() {
   const { user, signOut } = useAuth();
   const isMobile = useDeviceType();
   const [showForm, setShowForm] = useState(false);
-  const [editingRec, setEditingRec] = useState<typeof recurring[number] | null>(null);
+  const [editingRec, setEditingRec] = useState<RecurringTransaction | null>(null);
   
   const { data: recurring, isLoading } = useRecurringTransactions(user?.id);
   const deleteMutation = useDeleteRecurring();
