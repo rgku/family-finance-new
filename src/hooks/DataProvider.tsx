@@ -121,14 +121,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
       
       if (transactionsData.data) {
-        setTransactions(transactionsData.data.map(t => ({
-          id: t.id,
-          description: t.description || 'Outros',
-          amount: parseFloat(t.amount) || 0,
-          type: t.type,
-          category: t.category || 'Outros',
-          date: t.date,
-        })));
+        const mapped = transactionsData.data.map(t => {
+          const parsedAmount = parseFloat(t.amount) || 0;
+          if (parsedAmount === 0 && t.amount !== '0') {
+            console.warn('[DataProvider] Transaction with invalid amount:', { id: t.id, rawAmount: t.amount, description: t.description });
+          }
+          return {
+            id: t.id,
+            description: t.description || 'Outros',
+            amount: parsedAmount,
+            type: t.type,
+            category: t.category || 'Outros',
+            date: t.date,
+          };
+        });
+        setTransactions(mapped);
       }
       
       if (goalsData.data) {
