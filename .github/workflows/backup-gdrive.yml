@@ -1,0 +1,32 @@
+name: Backup to Google Drive
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create ZIP backup
+        run: |
+          zip -r family-finance-new-backup-$(date +%Y%m%d).zip . \
+            --exclude=".git/*" \
+            --exclude="node_modules/*" \
+            --exclude=".next/*"
+
+      - name: Upload to Google Drive
+        uses: burnett01/rsync-deployments@7.0.1
+        with:
+          switches: -avz --delete
+          path: family-finance-new-backup-*.zip
+          remote_path: ${{ secrets.GDRIVE_BACKUP_PATH }}
+          remote_host: ${{ secrets.GDRIVE_HOST }}
+          remote_user: ${{ secrets.GDRIVE_USER }}
+          remote_key: ${{ secrets.GDRIVE_SSH_KEY }}
