@@ -13,6 +13,7 @@ export default function RecurringPage() {
   const { user, signOut } = useAuth();
   const isMobile = useDeviceType();
   const [showForm, setShowForm] = useState(false);
+  const [editingRec, setEditingRec] = useState<typeof recurring[number] | null>(null);
   
   const { data: recurring, isLoading } = useRecurringTransactions(user?.id);
   const deleteMutation = useDeleteRecurring();
@@ -22,6 +23,11 @@ export default function RecurringPage() {
     if (confirm("Tens a certeza que queres eliminar esta recorrência?")) {
       await deleteMutation.mutateAsync(id);
     }
+  };
+
+  const handleEdit = (rec: typeof recurring[number]) => {
+    setEditingRec(rec);
+    setShowForm(true);
   };
 
   const handleToggle = async (id: string, enabled: boolean) => {
@@ -60,17 +66,29 @@ export default function RecurringPage() {
         <div className="max-w-2xl">
           <div className="mb-6">
             <button
-              onClick={() => setShowForm(false)}
+              onClick={() => {
+                setShowForm(false);
+                setEditingRec(null);
+              }}
               className="text-primary hover:underline text-sm"
             >
               ← Voltar
             </button>
           </div>
           <div className="bg-surface-container rounded-2xl p-6">
-            <h2 className="text-xl font-bold text-on-surface mb-6">Nova Transação Recorrente</h2>
+            <h2 className="text-xl font-bold text-on-surface mb-6">
+              {editingRec ? "Editar Transação Recorrente" : "Nova Transação Recorrente"}
+            </h2>
             <RecurringTransactionForm
-              onSuccess={() => setShowForm(false)}
-              onCancel={() => setShowForm(false)}
+              recurring={editingRec}
+              onSuccess={() => {
+                setShowForm(false);
+                setEditingRec(null);
+              }}
+              onCancel={() => {
+                setShowForm(false);
+                setEditingRec(null);
+              }}
             />
           </div>
         </div>
@@ -154,15 +172,22 @@ export default function RecurringPage() {
 
                 <div className="flex items-center gap-2">
                   <button
+                    onClick={() => handleEdit(rec)}
+                    className="p-2 rounded-full bg-surface-container-high text-on-surface-variant hover:bg-primary/20 hover:text-primary transition-colors"
+                    title="Editar"
+                  >
+                    <Icon name="edit" size={20} />
+                  </button>
+                  <button
                     onClick={() => handleToggle(rec.id, rec.enabled)}
                     className={`p-2 rounded-full transition-colors ${
                       rec.enabled
                         ? "bg-primary/20 text-primary hover:bg-primary/30"
                         : "bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest"
                     }`}
-                    title={rec.enabled ? "Desativar" : "Ativar"}
+                    title={rec.enabled ? "Pausar" : "Ativar"}
                   >
-                    <Icon name={rec.enabled ? "pause" : "play_arrow"} size={20} />
+                    <Icon name={rec.enabled ? "play_arrow" : "pause"} size={20} />
                   </button>
                   <button
                     onClick={() => handleDelete(rec.id)}

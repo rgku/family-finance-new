@@ -182,11 +182,10 @@ export function useOfflineSync() {
     if (!user || !isOnline) return;
 
     try {
-      // Fetch transactions
+      // Fetch transactions (view já inclui família via SECURITY DEFINER)
       const { data: transactions } = await supabase
         .from('transactions_decrypted')
         .select('*')
-        .eq('user_id', user.id)
         .order('date', { ascending: false });
 
       if (transactions) {
