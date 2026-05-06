@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useFamilyMembers } from "@/hooks/useFamilyMembers";
-import { useDeviceType } from "@/hooks/useDeviceType";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/Icon";
@@ -16,10 +15,8 @@ export default function FamilyPage() {
     userRole, 
     loading, 
     inviteMember, 
-    updateMember, 
     removeMember 
   } = useFamilyMembers();
-  const isMobile = useDeviceType();
   const router = useRouter();
   
   const [isInviting, setIsInviting] = useState(false);

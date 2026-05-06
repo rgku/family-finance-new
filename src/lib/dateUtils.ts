@@ -71,20 +71,4 @@ export function isDateInCustomMonth(dateStr: string, billingDay: number, display
   return dateStr >= startStr && dateStr <= endStr;
 }
 
-export function getCustomMonthForDate(dateStr: string, billingDay: number): { year: number, month: number } {
-  // Given a transaction date, determine which billing cycle month it belongs to
-  const date = new Date(dateStr);
-  const year = date.getFullYear();
-  const month = date.getMonth(); // 0-indexed
-  const day = date.getDate();
-  
-  if (day >= billingDay) {
-    // Transaction is on or after billing day → belongs to NEXT month
-    const nextMonth = month + 1;
-    const nextYear = nextMonth > 11 ? year + 1 : year;
-    return { year: nextYear, month: nextMonth + 1 }; // Return 1-indexed month
-  } else {
-    // Transaction is before billing day → belongs to CURRENT month
-    return { year, month: month + 1 }; // Return 1-indexed month
-  }
-}
+

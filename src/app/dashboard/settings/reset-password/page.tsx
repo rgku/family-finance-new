@@ -73,7 +73,7 @@ export default function ResetPasswordPage() {
           router.push("/");
         }, 2000);
       }
-    } catch (err) {
+    } catch {
       setError("Erro ao redefinir password");
     } finally {
       setLoading(false);

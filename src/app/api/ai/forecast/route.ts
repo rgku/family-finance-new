@@ -52,7 +52,7 @@ async function generateForecast(data: AIForecastPayload) {
   });
 }
 
-function computeBaselineForecast(history: { amount: number; month: string }[], _category: string): { predictedAmount: number; confidenceLow: number; confidenceHigh: number; trend: "up" | "down" | "stable"; changePercent: number } {
+function computeBaselineForecast(history: { amount: number; month: string }[]): { predictedAmount: number; confidenceLow: number; confidenceHigh: number; trend: "up" | "down" | "stable"; changePercent: number } {
   if (history.length === 0) {
     return { predictedAmount: 0, confidenceLow: 0, confidenceHigh: 0, trend: "stable", changePercent: 0 };
   }
@@ -166,7 +166,7 @@ export async function GET(request: NextRequest) {
     } catch (aiError) {
       console.warn("AI forecast generation failed, using baseline:", aiError);
       const baselines = Object.entries(historyByCategory).map(([category, history]) => {
-        const baseline = computeBaselineForecast(history, category);
+        const baseline = computeBaselineForecast(history);
         return {
           category,
           predictedAmount: baseline.predictedAmount,

@@ -8,7 +8,7 @@ import { Icon } from "@/components/Icon";
 
 export default function ProfilePage() {
   const { user, signOut } = useAuth();
-  const { transactions, goals, budgets, loading } = useData();
+  const { transactions, goals } = useData();
 
   const { totalIncome, totalExpenses } = useMemo(() => {
     const inc = transactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);

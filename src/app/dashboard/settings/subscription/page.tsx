@@ -9,7 +9,7 @@ import { Icon } from "@/components/Icon";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 
 export default function SubscriptionPage() {
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
   const isMobile = useDeviceType();
   const { currentPlan, isLoading, trialEndsAt } = useSubscription();
   const createCheckout = useCreateCheckoutSession();

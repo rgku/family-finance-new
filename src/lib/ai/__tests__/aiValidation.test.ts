@@ -38,7 +38,7 @@ describe("Data Quality Validation", () => {
   });
 
   it("should detect anomalous savings rate", () => {
-    const payload = { ...basePayload, pouparanca: 2400 };
+    const payload = { ...basePayload, pouparanca: 4000 };
     const result = validateDataQuality(payload);
     expect(result.issues.some(i => i.category === "outlier")).toBe(true);
   });

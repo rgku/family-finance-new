@@ -3,13 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/AuthProvider';
-import { useSupabase } from '@/hooks/useSupabase';
 import { EXPENSE_CATEGORIES } from '@/lib/constants';
 
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, profile, updateProfile } = useAuth();
-  const supabase = useSupabase();
   
   const [fullName, setFullName] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -43,9 +41,9 @@ export default function OnboardingPage() {
 
       // 3. Redirect to dashboard
       router.push('/dashboard');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Onboarding error:', err);
-      setError(err.message || 'Erro ao completar configuração');
+      setError(err instanceof Error ? err.message : 'Erro ao completar configuração');
     } finally {
       setLoading(false);
     }

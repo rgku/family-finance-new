@@ -6,7 +6,7 @@ import { useRecurringTransactions, useDeleteRecurring, useToggleRecurring, type 
 import { RecurringTransactionForm } from "@/components/RecurringTransactionForm";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import { Icon } from "@/components/Icon";
-import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
+import { MobileHeader, MobileNav } from "@/components/Sidebar";
 import { useDeviceType } from "@/hooks/useDeviceType";
 
 export default function RecurringPage() {

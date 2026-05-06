@@ -92,7 +92,7 @@ interface ReportData {
 
 export default function ReportsPage() {
   const { signOut } = useAuth();
-  const { transactions, goals, budgets } = useData();
+  const { transactions, goals } = useData();
   const isMobile = useDeviceType();
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<ReportData | null>(null);
@@ -109,6 +109,7 @@ export default function ReportsPage() {
     let cancelled = false;
     const controller = new AbortController();
     
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     fetch(`/api/reports/monthly?month=${selectedMonth}`, { cache: "no-store", signal: controller.signal })
       .then(res => res.json())

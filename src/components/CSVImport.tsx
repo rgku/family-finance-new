@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useToast } from '@/components/Toast';
 import { useData } from '@/hooks/DataProvider';
-import { Upload, FileSpreadsheet, CheckCircle, AlertCircle, X } from 'lucide-react';
+import { Upload, FileSpreadsheet, X } from 'lucide-react';
 import { formatCurrencyWithSymbol } from '@/lib/currency';
 
 export interface ParsedTransaction {
@@ -66,7 +66,7 @@ function parseCSVContent(content: string): ParsedTransaction[] {
     }
 
     const amountStr = values[amountIdx]?.replace(/[€$]/g, '').replace(',', '.').trim();
-    let amount = parseFloat(amountStr);
+    const amount = parseFloat(amountStr);
     
     if (isNaN(amount)) continue;
 
@@ -102,7 +102,7 @@ interface CSVImportProps {
 export function CSVImport({ onClose }: CSVImportProps) {
   const { showToast } = useToast();
   const { addTransaction } = useData();
-  const [parsing, setParsing] = useState(false);
+  const [, setParsing] = useState(false);
   const [parsed, setParsed] = useState<ParsedTransaction[] | null>(null);
   const [importing, setImporting] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);

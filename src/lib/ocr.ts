@@ -54,7 +54,7 @@ export function parseReceiptText(text: string): OCRResult {
   const lines = sanitizedText.split('\n').filter(line => line.trim().length > 0);
   
   const merchant = extractMerchant(lines);
-  const { total, confidence: totalConfidence } = extractTotal(sanitizedText);
+  const { total, confidence: _totalConfidence } = extractTotal(sanitizedText);
   const date = extractDate(sanitizedText);
   const confidence = calculateConfidence(merchant, total, date);
   
@@ -248,7 +248,7 @@ function isLikelyData(line: string): boolean {
 
 function calculateConfidence(merchant: string, total: number, date: string): number {
   let score = 0;
-  let maxScore = 3;
+  const maxScore = 3;
   
   if (merchant && merchant.length > 2) score++;
   if (total > 0) score++;

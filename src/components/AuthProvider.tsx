@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
@@ -39,10 +39,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
   const router = useRouter();
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -62,9 +61,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           family_id: data.family_id || null,
         });
       }
-    } catch (err) {
+    } catch (error) {
+      console.error('[AuthProvider] Error fetching profile:', error);
     }
-  };
+  }, [supabase]);
 
   const updateProfile = async (updates: Partial<Profile>) => {
     if (!user) return;
@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-
+    
     const initializeAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -89,72 +89,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!mounted) return;
         
         if (session?.user) {
-          console.log('[AuthProvider] Session user found:', session.user.email, 'Confirmed:', !!session.user.email_confirmed_at);
-          if (session.user.email_confirmed_at) {
-            setUser(session.user);
-            await fetchProfile(session.user.id);
-          } else {
-            // Email not confirmed - try refreshing session
-            console.log('[AuthProvider] Email not confirmed, trying refresh...');
-            const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
-            if (refreshedSession?.user?.email_confirmed_at) {
-              console.log('[AuthProvider] Refresh successful, email now confirmed!');
-              setUser(refreshedSession.user);
-              await fetchProfile(refreshedSession.user.id);
-            } else {
-              console.log('[AuthProvider] Refresh failed, signing out');
-              await supabase.auth.signOut();
-              setUser(null);
-            }
-          }
-        } else {
-          const { data: { user: serverUser } } = await supabase.auth.getUser();
-          if (!mounted) return;
-          
-          if (serverUser?.email_confirmed_at) {
-            setUser(serverUser);
-            await fetchProfile(serverUser.id);
-          } else if (serverUser) {
-            await supabase.auth.signOut();
-            setUser(null);
-          }
+          setUser(session.user);
+          await fetchProfile(session.user.id);
         }
       } catch (error) {
+        console.error('[AuthProvider] Error:', error);
       } finally {
         if (mounted) {
           setLoading(false);
-          setInitialized(true);
         }
       }
     };
-
+    
     initializeAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
         
-        if (!initialized && event === 'INITIAL_SESSION') {
-          setInitialized(true);
-          return;
-        }
-        
-        // Handle email confirmation
-        if (event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
-          console.log('[AuthProvider] Auth event:', event, 'Refreshing session...');
-          // Refresh session to get updated user metadata
-          const { data: { session: refreshedSession } } = await supabase.auth.getSession();
-          if (refreshedSession?.user?.email_confirmed_at) {
-            console.log('[AuthProvider] Email confirmed after refresh!');
-            setUser(refreshedSession.user);
-            await fetchProfile(refreshedSession.user.id);
-            return;
-          }
-        }
-        
-        if (session?.user?.email_confirmed_at) {
+        if (session?.user) {
           setUser(session.user);
-          fetchProfile(session.user.id);
+          await fetchProfile(session.user.id);
         } else {
           setUser(null);
           setProfile(null);
@@ -162,12 +117,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       }
     );
-
+    
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase, fetchProfile]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -186,6 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       router.push('/');
     } catch (error) {
+      console.error('[AuthProvider] SignOut error:', error);
       router.push('/');
     }
   };

@@ -8,7 +8,7 @@ import { formatCurrencyWithSymbol, calculatePercentage } from "@/lib/currency";
 import { Icon } from "@/components/Icon";
 
 export default function ExportPage() {
-  const { transactions, goals, budgets, loading } = useData();
+  const { transactions, goals, budgets } = useData();
   const { profile, updateProfile } = useAuth();
   const [exporting, setExporting] = useState(false);
   const [savingCycle, setSavingCycle] = useState(false);

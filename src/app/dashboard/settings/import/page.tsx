@@ -3,19 +3,19 @@
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
-import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
 import { useDeviceType } from "@/hooks/useDeviceType";
+import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
 import { Icon } from "@/components/Icon";
-import { parseCSV, bankPresets } from "@/lib/csvImport";
+import { parseCSV, bankPresets, type ParsedTransaction } from "@/lib/csvImport";
 
 export default function ImportPage() {
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
   const isMobile = useDeviceType();
   const { addTransaction } = useData();
   
   const [selectedBank, setSelectedBank] = useState("generic");
   const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<any[]>([]);
+  const [preview, setPreview] = useState<ParsedTransaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [imported, setImported] = useState(false);
 

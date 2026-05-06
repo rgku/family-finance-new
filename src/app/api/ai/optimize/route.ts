@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
       result = await generateOptimize(payload);
     } catch (aiError) {
       console.warn("AI optimize generation failed, using fallback:", aiError);
-      result = generateFallbackOptimize(currentBudgets, goals);
+      result = generateFallbackOptimize(currentBudgets);
     }
 
     await admin.from("budget_suggestions").insert({
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function generateFallbackOptimize(budgets: { category: string; limit: number; spent: number }[], goals: { name: string; target: number; current: number }[]): { suggestions: AIBudgetSuggestion[]; summary: string } {
+function generateFallbackOptimize(budgets: { category: string; limit: number; spent: number }[]): { suggestions: AIBudgetSuggestion[]; summary: string } {
   const suggestions: AIBudgetSuggestion[] = [];
 
   budgets.forEach(b => {

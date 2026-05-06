@@ -16,7 +16,7 @@ const defaultIcons = [
 ];
 
 export default function GoalsPage() {
-  const { goals, addGoal, updateGoal, deleteGoal, addGoalContribution } = useData();
+  const { goals, addGoal, updateGoal, deleteGoal } = useData();
   const { signOut } = useAuth();
   const isMobile = useDeviceType();
   const { showToast } = useToast();

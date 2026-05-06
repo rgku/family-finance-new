@@ -66,17 +66,18 @@ export async function POST(request: NextRequest) {
     console.log('Edge Function response:', { 
       hasData: !!data, 
       hasError: !!error,
-      errorStatus: (error as any)?.status,
-      errorMessage: (error as any)?.message,
-      errorContext: (error as any)?.context,
+      errorStatus: (error as { status?: number })?.status,
+      errorMessage: (error as { message?: string })?.message,
+      errorContext: (error as { context?: unknown })?.context,
     });
     
     if (error) {
       console.error('Edge Function error details:', JSON.stringify(error, null, 2));
+      const err = error as { message?: string; status?: number };
       return NextResponse.json({ 
         error: "Erro ao enviar notificação",
-        details: (error as any)?.message,
-        status: (error as any)?.status,
+        details: err.message,
+        status: err.status,
         full_error: error
       }, { status: 500 });
     }
@@ -94,16 +95,22 @@ export async function POST(request: NextRequest) {
         timestamp: new Date().toISOString()
       }
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Test push API error:", error);
-    console.error("Error stack:", error.stack);
-    console.error("Error name:", error.name);
-    console.error("Error message:", error.message);
+    if (error instanceof Error) {
+      console.error("Error stack:", error.stack);
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      return NextResponse.json({ 
+        error: "Erro interno",
+        details: error.message,
+        name: error.name,
+        stack: error.stack
+      }, { status: 500 });
+    }
     return NextResponse.json({ 
       error: "Erro interno",
-      details: error.message,
-      name: error.name,
-      stack: error.stack
+      details: "Unknown error"
     }, { status: 500 });
   }
 }

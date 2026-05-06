@@ -20,10 +20,10 @@ const updateSchema = z.object({
   action: z.enum(["update", "remove"]),
 });
 
-export async function GET(request: NextRequest) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function GET(_: NextRequest) {
   try {
     const supabase = await createClient();
-    const { searchParams } = new URL(request.url);
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     }
 
 // Get user's profile to find their family
-    const { data: profile, error: profileError } = await supabase
+    const { data: profile } = await supabase
       .from('profiles')
       .select('family_id, role, tier, member_limit')
       .eq('id', user.id)
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
 
     // Get all family members from profiles table using admin client (bypasses RLS)
     const adminSupabase = await createAdminSupabase();
-    const { data: profileMembers, error: profileMembersError } = await adminSupabase
+    const { data: profileMembers } = await adminSupabase
       .from('profiles')
       .select('id, full_name, role')
       .eq('family_id', profile.family_id);

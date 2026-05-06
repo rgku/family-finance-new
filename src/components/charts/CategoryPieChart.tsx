@@ -9,6 +9,7 @@ import {
   ResponsiveContainer,
   Legend,
   Label,
+  type PieLabelRenderProps,
 } from "recharts";
 import { getCategoryColor } from "@/lib/categoryColors";
 import { useDeviceType } from "@/hooks/useDeviceType";
@@ -40,11 +41,13 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
     );
   }
 
-  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-    if (percent < 0.05) return null;
+  const renderCustomLabel = (props: PieLabelRenderProps) => {
+    const { cx, cy, midAngle, innerRadius, outerRadius, percent } = props;
+    if (!percent || percent < 0.05) return null;
     const RAD = Math.PI / 180;
-    const x = cx + (innerRadius + outerRadius / 2) * Math.cos(-midAngle * RAD);
-    const y = cy + (innerRadius + outerRadius / 2) * Math.sin(-midAngle * RAD);
+    const angle = midAngle ?? 0;
+    const x = (cx ?? 0) + ((innerRadius ?? 0) + (outerRadius ?? 0) / 2) * Math.cos(-angle * RAD);
+    const y = (cy ?? 0) + ((innerRadius ?? 0) + (outerRadius ?? 0) / 2) * Math.sin(-angle * RAD);
     return (
       <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={12} fontWeight={600}>
         {`${(percent * 100).toFixed(0)}%`}

@@ -52,6 +52,7 @@ export function useAIInsights(month: string): AIInsightsState & {
   currentSavingsRate?: number;
 } {
   const { supabase } = useAuth();
+  void supabase; // used in fetchInsights effect
   const [insights, setInsights] = useState<AIInsightItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

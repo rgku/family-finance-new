@@ -42,7 +42,7 @@ export interface PendingSync {
   id?: number;
   type: 'create' | 'update' | 'delete';
   table: 'transactions' | 'goals' | 'budgets';
-  data: any;
+  data: Record<string, unknown>;
   id_to_update?: string;
   created_at: number;
   retry_count: number;

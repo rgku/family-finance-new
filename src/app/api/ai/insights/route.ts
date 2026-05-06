@@ -259,8 +259,6 @@ function generateFallbackInsights(data: AIInsightsPayload): AIInsightItem[] {
 
   // Check if there's enough data
   const hasTransactions = data.transactionsCount > 0;
-  const hasExpenses = data.expenses > 0;
-  const hasIncome = data.income > 0;
   
   // If no transactions at all, show helpful message but also show balance
   if (!hasTransactions) {

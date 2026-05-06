@@ -19,7 +19,8 @@ const updateSchema = z.object({
   is_active: z.boolean().optional(),
 });
 
-export async function GET(request: NextRequest) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function GET(_: NextRequest) {
   try {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();

@@ -44,8 +44,8 @@ export default function TransactionsPage() {
     
     if (sortConfig) {
       result = [...result].sort((a, b) => {
-        let aVal: any;
-        let bVal: any;
+        let aVal: string | number | Date;
+        let bVal: string | number | Date;
         
         switch (sortConfig.key) {
           case 'date':

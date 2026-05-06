@@ -2,26 +2,19 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useData } from "@/hooks/DataProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
+import { useData } from "@/hooks/DataProvider";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
 import { CURRENCY } from "@/lib/currency";
 import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/Toast";
-
-const GOAL_ICONS = [
-  "directions_car", "flight", "home", "school", "shopping_bag", 
-  "diamond", "celebration", "savings", "sports_esports"
-];
 
 function GoalContributionForm() {
   const { goals, addGoalContribution } = useData();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
-  const { signOut } = useAuth();
-  const isMobile = useDeviceType();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   

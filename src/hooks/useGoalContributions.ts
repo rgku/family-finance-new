@@ -13,6 +13,20 @@ export interface GoalContribution {
   goal_icon?: string;
 }
 
+interface GoalContributionQueryResult {
+  id: string;
+  goal_id: string;
+  user_id: string;
+  amount: string;
+  contribution_date: string;
+  month: string;
+  created_at: string;
+  goal?: {
+    name?: string;
+    icon?: string;
+  };
+}
+
 export function useGoalContributions(userId?: string) {
   const supabase = useSupabase();
   
@@ -30,7 +44,7 @@ export function useGoalContributions(userId?: string) {
       
       if (error) throw error;
       
-      return (data || []).map((item: any) => ({
+       return (data || []).map((item: GoalContributionQueryResult) => ({
         id: item.id,
         goal_id: item.goal_id,
         user_id: item.user_id,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
@@ -19,8 +19,36 @@ function getCategoryIcon(category: string): string {
   return found?.icon || "credit_card";
 }
 
+function InMyPocketSmallCard({ available, dailyBudget, status }: { available: number; dailyBudget: number; status: "good" | "warning" | "danger" }) {
+  if (available <= 0) return null;
+
+  const statusColors = {
+    good: "text-green-500",
+    warning: "text-amber-500",
+    danger: "text-red-500",
+  };
+
+  return (
+    <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-lg p-5">
+      <div className="flex items-center gap-2 mb-2">
+        <Icon name="account_balance_wallet" size={18} className="text-green-500" />
+        <p className="font-label text-sm font-medium text-on-surface">In My Pocket</p>
+      </div>
+      <p className={`font-headline text-2xl font-bold ${statusColors[status]}`}>
+        {formatCurrencyWithSymbol(Math.max(available, 0))}
+      </p>
+      <div className="flex items-center justify-between mt-3 text-xs text-on-surface-variant">
+        <span>~{dailyBudget.toFixed(2)}€/dia</span>
+        <span className={status === "good" ? "text-green-500" : status === "warning" ? "text-amber-500" : "text-red-500"}>
+          {status === "good" ? "✓" : status === "warning" ? "⚠" : "✕"} {status === "good" ? "No orçamento" : status === "warning" ? "Atenção" : "Ultrapassado"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
-  const { user, signOut, supabase, loading, profile } = useAuth();
+  const { profile, signOut } = useAuth();
   const { transactions, goals: dataGoals } = useData();
   const isMobile = useDeviceType();
   
@@ -61,105 +89,60 @@ export default function Dashboard() {
   const now = new Date();
   const canGoNext = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);
 
-  const filteredTransactions = useMemo(() => {
-    if (!transactions.length) return [];
+  const filteredTransactions = transactions.length === 0 ? [] : (
+    profile?.billing_cycle_day && profile.billing_cycle_day > 1
+      ? transactions.filter(t => isDateInCustomMonth(t.date, billingDay, year, month))
+      : transactions.filter(t => {
+          const transDate = new Date(t.date);
+          return transDate.getFullYear() === year && transDate.getMonth() === month - 1;
+        })
+  );
+
+  const income = filteredTransactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
+
+  const investmentExpenses = filteredTransactions
+    .filter(t => t.type === "expense" && t.category === "Investimentos")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const normalExpenses = filteredTransactions
+    .filter(t => t.type === "expense" && t.category !== "Investimentos")
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const filteredGoals = dataGoals.filter(g => {
+    if (!g.created_at) return true;
+    const createdAt = new Date(g.created_at);
     if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
-      return transactions.filter(t => isDateInCustomMonth(t.date, billingDay, year, month));
+      return isDateInCustomMonth(createdAt.toISOString(), billingDay, year, month);
     }
-    return transactions.filter(t => {
-      const transDate = new Date(t.date);
-      return transDate.getFullYear() === year && transDate.getMonth() === month - 1;
-    });
-  }, [transactions, year, month, profile?.billing_cycle_day, billingDay]);
+    return createdAt.getFullYear() === year && createdAt.getMonth() === month - 1;
+  });
 
-  const { totalIncome, totalExpenses, totalPoupanca, balance, savingsGoals, expenseGoals, expenseByCategory } = useMemo(() => {
-    const income = filteredTransactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0);
-    
-    const investmentExpenses = filteredTransactions
-      .filter(t => t.type === "expense" && t.category === "Investimentos")
-      .reduce((sum, t) => sum + t.amount, 0);
-    
-    const normalExpenses = filteredTransactions
-      .filter(t => t.type === "expense" && t.category !== "Investimentos")
-      .reduce((sum, t) => sum + t.amount, 0);
-    
-    // Filter goals by creation date to current month only
-    const filteredGoals = dataGoals.filter(g => {
-      if (!g.created_at) return true;
-      const createdAt = new Date(g.created_at);
-      if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
-        return isDateInCustomMonth(createdAt.toISOString(), billingDay, year, month);
+  const savingsGoals = filteredGoals.filter(g => g.goal_type === 'savings');
+
+  const savingsAllocated = savingsGoals.reduce((sum, g) => sum + g.current_amount, 0);
+  const totalPoupanca = savingsAllocated + investmentExpenses;
+
+  const expenseByCategory = filteredTransactions
+    .filter(t => t.type === "expense")
+    .reduce((acc, t) => {
+      const existing = acc.find(item => item.category === t.category);
+      if (existing) {
+        existing.amount += t.amount;
+      } else {
+        acc.push({ category: t.category, amount: t.amount });
       }
-      return createdAt.getFullYear() === year && createdAt.getMonth() === month - 1;
-    });
-    
-    const savings = filteredGoals.filter(g => g.goal_type === 'savings');
-    const expenses = filteredGoals.filter(g => g.goal_type === 'expense');
-    
-    const savingsAllocated = savings.reduce((sum, g) => sum + g.current_amount, 0);
-    const totalPoupanca = savingsAllocated + investmentExpenses;
-    
-    const expenseByCat = filteredTransactions
-      .filter(t => t.type === "expense")
-      .reduce((acc, t) => {
-        acc[t.category] = (acc[t.category] || 0) + t.amount;
-        return acc;
-      }, {} as Record<string, number>);
-    
-    const expenseCategories = Object.entries(expenseByCat).map(([category, amount]) => ({
-      category,
-      amount,
-    }));
-    
-    const totalExpenses = normalExpenses;
-    const balance = income - normalExpenses - totalPoupanca;
-    
-    return { 
-      totalIncome: income,
-      totalExpenses,
-      totalPoupanca,
-      balance: { total: balance, income, expenses: normalExpenses, poupar: totalPoupanca },
-      savingsGoals: savings,
-      expenseGoals: expenses,
-      expenseByCategory: expenseCategories,
-    };
-  }, [filteredTransactions, dataGoals]);
+      return acc;
+    }, [] as { category: string; amount: number }[]);
 
-  const monthChange = useMemo(() => {
-    return calculateMonthChange(totalIncome, totalExpenses);
-  }, [totalIncome, totalExpenses]);
+  const totalExpenses = normalExpenses;
+  const balanceTotal = income - normalExpenses - totalPoupanca;
+
+  const totalIncome = income;
+  const monthChange = calculateMonthChange(totalIncome, totalExpenses);
   
-  const isPositive = balance.total >= 0;
+  const isPositive = balanceTotal >= 0;
 
   const { available, dailyBudget, status } = useSpendingPower();
-
-  function InMyPocketSmallCard() {
-    if (available <= 0) return null;
-
-    const statusColors = {
-      good: "text-green-500",
-      warning: "text-amber-500",
-      danger: "text-red-500",
-    };
-
-    return (
-      <div className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-lg p-5">
-        <div className="flex items-center gap-2 mb-2">
-          <Icon name="account_balance_wallet" size={18} className="text-green-500" />
-          <p className="font-label text-sm font-medium text-on-surface">In My Pocket</p>
-        </div>
-        <p className={`font-headline text-2xl font-bold ${statusColors[status]}`}>
-          {formatCurrencyWithSymbol(Math.max(available, 0))}
-        </p>
-        <div className="flex items-center justify-between mt-3 text-xs text-on-surface-variant">
-          <span>~{dailyBudget.toFixed(2)}€/dia</span>
-          <span className={status === "good" ? "text-green-500" : status === "warning" ? "text-amber-500" : "text-red-500"}>
-            {status === "good" ? "✓" : status === "warning" ? "⚠" : "✕"} {status === "good" ? "No orçamento" : status === "warning" ? "Atenção" : "Ultrapassado"}
-          </span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <>
@@ -194,7 +177,7 @@ export default function Dashboard() {
           <main className="pt-28 px-6 max-w-2xl mx-auto space-y-8 pb-32">
             <section className={`mt-4 relative overflow-hidden rounded-lg p-8 shadow-2xl ${isPositive ? "bg-gradient-to-br from-primary to-primary-container text-on-primary" : "bg-gradient-to-br from-tertiary to-tertiary-container text-on-tertiary"}`}>
               <p className="font-label text-sm font-medium opacity-80 mb-1">Saldo Atual</p>
-              <h2 className="font-headline text-3xl sm:text-4xl font-extrabold tracking-tight min-w-0 truncate">{formatCurrencyWithSymbol(balance.total)}</h2>
+              <h2 className="font-headline text-3xl sm:text-4xl font-extrabold tracking-tight min-w-0 truncate">{formatCurrencyWithSymbol(balanceTotal)}</h2>
               <div className="mt-6 flex items-center gap-2 text-sm font-semibold bg-white/10 backdrop-blur-md w-fit px-3 py-1 rounded-full">
                 <Icon name={isPositive ? "trending_up" : "trending_down"} size={20} fill />
                 <span>{isPositive ? `+${monthChange}% este mês` : "Despesas superiores"}</span>
@@ -204,19 +187,19 @@ export default function Dashboard() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-surface-container rounded-lg p-4 min-w-0">
                 <p className="font-label text-xs text-on-surface-variant">Receitas</p>
-                <p className="font-headline text-xl sm:text-lg font-bold text-primary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.income)}</p>
+                <p className="font-headline text-xl sm:text-lg font-bold text-primary min-w-0 truncate">+{formatCurrencyWithSymbol(totalIncome)}</p>
               </div>
               <div className="bg-surface-container rounded-lg p-4 min-w-0">
                 <p className="font-label text-xs text-on-surface-variant">Despesas</p>
-                <p className="font-headline text-xl sm:text-lg font-bold text-tertiary min-w-0 truncate">-{formatCurrencyWithSymbol(balance.expenses)}</p>
+                <p className="font-headline text-xl sm:text-lg font-bold text-tertiary min-w-0 truncate">-{formatCurrencyWithSymbol(totalExpenses)}</p>
               </div>
               <div className="bg-surface-container rounded-lg p-4 min-w-0">
                 <p className="font-label text-xs text-on-surface-variant">Poupança</p>
-                <p className="font-headline text-xl sm:text-lg font-bold text-secondary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.poupar)}</p>
+                <p className="font-headline text-xl sm:text-lg font-bold text-secondary min-w-0 truncate">+{formatCurrencyWithSymbol(totalPoupanca)}</p>
               </div>
             </div>
 
-            <InMyPocketSmallCard />
+            <InMyPocketSmallCard available={available} dailyBudget={dailyBudget} status={status} />
 
             <section className="bg-surface-container rounded-lg p-4">
               <h3 className="font-headline text-lg font-bold text-on-surface mb-4">Despesas por Categoria</h3>
@@ -317,7 +300,7 @@ export default function Dashboard() {
           <div className="space-y-4">
             <div className={`p-6 rounded-lg min-w-0 ${isPositive ? "bg-gradient-to-br from-primary to-primary-container text-on-primary" : "bg-gradient-to-br from-tertiary to-tertiary-container text-on-tertiary"}`}>
               <p className="text-sm opacity-80">Saldo</p>
-              <h2 className="text-3xl sm:text-4xl font-bold mt-1 min-w-0 truncate">{formatCurrencyWithSymbol(balance.total)}</h2>
+              <h2 className="text-3xl sm:text-4xl font-bold mt-1 min-w-0 truncate">{formatCurrencyWithSymbol(balanceTotal)}</h2>
               <div className="mt-4 flex gap-2">
                 <span className="bg-white/10 px-3 py-1 rounded-full text-sm">{isPositive ? `+${monthChange}% este mês` : "Negativo"}</span>
               </div>
@@ -326,19 +309,19 @@ export default function Dashboard() {
             <div className="grid grid-cols-3 gap-4">
               <div className="bg-surface-container p-4 rounded-lg min-w-0">
                 <p className="text-xs text-on-surface-variant">Receitas</p>
-                <p className="text-lg sm:text-xl font-bold text-primary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.income)}</p>
+                <p className="text-lg sm:text-xl font-bold text-primary min-w-0 truncate">+{formatCurrencyWithSymbol(totalIncome)}</p>
               </div>
               <div className="bg-surface-container p-4 rounded-lg min-w-0">
                 <p className="text-xs text-on-surface-variant">Despesas</p>
-                <p className="text-lg sm:text-xl font-bold text-tertiary min-w-0 truncate">-{formatCurrencyWithSymbol(balance.expenses)}</p>
+                <p className="text-lg sm:text-xl font-bold text-tertiary min-w-0 truncate">-{formatCurrencyWithSymbol(totalExpenses)}</p>
               </div>
               <div className="bg-surface-container p-4 rounded-lg min-w-0">
                 <p className="text-xs text-on-surface-variant">Poupança</p>
-                <p className="text-lg sm:text-xl font-bold text-secondary min-w-0 truncate">+{formatCurrencyWithSymbol(balance.poupar)}</p>
+                <p className="text-lg sm:text-xl font-bold text-secondary min-w-0 truncate">+{formatCurrencyWithSymbol(totalPoupanca)}</p>
               </div>
             </div>
 
-            <InMyPocketSmallCard />
+            <InMyPocketSmallCard available={available} dailyBudget={dailyBudget} status={status} />
           </div>
 
           <div className="space-y-6">

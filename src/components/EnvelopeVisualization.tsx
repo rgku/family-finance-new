@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { formatCurrencyWithSymbol } from '@/lib/currency';
 import { EXPENSE_CATEGORIES } from '@/lib/constants';
 import { Icon } from '@/components/Icon';
-import { Eye, EyeOff, TrendingDown, TrendingUp, AlertTriangle, Edit2, Trash2 } from 'lucide-react';
+import { TrendingDown, TrendingUp, AlertTriangle, Edit2, Trash2 } from 'lucide-react';
 
 interface Budget {
   id: string;
@@ -178,10 +177,6 @@ export function EnvelopeVisualization({ budgets, filterMode, showAmounts, onEdit
     const pctB = (b.spent / b.limit) * 100;
     return pctB - pctA;
   });
-  
-  const totalLimit = validBudgets.reduce((sum, b) => sum + b.limit, 0);
-  const totalSpent = validBudgets.reduce((sum, b) => sum + b.spent, 0);
-  const totalRemaining = totalLimit - totalSpent;
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

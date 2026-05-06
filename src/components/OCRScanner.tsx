@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { createWorker } from "tesseract.js";
 import { parseReceiptText, suggestCategory, type OCRResult } from "@/lib/ocr";
 import { Icon } from "@/components/Icon";
@@ -23,11 +23,12 @@ interface ProcessedImage {
   pageNumber: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 interface OCRWorker {
   recognize: (image: HTMLImageElement | HTMLCanvasElement | Blob | ImageData) => Promise<{ data: { text: string; confidence: number } }>;
   terminate: () => Promise<void>;
   load: () => Promise<void>;
-  setParameters: (params: Record<string, any>) => Promise<void>;
+  setParameters: (params: Record<string, unknown>) => Promise<void>;
 }
 
 export function OCRScanner({ onDataExtracted, onCancel }: OCRScannerProps) {
@@ -39,7 +40,6 @@ export function OCRScanner({ onDataExtracted, onCancel }: OCRScannerProps) {
   const { showToast } = useToast();
 
   const supportedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
-  const supportedPdfTypes = ['application/pdf'];
 
   async function convertPdfToImages(file: File): Promise<ProcessedImage[]> {
     const pdfjsLib = await import("pdfjs-dist");

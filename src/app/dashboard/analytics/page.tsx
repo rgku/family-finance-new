@@ -14,7 +14,7 @@ import { isDateInCustomMonth, formatCustomMonth, getCustomMonthRange } from "@/l
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
 import { MonthlyTrendChart } from "@/components/charts/MonthlyTrendChart";
 import { ExpenseChart } from "@/components/charts/ExpenseChart";
-import { ProgressRing } from "@/components/charts/ProgressRing";
+// ProgressRing removed - unused
 import { SavingsBarChart } from "@/components/charts/SavingsBarChart";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
 import { Icon } from "@/components/Icon";
@@ -253,7 +253,7 @@ function InsightCard({ insight }: { insight: AIInsightItem }) {
   const style = insightStyles[insight.type] || insightStyles.info;
   return (
     <div className={`flex items-start gap-3 p-4 rounded-lg ${style.bg}`}>
-      <Icon name={style.icon as any} size={20} className={`${style.color} mt-0.5 shrink-0`} />
+      <Icon name={style.icon} size={20} className={`${style.color} mt-0.5 shrink-0`} />
       <div>
         <p className="font-medium text-on-surface">{insight.title}</p>
         <p className="text-sm text-on-surface-variant mt-0.5">{insight.description}</p>
@@ -263,7 +263,7 @@ function InsightCard({ insight }: { insight: AIInsightItem }) {
 }
 
 function InMyPocketCard() {
-  const { available, dailyBudget, remainingDays, breakdown, status, message } = useSpendingPower();
+  const { available, remainingDays, breakdown, status, message } = useSpendingPower();
 
   const statusStyles = {
     good: "from-green-500/20 to-green-600/10 border-green-500/30 text-green-600",
@@ -301,7 +301,7 @@ function InMyPocketCard() {
 }
 
 function FiscalSnapshotCard() {
-  const { benefits, totalDeductible, totalPotentialRefund, yearlyExpenses, lastYearExpenses } = useFiscalSnapshot();
+  const { benefits, totalDeductible, totalPotentialRefund, yearlyExpenses } = useFiscalSnapshot();
 
   if (yearlyExpenses === 0) return null;
 
@@ -528,7 +528,7 @@ const pageContent = (
         <div className="bg-surface-container rounded-lg p-6">
           <h3 className="font-bold text-lg mb-4">Tendência Poupança (3 meses)</h3>
           <div className="space-y-3">
-            {savingsTrend.map((item, idx) => {
+            {savingsTrend.map((item) => {
               const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
               const [, m] = item.month.split("-").map(Number);
               const isPositive = item.amount >= 0;

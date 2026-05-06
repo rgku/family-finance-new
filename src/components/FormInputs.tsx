@@ -65,6 +65,7 @@ export const Button = memo(function Button({
   );
 });
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export const Card = memo(function Card({ className = "", children, ...props }: CardProps) {

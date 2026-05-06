@@ -1,7 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import type { Session } from '@supabase/supabase-js'
-import { metricsCollector } from '@/lib/metrics'
 
 function getRequiredEnv(key: string): string {
   const value = process.env[key];
@@ -93,8 +92,6 @@ export async function middleware(request: NextRequest) {
     console.log(`🛡️ [MIDDLEWARE ${timestamp}] Dashboard route detected: ${pathname}`);
   }
 
-  let isAuthorized = false;
-
   try {
     const supabase = createServerClient(
       getRequiredEnv('NEXT_PUBLIC_SUPABASE_URL'),
@@ -116,7 +113,7 @@ export async function middleware(request: NextRequest) {
     console.log(`🔑 [MIDDLEWARE ${timestamp}] Checking auth for: ${pathname}`);
 
     let session: Session | null = null;
-    let error: any = null;
+    let supabaseError: { status?: number; message?: string } | null = null;
     let supabaseResponseTime = 0;
 
     const cached = getCachedSession(request);
@@ -131,7 +128,7 @@ export async function middleware(request: NextRequest) {
       const result = await supabase.auth.getSession();
       supabaseResponseTime = Date.now() - supabaseStart;
       session = result.data.session;
-      error = result.error;
+      supabaseError = result.error;
       setCachedSession(response, session);
     }
 
@@ -145,25 +142,14 @@ export async function middleware(request: NextRequest) {
       sessionValid: !!session,
       cacheUsed: cacheValid,
       supabaseResponseTime: cacheValid ? 'cache' : `${supabaseResponseTime}ms`,
-      errorCode: error?.status,
-      errorMessage: error?.message,
+      errorCode: supabaseError?.status,
+      errorMessage: supabaseError?.message,
     });
 
     // If user is authenticated
     if (user && session) {
-      isAuthorized = true;
       const totalTime = Date.now() - startTime;
       console.log(`✅ [MIDDLEWARE ${timestamp}] AUTHORIZED user: ${user.id} for: ${pathname} (total: ${totalTime}ms)`);
-      
-      metricsCollector.record({
-        pathname,
-        timestamp,
-        authStatus: 'authorized',
-        cacheUsed: !!cacheValid,
-        supabaseResponseTime: cacheValid ? 0 : supabaseResponseTime,
-        totalResponseTime: totalTime,
-        userId: user.id,
-      });
       
       // For authenticated users accessing auth pages, redirect to dashboard
       if (pathname === '/' || pathname === '/forgot-password') {
@@ -175,46 +161,25 @@ export async function middleware(request: NextRequest) {
       // User is not authenticated
       const totalTime = Date.now() - startTime;
       console.log(`🔒 [MIDDLEWARE ${timestamp}] UNAUTHORIZED - no user for: ${pathname} (total: ${totalTime}ms)`);
-      console.log(`   Error: ${error?.message || 'No session'}`);
+      console.log(`   Error: ${supabaseError?.message || 'No session'}`);
       console.log(`   Redirecting to login with redirect=${pathname}`);
-      
-      metricsCollector.record({
-        pathname,
-        timestamp,
-        authStatus: 'unauthorized',
-        cacheUsed: !!cacheValid,
-        supabaseResponseTime: cacheValid ? 0 : supabaseResponseTime,
-        totalResponseTime: totalTime,
-        errorCode: error?.status?.toString(),
-        errorMessage: error?.message || 'No session',
-      });
       
       const loginUrl = new URL('/', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
-
+    
     const totalTime = Date.now() - startTime;
     console.log(`✅ [MIDDLEWARE ${timestamp}] Allowing access to: ${pathname} (total: ${totalTime}ms)`);
     return response;
-  } catch (error) {
-    const totalTime = Date.now() - startTime;
-    const errorType = error instanceof Error ? error.message : 'Unknown error';
+  } catch (error: unknown) {
+      const totalTime = Date.now() - startTime;
+      const errorType = error instanceof Error ? error.message : 'Unknown error';
     const isSupabaseError = errorType.includes('fetch') || errorType.includes('network') || errorType.includes('timeout');
     
     console.error(`❌ [MIDDLEWARE ${timestamp}] Error:`, error);
     console.log(`   Error type: ${isSupabaseError ? 'SUPABASE_UNAVAILABLE' : 'AUTH_ERROR'}`);
     console.log(`   Total time: ${totalTime}ms`);
-    
-    metricsCollector.record({
-      pathname,
-      timestamp,
-      authStatus: 'error',
-      cacheUsed: false,
-      totalResponseTime: totalTime,
-      errorCode: error instanceof Error ? error.name : 'Unknown',
-      errorMessage: errorType,
-    });
     
     // On Supabase unavailable, log metric but still deny access
     if (isSupabaseError) {

@@ -68,22 +68,10 @@ export default function AuthPage() {
           setError("Erro ao criar conta. Tenta novamente.");
         }
       }
-    } catch (err) {
+    } catch {
       setError("Erro de conexão. Tente novamente.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-    if (error) {
-      setError(error.message);
     }
   };
 

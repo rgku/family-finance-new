@@ -1,4 +1,4 @@
-import { AIInsightsPayload, AIForecastPayload, AIBudgetOptimizePayload, SubscriptionData } from "./types";
+import { AIInsightsPayload, AIForecastPayload, AIBudgetOptimizePayload } from "./types";
 import { calculatePercentage } from "../currency";
 
 const SYSTEM_PROMPT = `És assistente financeiro para famílias portuguesas.
@@ -23,11 +23,6 @@ export function buildInsightsPrompt(data: AIInsightsPayload): string {
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const [year, monthNum] = month.split("-").map(Number);
   const monthName = monthNames[monthNum - 1];
-
-  const catEntries = Object.entries(categorySpending)
-    .sort((a, b) => b[1] - a[1])
-    .map(([cat, amt]) => `${cat}: €${amt.toFixed(2)}`)
-    .join("\n");
 
   const budgetEntries = budgets.map(b => `${b.category}: €${b.spent.toFixed(2)} de €${b.limit.toFixed(2)} (${calculatePercentage(b.spent, b.limit)}%)`).join("\n");
 

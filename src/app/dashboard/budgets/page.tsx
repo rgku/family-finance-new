@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useData, type Budget } from "@/hooks/DataProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
+import { useData, type Budget } from "@/hooks/DataProvider";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
-import { formatCustomMonth } from "@/lib/dateUtils";
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
 import { Icon } from "@/components/Icon";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
@@ -14,15 +13,16 @@ import { useToast } from "@/components/Toast";
 import { EnvelopeVisualization } from "@/components/EnvelopeVisualization";
 import { Eye, EyeOff, LayoutList, Grid3X3 } from "lucide-react";
 
-const categories = EXPENSE_CATEGORIES.filter(c => c.value !== "Outros");
-
 type ViewMode = "list" | "envelopes";
 type FilterMode = "all" | "critical" | "ok";
 
+const categories = EXPENSE_CATEGORIES.filter(c => c.value !== "Outros");
+
 export default function BudgetsPage() {
-  const { budgets, setCurrentBudgetMonth, addBudget, updateBudget, deleteBudget } = useData();
-  const { profile, signOut } = useAuth();
+  const { budgets, setCurrentMonth, addBudget, updateBudget, deleteBudget } = useData();
+  const { signOut } = useAuth();
   const isMobile = useDeviceType();
+  // profile removed - unused
   const { showToast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -39,18 +39,12 @@ export default function BudgetsPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
 
-  const billingDay = profile?.billing_cycle_day || 1;
-  const displayMonth = profile?.billing_cycle_day && profile.billing_cycle_day > 1
-    ? formatCustomMonth(billingDay, new Date(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]) - 1))
-    : (() => {
-        const [y, m] = selectedMonth.split('-').map(Number);
-        const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-        return `${monthNames[m - 1]} ${y}`;
-      })();
+  // billingDay removed - unused
+  // displayMonth removed - unused
 
   const handleMonthChange = (month: string) => {
     setSelectedMonth(month);
-    setCurrentBudgetMonth(month);
+    setCurrentMonth(month);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,15 +78,16 @@ export default function BudgetsPage() {
         }
       
       resetForm();
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const supabaseError = error instanceof Error ? error as { message?: string; cause?: unknown; code?: string; hint?: string } : null;
         console.error("Error saving budget:", {
           error,
-          message: error?.message,
-          details: error?.details,
-          hint: error?.hint,
-          code: error?.code,
+          message: supabaseError?.message ?? "Unknown",
+          details: supabaseError?.cause ?? undefined,
+          hint: supabaseError?.hint,
+          code: supabaseError?.code,
         });
-        const errorMsg = error?.message || error?.details || "Erro ao guardar o orçamento. Tenta novamente.";
+        const errorMsg = (error instanceof Error ? error.message : "Erro ao guardar o orçamento. Tenta novamente.");
         showToast(errorMsg, "error");
       } finally {
       setLoading(false);

@@ -1,19 +1,14 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { initOneSignal, cleanupOneSignal } from '@/lib/onesignal/init';
+import { useEffect, useState } from 'react';
+import { initOneSignal } from '@/lib/onesignal/init';
 
 interface OneSignalProviderProps {
   children: React.ReactNode;
 }
 
 export function OneSignalProvider({ children }: OneSignalProviderProps) {
-  const [initialized, setInitialized] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const handleCleanup = useCallback(async () => {
-    await cleanupOneSignal();
-  }, []);
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;
@@ -30,7 +25,6 @@ export function OneSignalProvider({ children }: OneSignalProviderProps) {
             ...state,
             timestamp: new Date().toISOString(),
           });
-          setInitialized(true);
         }
       })
       .catch((err) => {

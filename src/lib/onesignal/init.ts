@@ -7,7 +7,25 @@ import { ONE_SIGNAL_CONFIG } from './config';
 
 declare global {
   interface Window {
-    OneSignal?: any;
+    OneSignal?: {
+      initialized?: boolean;
+      init: (options: Record<string, unknown>) => Promise<void>;
+      isSubscribed?: () => Promise<boolean>;
+      isPushEnabled?: () => Promise<boolean>;
+      getUserId?: () => Promise<string | null>;
+      setExternalUserId?: (userId: string) => Promise<void>;
+      registerForPushNotifications?: () => Promise<void>;
+      clearAllNotifications?: () => Promise<void>;
+      User?: {
+        PushNotifications?: {
+          subscribe?: () => Promise<void>;
+          permissionChanged?: { subscribe: (cb: (granted: boolean) => void) => void };
+          addEventListener?: (event: string, handler: (event: { permission: boolean }) => void) => void;
+        };
+      };
+      login?: (userId: string) => Promise<void>;
+      logout?: () => Promise<void>;
+    };
   }
 }
 
@@ -55,10 +73,10 @@ export async function initOneSignal(): Promise<OneSignalSubscriptionState> {
       });
 
       console.log('OneSignal.init() completed');
-    } catch (initError: any) {
-      if (!initError.message.includes('already been initialized')) {
+    } catch (initError: unknown) {
+      if (initError instanceof Error && !initError.message.includes('already been initialized')) {
         console.error('OneSignal.init() failed:', initError);
-        throw new Error('OneSignal.init() falhou: ' + initError.message);
+        throw new Error('OneSignal.init() falhou: ' + (initError as Error).message);
       }
       console.log('OneSignal already initialized, continuing...');
     }
@@ -104,8 +122,8 @@ export async function initOneSignal(): Promise<OneSignalSubscriptionState> {
     console.log('✅ OneSignal state:', subscriptionState);
 
     return subscriptionState;
-  } catch (error: any) {
-    console.error('❌ OneSignal initialization failed:', error.message);
+  } catch (error: unknown) {
+    console.error('❌ OneSignal initialization failed:', error instanceof Error ? error.message : error);
     return subscriptionState;
   }
 }
@@ -120,6 +138,10 @@ export async function subscribeToPush(): Promise<string | null> {
   try {
     // v15 API: registerForPushNotifications returns a Promise
     // Note: In v15, this method may not return a value in some versions
+    if (!window.OneSignal?.registerForPushNotifications) {
+      console.warn('registerForPushNotifications not available');
+      return null;
+    }
     const result = await window.OneSignal.registerForPushNotifications();
     
     console.log('registerForPushNotifications result:', result);
@@ -128,7 +150,7 @@ export async function subscribeToPush(): Promise<string | null> {
     await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Get the subscription ID after registration
-    const subscriptionId = await window.OneSignal.getUserId();
+    const subscriptionId = await window.OneSignal.getUserId?.();
     
     if (subscriptionId) {
       console.log('✅ Successfully subscribed with ID:', subscriptionId);
@@ -136,7 +158,7 @@ export async function subscribeToPush(): Promise<string | null> {
     }
     
     throw new Error('Não foi possível obter o ID de subscrição');
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('❌ subscribeToPush error:', error);
     throw error;
   }
@@ -178,7 +200,7 @@ export async function saveOneSignalSubscription(userId: string, playerId: string
     }
     
     return true;
-  } catch (error) {
+  } catch (error: unknown) {
     return false;
   }
 }

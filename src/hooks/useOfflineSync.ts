@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSupabase } from '@/hooks/useSupabase';
 import { useAuth } from '@/components/AuthProvider';
 import * as offlineDB from '@/lib/offline-db';
+import type { OfflineTransaction, OfflineGoal, OfflineBudget } from '@/lib/offline-db';
 
 export function useOfflineSync() {
   const supabase = useSupabase();
@@ -27,11 +28,12 @@ export function useOfflineSync() {
 
   // Update pending count
   useEffect(() => {
-    let mounted = true;
-    
+    let cancelled = false;
+    const abortController = new AbortController();
+
     const updateCount = async () => {
       const count = await offlineDB.getUnsyncedCount();
-      if (mounted) {
+      if (!cancelled) {
         setPendingCount(count);
       }
     };
@@ -44,7 +46,8 @@ export function useOfflineSync() {
     }
     
     return () => {
-      mounted = false;
+      cancelled = true;
+      abortController.abort();
     };
   }, [isOnline, user]);
 
@@ -112,17 +115,17 @@ export function useOfflineSync() {
               await offlineDB.removePendingSync(item.id!);
             }
           }
-        } catch (error) {
+        } catch (_error) {
           await offlineDB.updatePendingSyncRetry(item.id!);
         }
       }
-
+      
       await offlineDB.setLastSyncTime(Date.now());
       
       const remaining = await offlineDB.getUnsyncedCount();
       setPendingCount(remaining);
-    } catch (error) {
-      console.error('Sync error:', error);
+    } catch (_error) {
+      console.error('Sync error:', _error);
     } finally {
       syncInProgressRef.current = false;
       setIsSyncing(false);
@@ -134,12 +137,12 @@ export function useOfflineSync() {
     if (isOnline && user) {
       syncPending();
     }
-  }, [isOnline, user]);
+  }, [isOnline, user, syncPending]);
 
   // Save to offline DB and queue for sync
   const saveOffline = useCallback(async (
     table: 'transactions' | 'goals' | 'budgets',
-    data: any,
+    data: Record<string, unknown>,
     operation: 'create' | 'update' | 'delete',
     id_to_update?: string
   ) => {
@@ -147,13 +150,14 @@ export function useOfflineSync() {
 
     // Save to offline DB immediately
     if (operation === 'create') {
-      const offlineData = { ...data, user_id: user.id, synced: false };
-      
       if (table === 'transactions') {
+        const offlineData: OfflineTransaction = { ...data as Record<string, unknown>, user_id: user.id, synced: false } as OfflineTransaction;
         await offlineDB.saveTransaction(offlineData);
       } else if (table === 'goals') {
+        const offlineData: OfflineGoal = { ...data as Record<string, unknown>, user_id: user.id, synced: false } as OfflineGoal;
         await offlineDB.saveGoal(offlineData);
       } else if (table === 'budgets') {
+        const offlineData: OfflineBudget = { ...data as Record<string, unknown>, user_id: user.id, synced: false } as OfflineBudget;
         await offlineDB.saveBudget(offlineData);
       }
     } else if (operation === 'delete') {
@@ -222,7 +226,8 @@ export function useOfflineSync() {
       }
 
       await offlineDB.setLastSyncTime(Date.now());
-    } catch (error) {
+    } catch (_error) {
+      console.error('Fetch error:', _error);
     }
   }, [user, isOnline, supabase]);
 

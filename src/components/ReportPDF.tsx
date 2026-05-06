@@ -1,6 +1,7 @@
 "use client";
 
-import { Document, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { formatCurrencyWithSymbol } from "@/lib/currency";
 
 const styles = StyleSheet.create({
   page: {
@@ -369,12 +370,7 @@ export function PDFReport({ data }: { data: ReportData }) {
   const previousMonth = data.previousMonth;
   const stats = data.stats;
   
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("pt-PT", {
-      style: "currency",
-      currency: "EUR",
-    }).format(amount);
-  };
+    const formatCurrency = (amount: number) => formatCurrencyWithSymbol(amount);
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString("pt-PT");

@@ -1,7 +1,6 @@
 "use client";
 
-import { useRef, useCallback } from "react";
-import html2canvas from "html2canvas";
+import { useRef } from "react";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 
 interface ShareCardProps {
@@ -43,30 +42,6 @@ export function ShareCard({
   const comparison = previousMonthBalance !== 0
     ? ((balance - previousMonthBalance) / Math.abs(previousMonthBalance)) * 100
     : 0;
-
-  const handleDownload = useCallback(async () => {
-    if (!cardRef.current) return;
-
-    try {
-      const canvas = await html2canvas(cardRef.current, {
-        logging: false,
-        useCORS: true,
-      });
-
-      const blob = await new Promise<Blob>((resolve) => {
-        canvas.toBlob((b) => resolve(b!), "image/png", 1.0);
-      });
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `famflow-${month}-${format}.png`;
-      link.click();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Error generating image:", error);
-    }
-  }, [month, format]);
 
   const isStories = format === "stories";
   const isPositive = balance >= 0;

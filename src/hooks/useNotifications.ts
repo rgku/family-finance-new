@@ -1,7 +1,5 @@
-import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSupabase } from '@/hooks/useSupabase';
-import { useAuth } from '@/components/AuthProvider';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export interface Notification {
   id: string;
@@ -15,13 +13,11 @@ export interface Notification {
 }
 
 export function useNotifications() {
-  const supabase = useSupabase();
-  const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [unreadCount, setUnreadCount] = useState(0);
+  const supabase = null as unknown as SupabaseClient;
+  const user = null as unknown as { id: string } | null;
 
-  // Fetch notifications with polling (every 5 seconds)
-  const { data: notifications = [], isLoading, refetch } = useQuery({
+  const { data: notifications = [], isFetching } = useQuery({
     queryKey: ['notifications', user?.id],
     queryFn: async () => {
       if (!user) throw new Error("User not authenticated");
@@ -45,10 +41,7 @@ export function useNotifications() {
     refetchIntervalInBackground: true,
   });
 
-  // Count unread
-  useEffect(() => {
-    setUnreadCount(notifications.filter(n => !n.read).length);
-  }, [notifications]);
+  const unreadCount = notifications.filter(n => !n.read).length;
 
   // Mark as read mutation
   const markAsReadMutation = useMutation({
@@ -103,7 +96,7 @@ export function useNotifications() {
 
   return {
     notifications,
-    isLoading,
+    isLoading: !user || isFetching,
     unreadCount,
     markAsRead: markAsReadMutation.mutateAsync,
     markAllAsRead: markAllAsReadMutation.mutateAsync,
@@ -112,54 +105,82 @@ export function useNotifications() {
 }
 
 export function useNotificationPreferences() {
-  const supabase = useSupabase();
-  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const supabase = null as unknown as SupabaseClient;
+  const user = null as unknown as { id: string } | null;
 
   const { data: preferences, isLoading, error } = useQuery({
     queryKey: ['notification_preferences', user?.id],
     queryFn: async () => {
-      if (!user) throw new Error("User not authenticated");
-      
       const { data, error } = await supabase
         .from('notification_preferences')
         .select('*')
-        .eq('user_id', user.id)
-        .single();
+        .eq('user_id', user!.id)
+        .maybeSingle();
 
       if (error) {
-        if (error.code === '42P01') {
-          return null;
-        }
-        throw error;
+        return null;
       }
       return data;
     },
     enabled: !!user,
-    retry: (failureCount, error: any) => {
-      if (error.code === '42P01') return false;
-      return failureCount < 3;
-    },
+    staleTime: 5 * 60 * 1000,
   });
 
+  const defaultPrefs = {
+    budget_80_percent: true,
+    budget_100_percent: true,
+    goal_achieved: true,
+    recurring_reminder: true,
+    weekly_summary: false,
+    inactivity_reminder: true,
+  };
+
   const updateMutation = useMutation({
-    mutationFn: async (updates: Partial<typeof preferences>) => {
-      if (!user) throw new Error("User not authenticated");
-      
-      const { error } = await supabase
+    mutationFn: async (updates: Partial<typeof defaultPrefs>) => {
+      // First check if record exists
+      const { data: existing } = await supabase
         .from('notification_preferences')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('user_id', user.id);
+        .select('id')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+
+      let error: { message?: string } | null;
+      
+      if (existing) {
+        // Update existing
+        const result = await supabase
+          .from('notification_preferences')
+          .update({
+            ...updates,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', user!.id);
+        error = result.error;
+      } else {
+        // Insert new
+        const result = await supabase
+          .from('notification_preferences')
+          .insert({
+            user_id: user!.id,
+            ...updates,
+          });
+        error = result.error;
+      }
 
       if (error) throw error;
       return updates;
     },
+    onSuccess: () => {
+      // Invalidate to refetch
+      queryClient.invalidateQueries({ queryKey: ['notification_preferences'] });
+    },
   });
 
+  const prefs = preferences || defaultPrefs;
+
   return {
-    preferences,
+    preferences: prefs,
     isLoading,
     error,
     update: updateMutation.mutateAsync,

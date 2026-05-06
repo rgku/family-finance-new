@@ -85,7 +85,7 @@ export const PLANS: SubscriptionPlan[] = [
 
 export function useSubscription() {
   const supabase = useSupabase();
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
 
   const { data: subscription, isLoading } = useQuery({
     queryKey: ['subscription', user?.id],

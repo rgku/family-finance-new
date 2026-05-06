@@ -168,7 +168,7 @@ export function RecurringTransactionForm({ onSuccess, onCancel, initialData }: R
         <select
           id="frequency"
           value={formData.frequency}
-          onChange={(e) => setFormData({ ...formData, frequency: e.target.value as any })}
+          onChange={(e) => setFormData({ ...formData, frequency: e.target.value as "weekly" | "biweekly" | "monthly" | "quarterly" | "yearly" })}
           className="w-full bg-surface-container-low border-none rounded-2xl px-5 py-4 text-on-surface focus:ring-2 focus:ring-primary/20 transition-all"
         >
           <option value="weekly">Semanal (toda semana)</option>

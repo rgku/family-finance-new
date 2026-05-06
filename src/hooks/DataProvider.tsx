@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, useMemo, ReactNode, useRef } from "react";
+import { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode, useRef } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 import * as offlineDB from "@/lib/offline-db";
@@ -54,7 +54,7 @@ interface DataContextType {
   refreshGoals: () => Promise<void>;
   
   budgets: Budget[];
-  setCurrentBudgetMonth: (month: string) => void;
+  setCurrentMonth: (month: string) => void;
   addBudget: (b: Omit<Budget, "id" | "spent">) => Promise<void>;
   updateBudget: (id: string, b: Partial<Budget>) => Promise<void>;
   deleteBudget: (id: string) => Promise<void>;
@@ -73,11 +73,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [goals, setGoals] = useState<Goal[]>([]);
-  const [budgetsRaw, setBudgetsRaw] = useState<any[]>([]);
+  const [budgetsRaw, setBudgetsRaw] = useState<Budget[]>([]);
   const [currentMonth, setCurrentMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [loading, setLoading] = useState(true);
   const lastFetchUserId = useRef<string | null>(null);
   const lastFetchFamilyId = useRef<string | null>(null);
+
+  const refreshGoals = useCallback(async () => {
+    if (!user || !supabase) return;
+    const { data } = await supabase
+      .from('goals_decrypted')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    if (data) {
+      const newGoals = data.map(g => ({
+        id: g.id,
+        name: g.name,
+        target_amount: parseFloat(g.target_amount) || 0,
+        current_amount: parseFloat(g.current_amount) || 0,
+        deadline: g.deadline,
+        icon: g.icon || 'savings',
+        goal_type: g.goal_type || 'savings',
+        created_at: g.created_at,
+      }));
+      setGoals(newGoals);
+      localStorage.setItem(GOALS_UPDATED_CHANNEL, Date.now().toString());
+    }
+  }, [user, supabase]);
 
   // Listen for goals updates from other components
   useEffect(() => {
@@ -150,14 +173,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
         
         if (cachedBudgets.length > 0) {
-          setBudgetsRaw(cachedBudgets);
+          setBudgetsRaw(cachedBudgets.map(b => ({
+            id: b.id,
+            category: b.category,
+            limit: b.limit_amount,
+            spent: 0,
+            month: b.month,
+            user_id: b.user_id,
+            family_id: b.family_id,
+          })));
         }
         
         // If online, fetch fresh data from server
         if (isOnline) {
           // Use views that filter by family_id in the database layer
-          let transQuery = supabase.from('transactions_decrypted').select('*');
-          let goalsQuery = supabase.from('goals_decrypted').select('*');
+          const transQuery = supabase.from('transactions_decrypted').select('*');
+          const goalsQuery = supabase.from('goals_decrypted').select('*');
           // For budgets, filter by family_id only if available
           let budgetsQuery = supabase.from('budgets').select('*');
           if (profile?.family_id) {
@@ -223,7 +254,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     };
 
     fetchData();
-  }, [user, isOnline, profile?.family_id]);
+  }, [user, isOnline, profile?.family_id, fetchAndCache, supabase]);
 
   const budgets = useMemo(() => {
     if (!budgetsRaw || budgetsRaw.length === 0) return [];
@@ -263,7 +294,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return {
         id: b.id,
         category: b.category,
-        limit: Number(b.limit_amount),
+        limit: b.limit,
         spent,
         month: budgetMonth,
       };
@@ -381,18 +412,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
         
         // Check budget alerts for expense transactions
         if (t.type === 'expense') {
-          await checkBudgetAlerts(t.category, t.amount);
+          await checkBudgetAlerts(t.category);
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string; details?: string; hint?: string; code?: string };
       console.error('[DataProvider] Error adding transaction:', {
         error,
         userId: user.id,
         transaction: t,
-        message: error?.message,
-        details: error?.details,
-        hint: error?.hint,
-        code: error?.code,
+        message: err.message,
+        details: err.details,
+        hint: err.hint,
+        code: err.code,
       });
       
       // Rollback optimistic update
@@ -400,12 +432,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
       
       // Show user-friendly error message
       let errorMsg = 'Erro ao adicionar transação. ';
-      if (error?.code === 'PGRST301') {
+      if (err.code === 'PGRST301') {
         errorMsg += 'Verifica as tuas permissões na base de dados.';
-      } else if (error?.message?.includes('profile')) {
+      } else if (err.message?.includes('profile')) {
         errorMsg += 'Perfil não encontrado.';
       } else {
-        errorMsg += error?.message || 'Tenta novamente.';
+        errorMsg += err.message || 'Tenta novamente.';
       }
       
       throw new Error(errorMsg);
@@ -430,8 +462,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       } else {
         console.log('✅ [BudgetAlerts] In-app notification created successfully');
       }
-    } catch (rpcError: any) {
-      console.error('[BudgetAlerts] RPC error creating notification:', rpcError.message);
+    } catch (rpcError: unknown) {
+      console.error('[BudgetAlerts] RPC error creating notification:', rpcError instanceof Error ? rpcError.message : String(rpcError));
     }
   };
 
@@ -458,13 +490,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
       } else {
         console.log('✅ [BudgetAlerts] Push notification sent successfully');
       }
-    } catch (pushError: any) {
-      console.log('⚠️ [BudgetAlerts] Push notification skipped:', pushError.message);
+    } catch (pushError: unknown) {
+      console.log('⚠️ [BudgetAlerts] Push notification skipped:', pushError instanceof Error ? pushError.message : String(pushError));
     }
   };
 
   // Check if budget threshold is reached and send notification
-  const checkBudgetAlerts = async (category: string, amount: number) => {
+    const checkBudgetAlerts = async (category: string) => {
     if (!supabase || !user) return;
     
     try {
@@ -489,14 +521,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (budgetError) {
         console.error('[BudgetAlerts] Error fetching budget:', budgetError);
         console.error('[BudgetAlerts] Error details:', JSON.stringify(budgetError, null, 2));
-        console.error('[BudgetAlerts] Error status:', (budgetError as any).status);
-        console.error('[BudgetAlerts] Error code:', (budgetError as any).code);
-        console.error('[BudgetAlerts] Error message:', (budgetError as any).message);
-        console.error('[BudgetAlerts] Error hint:', (budgetError as any).hint);
-        console.error('[BudgetAlerts] Error details:', (budgetError as any).details);
+        console.error('[BudgetAlerts] Error code:', budgetError?.code);
+        console.error('[BudgetAlerts] Error message:', budgetError?.message);
+        console.error('[BudgetAlerts] Error hint:', budgetError?.hint);
+        console.error('[BudgetAlerts] Error details:', budgetError?.details);
         
         // If 404, table might not exist or RLS policy blocking
-        if ((budgetError as any).status === 404) {
+        if (budgetError?.code === 'PGRST116') {
           console.error('[BudgetAlerts] Budgets table not found or RLS blocking access');
           console.error('[BudgetAlerts] Check if table exists and RLS policies are correct');
         }
@@ -671,7 +702,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     ));
     
     if (!isOnline) {
-      const updates: any = {};
+      const updates: Record<string, unknown> = {};
       if (t.description !== undefined) updates.description = t.description;
       if (t.amount !== undefined) updates.amount = t.amount;
       if (t.type !== undefined) updates.type = t.type;
@@ -984,12 +1015,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
     
       // Optimistic update
       const tempId = `temp_${Date.now()}`;
-      const newBudget = {
+      const newBudget: Budget = {
         id: tempId,
         user_id: user.id,
         family_id: profile?.family_id || null,
         category: b.category,
-        limit_amount: b.limit,
+        limit: b.limit,
+        spent: 0,
         month: budgetMonth,
       };
       setBudgetsRaw(prev => [...prev, newBudget]);
@@ -1112,39 +1144,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const setCurrentBudgetMonth = (month: string) => {
-    setCurrentMonth(month);
-  };
-
-  const refreshGoals = async () => {
-    if (!user || !supabase) return;
-    const { data } = await supabase
-      .from('goals_decrypted')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-    if (data) {
-      const newGoals = data.map(g => ({
-        id: g.id,
-        name: g.name,
-        target_amount: parseFloat(g.target_amount) || 0,
-        current_amount: parseFloat(g.current_amount) || 0,
-        deadline: g.deadline,
-        icon: g.icon || 'savings',
-        goal_type: g.goal_type || 'savings',
-        created_at: g.created_at,
-      }));
-      setGoals(newGoals);
-      // Notify other components
-      localStorage.setItem(GOALS_UPDATED_CHANNEL, Date.now().toString());
-    }
-  };
-
   const contextValue = useMemo(() => ({
     transactions, addTransaction, updateTransaction, deleteTransaction,
     goals, addGoal, updateGoal, deleteGoal, addGoalContribution, refreshGoals,
-    budgets: budgets || [], setCurrentBudgetMonth, addBudget, updateBudget, deleteBudget,
+    budgets: budgets || [], setCurrentMonth, addBudget, updateBudget, deleteBudget,
     loading,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [transactions, goals, budgets, loading]);
 
   return (

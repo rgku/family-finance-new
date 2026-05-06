@@ -2,12 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useSupabase } from "@/hooks/useSupabase";
 import { Icon } from "@/components/Icon";
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
   const supabase = useSupabase();
   
   const [email, setEmail] = useState("");
@@ -32,7 +30,7 @@ export default function ForgotPasswordPage() {
         setMessage("Email de recuperação enviado! Verifica a tua caixa de correio.");
         setEmail("");
       }
-    } catch (err) {
+    } catch {
       setError("Erro ao enviar email de recuperação");
     } finally {
       setLoading(false);

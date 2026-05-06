@@ -40,7 +40,6 @@ import {
   Lock,
   Info,
   PiggyBank,
-  CreditCard,
   Mail,
   BellRing,
   Eye,

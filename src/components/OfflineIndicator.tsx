@@ -2,20 +2,9 @@
 
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { Icon } from "./Icon";
-import { useEffect, useState } from "react";
 
 export function OfflineIndicator() {
   const { isOnline, isSyncing, pendingCount, syncPending } = useOfflineSync();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Don't render on server to avoid hydration mismatch
-  if (!mounted) {
-    return null;
-  }
 
   // Don't show anything when online and no pending items
   if (isOnline && pendingCount === 0 && !isSyncing) {

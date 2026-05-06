@@ -2,7 +2,7 @@
 
 import { useRef, useCallback } from "react";
 
-export function useDebounce<T extends (...args: any[]) => any>(
+export function useDebounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
   callback: T,
   delay: number
 ) {
@@ -23,7 +23,7 @@ export function useDebounce<T extends (...args: any[]) => any>(
   return debouncedCallback;
 }
 
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(
   callback: T,
   delay: number
 ): (...args: Parameters<T>) => void {

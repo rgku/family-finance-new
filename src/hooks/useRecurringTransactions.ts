@@ -77,12 +77,12 @@ export function useUpdateRecurring() {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<RecurringTransaction>) => {
-      let updateData: Partial<RecurringTransaction> = { ...updates };
-      
+      const updateData: Partial<RecurringTransaction> = { ...updates };
+
       // Recalculate next_run if frequency or day_of_month changed
-      if (updates.frequency || updates.day_of_month) {
-        const freq = updates.frequency || (updates as any).frequency;
-        const day = updates.day_of_month || (updates as any).day_of_month;
+      const freq = updates.frequency;
+      const day = updates.day_of_month;
+      if (freq) {
         updateData.next_run = calculateNextRun(freq, day);
       }
       

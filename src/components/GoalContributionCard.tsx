@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
 import { Icon } from "@/components/Icon";
 import type { GoalContribution } from "@/hooks/useGoalContributions";

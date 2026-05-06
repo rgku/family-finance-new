@@ -60,7 +60,7 @@ export default function ChangePasswordPage() {
         setNewPassword("");
         setConfirmPassword("");
       }
-    } catch (err) {
+    } catch {
       setError("Erro ao alterar password");
     } finally {
       setLoading(false);

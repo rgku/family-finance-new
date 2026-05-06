@@ -32,7 +32,7 @@ function getBarColor(percentage: number): string {
 }
 
 function getMonthLabel(monthString: string): string {
-  const [year, month] = monthString.split("-").map(Number);
+  const [, month] = monthString.split("-").map(Number);
   const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
   return monthNames[month - 1];
 }

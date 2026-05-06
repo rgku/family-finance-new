@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
             confidence: confidence.toFixed(2),
           });
         }
-      } catch (e) {
+      } catch {
         console.warn("Cohere API failed, using keyword fallback");
       }
     }

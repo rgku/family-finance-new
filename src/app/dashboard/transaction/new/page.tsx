@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
 import { CURRENCY } from "@/lib/currency";
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from "@/lib/constants";
@@ -18,7 +17,7 @@ const ALL_CATEGORIES = [...EXPENSE_CATEGORIES, ...INCOME_CATEGORIES]
     return a.localeCompare(b);
   });
 
-function debounce<T extends (...args: any[]) => any>(fn: T, ms: number) {
+function debounce<T extends (...args: Parameters<T>) => ReturnType<T>>(fn: T, ms: number) {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   return (...args: Parameters<T>) => {
     if (timeoutId) clearTimeout(timeoutId);
@@ -27,7 +26,6 @@ function debounce<T extends (...args: any[]) => any>(fn: T, ms: number) {
 }
 
 export default function NewTransaction() {
-  const { user } = useAuth();
   const { addTransaction } = useData();
   const router = useRouter();
   const { showToast } = useToast();

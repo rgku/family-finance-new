@@ -22,6 +22,13 @@ jest.mock('../DataProvider', () => {
   };
 });
 
+jest.mock('@/components/AuthProvider', () => ({
+  useAuth: () => ({
+    profile: { billing_cycle_day: 1 },
+    user: { id: 'test-user' },
+  }),
+}));
+
 const { __setMockData } = jest.requireMock('../DataProvider');
 
 describe('useSpendingPower', () => {
@@ -34,24 +41,23 @@ describe('useSpendingPower', () => {
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
     const monthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
-
+ 
     __setMockData({
       transactions: [
         { id: '1', description: 'Salário', amount: 2500, type: 'income' as const, category: 'Salário', date: `${monthStr}-01` },
         { id: '2', description: 'Supermercado', amount: 1800, type: 'expense' as const, category: 'Alimentação', date: `${monthStr}-05` },
       ],
       goals: [
-        { id: '1', name: 'Férias', target_amount: 700, current_amount: 0, goal_type: 'savings' as const },
+        { id: '1', name: 'Férias', target_amount: 700, current_amount: 100, goal_type: 'savings' as const, created_at: `${monthStr}-01` },
       ],
       budgets: [],
     });
-
+ 
     const { result } = renderHook(() => useSpendingPower());
-
-    // available = income (2500) - expenses (1800) - goalsAllocated (700/12 ≈ 58.33)
-    // available ≈ 641.67
-    expect(result.current.available).toBeGreaterThan(600);
-    expect(result.current.available).toBeLessThan(700);
+ 
+    // available = income (2500) - expenses (1800) - goalsAllocated (100)
+    // available = 600
+    expect(result.current.available).toBe(600);
   });
 
   it('retorna dailyBudget correto', () => {

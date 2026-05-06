@@ -3,10 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/components/AuthProvider';
 import {
-  initOneSignal,
   subscribeToPush,
   unsubscribeFromPush,
-  getOneSignalState,
   type OneSignalSubscriptionState,
 } from '@/lib/onesignal/init';
 
@@ -68,10 +66,10 @@ export function useOneSignal() {
             setLoading(false);
           }
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('❌ Error getting OneSignal state:', err);
         if (mounted) {
-          setError(err.message || 'Failed to get OneSignal state');
+          setError(err instanceof Error ? err.message : String(err));
           setLoading(false);
         }
       }
@@ -96,14 +94,14 @@ export function useOneSignal() {
       }
       
       // Wait for OneSignal to be fully initialized
-      const oneSignalAny = window.OneSignal as any;
-      if (!oneSignalAny?.initialized) {
+      const oneSignal = window.OneSignal;
+      if (!oneSignal) {
         console.log('⏳ Waiting for OneSignal to initialize...');
         try {
           const { waitForOneSignal } = await import('@/lib/onesignal/init');
           await waitForOneSignal();
-        } catch (waitError) {
-          console.error('Timeout waiting for OneSignal:', waitError);
+      } catch (err: unknown) {
+        console.error('Timeout waiting for OneSignal:', err);
           setError('OneSignal ainda está a carregar. Tenta novamente em alguns segundos.');
           setLoading(false);
           return false;
@@ -156,10 +154,10 @@ export function useOneSignal() {
       }));
       setLoading(false);
       return true;
-    } catch (err: any) {
-      const errorMessage = err?.message || 'Falha ao ativar notificações';
-      console.error('❌ Subscribe error:', errorMessage);
-      setError(errorMessage);
+} catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error('❌ Subscribe error:', errorMessage);
+        setError(errorMessage);
       setLoading(false);
       return false;
     }
@@ -193,8 +191,12 @@ export function useOneSignal() {
         isSubscribed: false,
         isPushEnabled: false,
       }));
-    } catch (err: any) {
-      setError(err?.message || 'Failed to unsubscribe');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Failed to unsubscribe');
+      } else {
+        setError('Failed to unsubscribe');
+      }
     }
   }, [user, supabase]);
 
@@ -207,8 +209,8 @@ export function useOneSignal() {
         playerId: await window.OneSignal?.getUserId?.() || null,
       };
       setState(oneSignalState);
-    } catch (err: any) {
-      console.error('Error refreshing OneSignal state:', err);
+    } catch (err: unknown) {
+      console.error('Error refreshing OneSignal state:', err instanceof Error ? err.message : String(err));
     }
   }, []);
 

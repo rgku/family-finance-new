@@ -17,6 +17,7 @@ jest.mock('@/hooks/useSupabase', () => ({
 }));
 
 jest.mock('@/hooks/DataProvider', () => {
+  // eslint-disable-next-line no-require-imports
   const { createMockData } = require('./__mocks__/useData');
   return {
     useData: () => createMockData(),

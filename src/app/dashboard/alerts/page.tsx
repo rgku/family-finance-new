@@ -1,28 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { useAuth } from "@/components/AuthProvider";
-import { useNotificationPreferences } from "@/hooks/usePushNotification";
+import { useNotificationPreferences } from "@/hooks/useNotifications";
 import { useOneSignal } from "@/hooks/useOneSignal";
-import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
+import { useAuth } from "@/components/AuthProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
+import { MobileHeader, MobileNav } from "@/components/Sidebar";
 import { Icon } from "@/components/Icon";
 
 export default function NotificationsPage() {
-  const { user, signOut } = useAuth();
-  const isMobile = useDeviceType();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   
+  const { isPushEnabled, loading: oneSignalLoading, error: oneSignalError, subscribe, unsubscribe } = useOneSignal();
+  const { signOut } = useAuth();
+  const isMobile = useDeviceType();
+  
   const { preferences, isLoading, error, update } = useNotificationPreferences();
-  const { 
-    isSubscribed, 
-    isPushEnabled, 
-    loading: oneSignalLoading, 
-    subscribe, 
-    unsubscribe,
-    error: oneSignalError 
-  } = useOneSignal();
   
   // Default preferences when table doesn't exist
   const defaultPrefs = {
@@ -71,7 +65,7 @@ export default function NotificationsPage() {
       }
       
       // Check if OneSignal is initialized
-      const oneSignalAny = window.OneSignal as any;
+      const oneSignalAny = window.OneSignal as { initialized?: boolean };
       if (!oneSignalAny?.initialized) {
         setMessage({ 
           type: 'error', 
