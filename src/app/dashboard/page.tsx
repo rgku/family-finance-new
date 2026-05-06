@@ -2,7 +2,7 @@
 
 import { useState, useMemo, Suspense } from "react";
 import { useAuth } from "@/components/AuthProvider";
-import { useData } from "@/hooks/DataProvider";
+import { useData, type Transaction } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol, calculatePercentage, calculateMonthChange } from "@/lib/currency";
 import { useSpendingPower } from "@/hooks/useSpendingPower";
@@ -47,14 +47,18 @@ export default function Dashboard() {
   const canGoNext = year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1);
 
   const filteredTransactions = useMemo(() => {
+    let filtered: Transaction[] = [];
     if (!transactions.length) return [];
     if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
-      return transactions.filter(t => isDateInCustomMonth(t.date, billingDay, year, month));
+      filtered = transactions.filter(t => isDateInCustomMonth(t.date, billingDay, year, month));
+    } else {
+      filtered = transactions.filter(t => {
+        const transDate = new Date(t.date);
+        return transDate.getFullYear() === year && transDate.getMonth() === month - 1;
+      });
     }
-    return transactions.filter(t => {
-      const transDate = new Date(t.date);
-      return transDate.getFullYear() === year && transDate.getMonth() === month - 1;
-    });
+    // Sort by date descending (most recent first)
+    return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [transactions, year, month, profile?.billing_cycle_day, billingDay]);
 
   const { totalIncome, totalExpenses, totalPoupanca, balance, savingsGoals, expenseGoals, expenseByCategory } = useMemo(() => {
