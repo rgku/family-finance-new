@@ -99,9 +99,11 @@ export async function GET(request: NextRequest) {
         const d = new Date(dateStr);
         return d.getFullYear() === year && d.getMonth() === monthNum - 1;
       }
-      const cycleStart = new Date(year, monthNum - 1, billingDay);
-      let cycleEnd = new Date(year, monthNum, billingDay);
-      if (monthNum === 12) cycleEnd = new Date(year + 1, 0, billingDay);
+      // Billing cycle: from billingDay of PREVIOUS month to billingDay of current month - 1
+      // Example: monthParam=2026-05, billingDay=29 → 2026-04-29 to 2026-05-28
+      const cycleStart = new Date(year, monthNum - 2, billingDay);
+      let cycleEnd = new Date(year, monthNum - 1, billingDay);
+      if (monthNum === 1) cycleStart = new Date(year - 1, 11, billingDay);
       const d = new Date(dateStr);
       return d >= cycleStart && d < cycleEnd;
     }
