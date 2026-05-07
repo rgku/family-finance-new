@@ -17,6 +17,35 @@ interface ExpenseChartProps {
   data: { category: string; amount: number }[];
 }
 
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: any[];
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div style={{
+        backgroundColor: "#1e293b",
+        border: "none",
+        borderRadius: "12px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+        padding: "12px 16px",
+      }}>
+        <p style={{ color: "#f8fafc", fontWeight: 600, margin: "0 0 8px 0" }}>
+          {data.name}
+        </p>
+        <p style={{ color: "#94a3b8", margin: 0, fontSize: "14px" }}>
+          {Number(data.value).toFixed(2)} € ({data.percentage.toFixed(1)}%)
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export const ExpenseChart = memo(function ExpenseChart({ data }: ExpenseChartProps) {
   const isMobile = useDeviceType();
   const totalExpenses = useMemo(() => data.reduce((sum, d) => sum + d.amount, 0), [data]);
@@ -50,24 +79,7 @@ export const ExpenseChart = memo(function ExpenseChart({ data }: ExpenseChartPro
       <RechartsBarChart data={chartData} layout="vertical" margin={{ left: marginLeft }}>
         <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
         <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} width={yAxisWidth} />
-        <Tooltip
-          contentStyle={{
-            backgroundColor: "#1e293b",
-            border: "none",
-            borderRadius: "12px",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-          }}
-          labelStyle={{ color: "#f8fafc", fontWeight: 600 }}
-          itemStyle={{ color: "#94a3b8" }}
-          formatter={(value, name, props) => {
-            const category = props?.payload?.name;
-            const percentage = props?.payload?.percentage;
-            return [
-              `${Number(value).toFixed(2)} € (${percentage.toFixed(1)}%)`,
-              category
-            ];
-          }}
-        />
+        <Tooltip content={<CustomTooltip />} />
         <Bar dataKey="value" radius={[0, 8, 8, 0]} animationDuration={800}>
           {chartData.map((entry, index) => (
             <Cell key={`cell-${index}`} fill={entry.fill} />
