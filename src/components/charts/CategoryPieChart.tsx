@@ -17,6 +17,34 @@ interface CategoryPieChartProps {
   data: { category: string; amount: number }[];
 }
 
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: any[];
+}
+
+const CustomTooltip = ({ active, payload }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div style={{
+        backgroundColor: "#1e293b",
+        border: "none",
+        borderRadius: "12px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+        padding: "12px 16px",
+      }}>
+        <p style={{ color: "#f8fafc", fontWeight: 600, margin: "0 0 8px 0" }}>
+          {data.name}
+        </p>
+        <p style={{ color: "#94a3b8", margin: 0, fontSize: "14px" }}>
+          {Number(data.value).toFixed(2)} €
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 export const CategoryPieChart = memo(function CategoryPieChart({ data }: CategoryPieChartProps) {
   const isMobile = useDeviceType();
   const chartData = useMemo(() => {
@@ -92,16 +120,7 @@ export const CategoryPieChart = memo(function CategoryPieChart({ data }: Categor
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Pie>
-          <Tooltip
-            contentStyle={{
-              backgroundColor: "#1e293b",
-              border: "none",
-              borderRadius: "12px",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
-            }}
-            labelStyle={{ color: "#f8fafc", fontWeight: 600 }}
-            formatter={(value) => [`${Number(value).toFixed(2)} €`, "Valor"]}
-          />
+          <Tooltip content={<CustomTooltip />} />
           {showLegend && (
             <Legend
               verticalAlign="bottom"
