@@ -55,6 +55,7 @@ export const ExpenseChart = memo(function ExpenseChart({ data }: ExpenseChartPro
             boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
           }}
           labelStyle={{ color: "#f8fafc", fontWeight: 600 }}
+          itemStyle={{ color: "#94a3b8" }}
           formatter={(value) => [`${Number(value).toFixed(2)} €`, "Valor"]}
         />
         <Bar dataKey="value" radius={[0, 8, 8, 0]} animationDuration={800}>
