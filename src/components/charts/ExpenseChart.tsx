@@ -19,6 +19,8 @@ interface ExpenseChartProps {
 
 export const ExpenseChart = memo(function ExpenseChart({ data }: ExpenseChartProps) {
   const isMobile = useDeviceType();
+  const totalExpenses = useMemo(() => data.reduce((sum, d) => sum + d.amount, 0), [data]);
+  
   const chartData = useMemo(() => {
     return data
       .filter((d) => d.amount > 0)
@@ -26,9 +28,10 @@ export const ExpenseChart = memo(function ExpenseChart({ data }: ExpenseChartPro
         name: d.category,
         value: d.amount,
         fill: getCategoryColor(d.category, idx),
+        percentage: totalExpenses > 0 ? ((d.amount / totalExpenses) * 100) : 0,
       }))
       .sort((a, b) => b.value - a.value);
-  }, [data]);
+  }, [data, totalExpenses]);
 
   if (chartData.length === 0) {
     return (
@@ -56,7 +59,14 @@ export const ExpenseChart = memo(function ExpenseChart({ data }: ExpenseChartPro
           }}
           labelStyle={{ color: "#f8fafc", fontWeight: 600 }}
           itemStyle={{ color: "#94a3b8" }}
-          formatter={(value) => [`${Number(value).toFixed(2)} €`, "Valor"]}
+          formatter={(value, name, props) => {
+            const category = props?.payload?.name;
+            const percentage = props?.payload?.percentage;
+            return [
+              `${Number(value).toFixed(2)} € (${percentage.toFixed(1)}%)`,
+              category
+            ];
+          }}
         />
         <Bar dataKey="value" radius={[0, 8, 8, 0]} animationDuration={800}>
           {chartData.map((entry, index) => (
