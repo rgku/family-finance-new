@@ -11,6 +11,10 @@
     {
       "path": "/api/inactivity-reminder",
       "schedule": "0 10 * * *"
+    },
+    {
+      "path": "/api/monthly-report-email",
+      "schedule": "0 9 1 * *"
     }
   ],
   "functions": {
