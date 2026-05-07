@@ -132,7 +132,11 @@ export default function AnalyticsPage() {
       const d = new Date(year, month - 1 - i, 15);
       const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       
+      // Filter transactions by billing cycle
       const monthTransactions = transactions.filter(t => {
+        if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
+          return isDateInCustomMonth(t.date, billingDay, d.getFullYear(), d.getMonth() + 1);
+        }
         const transDate = new Date(t.date);
         return transDate.getFullYear() === d.getFullYear() && transDate.getMonth() === d.getMonth();
       });
@@ -140,7 +144,20 @@ export default function AnalyticsPage() {
       const monthIncome = monthTransactions.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
       const monthExpenses = monthTransactions.filter(t => t.type === "expense" && t.category !== "Investimentos").reduce((s, t) => s + t.amount, 0);
       
-      const monthSavings = monthIncome - monthExpenses;
+      // Filter goals by created_at in this month
+      const monthGoals = dataGoals.filter(g => {
+        if (!g.created_at || g.goal_type !== 'savings') return false;
+        const createdAt = new Date(g.created_at);
+        if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
+          return isDateInCustomMonth(createdAt.toISOString(), billingDay, d.getFullYear(), d.getMonth() + 1);
+        }
+        return createdAt.getFullYear() === d.getFullYear() && createdAt.getMonth() === d.getMonth();
+      });
+      const savingsAllocated = monthGoals.reduce((s, g) => s + g.current_amount, 0);
+      const investmentExpenses = monthTransactions.filter(t => t.type === "expense" && t.category === "Investimentos").reduce((s, t) => s + t.amount, 0);
+      const poupanca = savingsAllocated + investmentExpenses;
+      
+      const monthSavings = monthIncome - monthExpenses - poupanca;
       const percentage = monthIncome > 0 ? (monthSavings / monthIncome) * 100 : 0;
       
       trend.push({
@@ -151,7 +168,7 @@ export default function AnalyticsPage() {
     }
     
     return trend;
-  }, [transactions, year, month]);
+  }, [transactions, dataGoals, year, month, profile, billingDay]);
 
   const monthlyTrend = useMemo(() => {
     const months: { month: string; income: number; expense: number; pouparanca: number }[] = [];
