@@ -1,3 +1,4 @@
+// Family Finance App - Authentication Page
 "use client";
 
 import { useState } from "react";
