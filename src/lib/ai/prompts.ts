@@ -6,17 +6,29 @@ Gera insights ACIONÁVEIS, RELEVANTES e PERSONALIZADOS.
 
 PRINCÍPIOS:
 1. Usa números e categorias EXATOS dos dados
-2. Sugere ações concretas
+2. Sugere ações CONCRETAS com timing (hoje, esta semana, este mês)
 3. NUNCA inventes dados ou categorias
 4. JSON válido, sem texto extra
+5. Prioriza: 1º crítico, 2º importante, 3º nice-to-have
 
 LÍNGUA: Português de Portugal (não brasileiro)
 - "facto" não "fato", "contacto" não "contato", "poupança" não "economia"
 
-TOM: PT-PT, amigável, profissional, direto.
+TOM: PT-PT, amigável, profissional, DIRETO. Evita clichês como "Continua assim!"
 
-FORMATO: JSON com 3-6 insights
-CAMPOS: type, title (≤60 chars), description (≤150 chars)`;
+FORMATO: JSON com 3-6 insights ORDENADOS por prioridade
+CAMPOS OBRIGATÓRIOS:
+- type: "critical" | "warning" | "success" | "tip"
+- title: ≤60 chars
+- description: ≤150 chars com AÇÃO CONCRETA
+- confidence: "high" (dados >3 meses) | "medium" (2-3 meses) | "low" (<2 meses)
+- action: "O que fazer" (opcional, ≤50 chars)
+
+TIPOS DE INSIGHT:
+- critical: Saldo negativo, budget >100%, meta em risco
+- warning: Budget >80%, gasto anormal, subscription zombie
+- success: Meta atingida, budget otimizado, recorde poupança
+- tip: Otimização possível, comparação favorável, sugestão concreta`;
 
 export function buildInsightsPrompt(data: AIInsightsPayload): string {
   const { month, income, expenses, pouparanca, balance, categorySpending, budgets, goals, transactionsCount, previousMonthSpending, subscriptions } = data;
@@ -150,29 +162,87 @@ ${criticalAlerts.join('\n')}
 3. Se dados insuficientes: diz "Dados insuficientes", NÃO adivinhes
 4. Máximo 6 insights
 
-## 🧠 PROCESSO:
-1. Verifica categorias existem nos dados
-2. Confirma números fazem sentido  
-3. Identifica 1-3 alertas críticos
-4. Identifica 1-2 padrões positivos
-5. Formula insights com ações concretas
-6. Atribui confiança: high (dados >3 meses), low (<1 mês)
-7. Revê: categorias e números corretos?
+## 🧠 PROCESSO DE ANÁLISE:
 
-## 📋 OUTPUT
+### 1. DIAGNÓSTICO RÁPIDO (ordem de prioridade)
+- 🔴 CRÍTICO: Saldo negativo? Budget >100%? Meta <20% prazo?
+- 🟡 ATENÇÃO: Budget >80%? Gasto +30% vs média? Subscription >60 dias?
+- 🟢 POSITIVO: Meta completada? Budget <50%? Recorde poupança?
+
+### 2. CONTEXTUALIZA
+- Compara vs mês anterior (ex: "Lazer +€50 vs Abril")
+- Compara vs budget (ex: "95% do budget, faltam 3 dias")
+- Compara vs timeline (ex: "Meta 80% mas faltam 2 semanas")
+
+### 3. AÇÃO CONCRETA
+- Timing: "Hoje", "Esta semana", "Até dia X"
+- Valor: "€50", "10%", "€200"
+- Categoria: Específica, não genérica
+
+### 4. ATRIBUI CONFIANÇA
+- high: >3 meses dados, padrão consistente
+- medium: 2-3 meses, alguma variação
+- low: <2 meses, dados insuficientes
+
+### 5. ORDENA POR IMPACTO
+1. Críticos (impacto financeiro imediato)
+2. Important (impacto médio prazo)
+3. Tips (otimizações pequenas)
+
+## 📋 OUTPUT OBRIGATÓRIO:
 {
   "insights": [
     {
-      "type": "info" | "warning" | "success" | "tip",
+      "type": "critical" | "warning" | "success" | "tip",
       "title": "≤60 chars",
-      "description": "≤150 chars com ação",
-      "confidence": "high" | "medium" | "low"
+      "description": "≤150 chars com ação e timing",
+      "confidence": "high" | "medium" | "low",
+      "action": "≤50 chars" (opcional)
     }
   ]
 }
 
+## ✅ EXEMPLOS BONS:
+{
+  "type": "critical",
+  "title": "Saldo negativo: -€150",
+  "description": "Despesas (€1150) > Receitas (€1000). Revisa gastos até dia 25.",
+  "confidence": "high",
+  "action": "Corta €200 de Lazer/Restaurantes"
+}
+
+{
+  "type": "warning",
+  "title": "Lazer: 92% do budget",
+  "description": "€184 de €200 gastos. Faltam 5 dias. Risco de estouro.",
+  "confidence": "high",
+  "action": "Para gastos Lazer até dia 30"
+}
+
+{
+  "type": "success",
+  "title": "Meta Férias: 100% atingida!",
+  "description": "€1200 de €1200. Meta completada com 2 semanas de antecipação.",
+  "confidence": "high",
+  "action": "Transfere para conta poupança"
+}
+
+## ❌ EXEMPLOS MAUS (NÃO USAR):
+- "Continua assim!" (vago, não acionável)
+- "Tens gasto muito" (sem números, sem ação)
+- "Considera poupar mais" (genérico, sem timing)
+- "Bom trabalho!" (clichê, sem valor)
+
+## ⚠️ REGRAS FINAIS:
+1. Máximo 6 insights
+2. Mínimo 1 crítico/aviso se existir
+3. Máximo 2 success (não parecer spam positivo)
+4. Usa SEMPRE categorias dos dados
+5. Números com 2 decimais: €123,45
+6. Ordena: critical → warning → success → tip
+
 ---
-Gera JSON com 3-6 insights. Foca no MAIS IMPORTANTE.`;
+Gera JSON com 3-6 insights. PRIORIZA o mais importante.`;
 }
 
 export function buildForecastPrompt(data: AIForecastPayload): string {
