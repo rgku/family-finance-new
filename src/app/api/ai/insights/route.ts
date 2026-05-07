@@ -121,23 +121,12 @@ export async function GET(request: NextRequest) {
 
     const monthGoals = (goalsResult.data || []).filter((g) => {
       if (!g.created_at) return false;
-      const goalDate = new Date(g.created_at);
-      const isInMonth = goalDate.getFullYear() === year && goalDate.getMonth() === monthNum - 1;
-      console.log(`[Goal] ${g.name}: created_at=${g.created_at}, isInMonth=${isInMonth}`);
-      return isInMonth;
+      return isInMonth(g.created_at);
     });
 
     const savingsAllocated = monthGoals
       .filter((g) => g.goal_type === "savings")
       .reduce((s, g) => s + Number(g.current_amount), 0);
-
-    console.log(`[AI Insights] Month: ${monthParam}`);
-    console.log(`[AI Insights] Total goals: ${(goalsResult.data || []).length}`);
-    console.log(`[AI Insights] Month goals: ${monthGoals.length}`);
-    console.log(`[AI Insights] Savings allocated (this month only): €${savingsAllocated.toFixed(2)}`);
-    console.log(`[AI Insights] Income: €${income.toFixed(2)}`);
-    console.log(`[AI Insights] Expenses: €${expenses.toFixed(2)}`);
-    console.log(`[AI Insights] Balance: €${balance.toFixed(2)}`);
 
     const pouparanca = savingsAllocated + investmentExpenses;
     const expenses = normalExpenses;
