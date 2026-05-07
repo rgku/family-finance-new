@@ -126,25 +126,12 @@ export default function AnalyticsPage() {
 
   // Savings trend (last 3 months)
   const savingsTrend = useMemo(() => {
-    const trend: { month: string; amount: number; percentage: number; label: string }[] = [];
+    const trend: { month: string; label: string; amount: number; percentage: number }[] = [];
+    const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
     
     for (let i = 2; i >= 0; i--) {
       const d = new Date(year, month - 1 - i, 15);
       const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      
-      // Calculate custom month label based on billing cycle
-      let label: string;
-      if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
-        const prevMonth = i === 0 ? month - 1 : month - 1 - i;
-        const prevYear = prevMonth < 0 ? year - 1 : year;
-        const actualMonth = prevMonth < 0 ? 12 : prevMonth;
-        const nextMonth = actualMonth === 12 ? 1 : actualMonth + 1;
-        const nextYear = actualMonth === 12 ? prevYear + 1 : prevYear;
-        label = `${String(billingDay).padStart(2, "0")}/${actualMonth + 1}-${String(billingDay - 1).padStart(2, "0")}/${nextMonth}`;
-      } else {
-        const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-        label = monthNames[d.getMonth()];
-      }
       
       // Filter transactions by billing cycle
       const monthTransactions = transactions.filter(t => {
@@ -176,9 +163,11 @@ export default function AnalyticsPage() {
       
       trend.push({
         month: m,
+        label: profile?.billing_cycle_day && profile.billing_cycle_day > 1
+          ? `${monthNames[d.getMonth()]}`
+          : monthNames[d.getMonth()],
         amount: monthSavings,
         percentage,
-        label,
       });
     }
     
