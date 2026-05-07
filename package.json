@@ -1,6 +1,7 @@
 {
   "name": "family-finance-app",
-  "version": "0.1.1",
+  "version": "0.2.0",
+  "description": "Family finance management with AI insights and push notifications",
   "private": true,
   "scripts": {
     "dev": "next dev",
