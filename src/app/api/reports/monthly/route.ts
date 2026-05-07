@@ -27,8 +27,16 @@ export async function GET(request: NextRequest) {
       ? `${year + 1}-01-01` 
       : `${year}-${String(monthNum + 1).padStart(2, "0")}-01`;
 
-    // Run both queries in parallel
-    const [transactionsRes, budgetsRes] = await Promise.all([
+    // Previous month calculation
+    const prevMonthNum = monthNum === 1 ? 12 : monthNum - 1;
+    const prevYear = monthNum === 1 ? year - 1 : year;
+    const prevStartDate = `${prevYear}-${String(prevMonthNum).padStart(2, "0")}-01`;
+    const prevEndDate = monthNum === 1 
+      ? `${prevYear + 1}-01-01` 
+      : `${prevYear}-${String(monthNum).padStart(2, "0")}-01`;
+
+    // Run queries in parallel
+    const [transactionsRes, budgetsRes, prevTransactionsRes] = await Promise.all([
       supabase
         .from("transactions_decrypted")
         .select("id, description, amount, type, category, date")
@@ -38,7 +46,12 @@ export async function GET(request: NextRequest) {
       supabase
         .from("budgets")
         .select("category, limit_amount")
-        .eq("user_id", user.id)
+        .eq("user_id", user.id),
+      supabase
+        .from("transactions_decrypted")
+        .select("amount, type")
+        .gte("date", prevStartDate)
+        .lt("date", prevEndDate),
     ]);
 
     if (transactionsRes.error) {
@@ -51,6 +64,7 @@ export async function GET(request: NextRequest) {
 
     const transactions = transactionsRes.data || [];
     const budgets = budgetsRes.data || [];
+    const prevTransactions = prevTransactionsRes.data || [];
 
     const budgetData = budgets.map(b => {
       const spent = transactions
@@ -69,6 +83,28 @@ export async function GET(request: NextRequest) {
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
     const expenses = transactions
+      .filter(t => t.type === "expense")
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    // Category breakdown
+    const categoryMap = new Map<string, number>();
+    transactions
+      .filter(t => t.type === "expense")
+      .forEach(t => {
+        categoryMap.set(t.category, (categoryMap.get(t.category) || 0) + Number(t.amount));
+      });
+    
+    const categoryBreakdown = Array.from(categoryMap.entries()).map(([category, amount]) => ({
+      category,
+      amount,
+    })).sort((a, b) => b.amount - a.amount);
+
+    // Previous month data
+    const prevIncome = prevTransactions
+      .filter(t => t.type === "income")
+      .reduce((sum, t) => sum + Number(t.amount), 0);
+
+    const prevExpenses = prevTransactions
       .filter(t => t.type === "expense")
       .reduce((sum, t) => sum + Number(t.amount), 0);
 
@@ -92,6 +128,12 @@ export async function GET(request: NextRequest) {
         category: t.category,
         date: t.date,
       })),
+      categoryBreakdown,
+      previousMonth: {
+        income: prevIncome,
+        expenses: prevExpenses,
+        balance: prevIncome - prevExpenses,
+      },
     };
 
     return NextResponse.json(reportData);
