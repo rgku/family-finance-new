@@ -36,15 +36,24 @@ export async function POST(req: Request) {
       try {
         const billingDay = user.billing_cycle_day || 1;
         const today = new Date();
+        const currentDay = today.getDate();
         
-        // Calculate the period end date (yesterday)
+        // Only send email if today is the user's billing cycle day
+        if (currentDay !== billingDay) {
+          console.log(`⏭️ Skipping user ${user.id} - billing cycle day is ${billingDay}, today is ${currentDay}`);
+          continue;
+        }
+        
+        // Calculate period: from billing_day of previous month to yesterday
         const periodEnd = new Date(today);
         periodEnd.setDate(periodEnd.getDate() - 1);
         
-        // Calculate period start (1 month before)
         const periodStart = new Date(today);
         periodStart.setMonth(periodStart.getMonth() - 1);
-        periodStart.setDate(billingDay);
+        // Keep the billing day
+        if (periodStart.getDate() !== billingDay) {
+          periodStart.setDate(billingDay);
+        }
         
         // Format dates for query
         const startDate = periodStart.toISOString().split('T')[0];

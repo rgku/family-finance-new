@@ -14,7 +14,7 @@
     },
     {
       "path": "/api/monthly-report-email",
-      "schedule": "0 9 1 * *"
+      "schedule": "0 9 * * *"
     }
   ],
   "functions": {
