@@ -117,6 +117,15 @@ export async function GET(request: NextRequest) {
       .filter(t => t.type === "expense" && t.category !== "Investimentos")
       .reduce((s, t) => s + Number(t.amount), 0);
 
+    // Debug logging
+    console.log('[Insights] Month:', monthParam, '| Billing cycle day:', billingDay);
+    console.log('[Insights] Total transactions:', transResult.data?.length, '| In month:', monthTransactions.length);
+    console.log('[Insights] Income:', income, '€ (', monthTransactions.filter(t => t.type === 'income').length, 'transactions)');
+    console.log('[Insights] Expenses:', normalExpenses, '€ (', monthTransactions.filter(t => t.type === 'expense' && t.category !== 'Investimentos').length, 'transactions)');
+    console.log('[Insights] Investments:', investmentExpenses, '€');
+    console.log('[Insights] Budgets:', budgetsResult.data?.length || 0);
+    console.log('[Insights] Goals:', goalsResult.data?.length || 0);
+
     const monthGoals = (goalsResult.data || []).filter((g) => {
       if (!g.created_at) return false;
       return isInMonth(g.created_at);
