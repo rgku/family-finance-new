@@ -221,7 +221,6 @@ export async function GET(request: NextRequest) {
           insights = generateFallbackInsights(payload);
         }
       }
-      }
     } catch (aiError) {
       console.warn("AI insights generation failed, using fallback:", aiError);
       insights = generateFallbackInsights(payload);
