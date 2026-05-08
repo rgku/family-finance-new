@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useData } from "@/hooks/DataProvider";
 import { DesktopSidebar, MobileHeader, MobileNav } from "@/components/Sidebar";
@@ -9,7 +9,7 @@ import { Icon } from "@/components/Icon";
 import { parseCSV, bankPresets } from "@/lib/csvImport";
 
 export default function ImportPage() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, supabase } = useAuth();
   const isMobile = useDeviceType();
   const { addTransaction } = useData();
   
@@ -18,6 +18,17 @@ export default function ImportPage() {
   const [preview, setPreview] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [imported, setImported] = useState(false);
+  const [userFamilyId, setUserFamilyId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user || !supabase) return;
+    supabase
+      .from("profiles")
+      .select("family_id")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => setUserFamilyId(data?.family_id || null));
+  }, [user, supabase]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = e.target.files?.[0];
@@ -53,14 +64,34 @@ export default function ImportPage() {
       const mapping = bankPresets[selectedBank];
       const transactions = await parseCSV(file, mapping);
 
-      for (const trans of transactions) {
-        await addTransaction({
-          description: trans.description,
-          amount: trans.amount,
-          type: trans.type,
-          category: trans.category || "Outros",
-          date: trans.date,
-        });
+      if (userFamilyId && selectedBank !== "famflow") {
+        // User has family: insert directly with family_id for sharing
+        for (const trans of transactions) {
+          const { error } = await supabase!
+            .from("transactions")
+            .insert({
+              user_id: user!.id,
+              family_id: userFamilyId,
+              description: trans.description,
+              amount: trans.amount,
+              type: trans.type,
+              category: trans.category || "Outros",
+              date: trans.date,
+            });
+
+          if (error) throw error;
+        }
+      } else {
+        // No family or FamFlow import: use addTransaction (user_id only)
+        for (const trans of transactions) {
+          await addTransaction({
+            description: trans.description,
+            amount: trans.amount,
+            type: trans.type,
+            category: trans.category || "Outros",
+            date: trans.date,
+          });
+        }
       }
 
       setImported(true);
@@ -116,8 +147,17 @@ export default function ImportPage() {
                 <Icon name="info" size={16} className="text-amber-500 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-amber-500">
                   <strong>Nota:</strong> Todas as transações importadas ficarão associadas apenas à tua conta. 
-                  Outros membros da família <strong>não</strong> terão acesso a estas transações, mesmo que pertençam 
-                  a uma família no ficheiro original.
+                  Outros membros da família <strong>não</strong> terão acesso a estas transações.
+                </p>
+              </div>
+            </div>
+          )}
+          {selectedBank !== "famflow" && userFamilyId && (
+            <div className="mt-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+              <div className="flex items-start gap-2">
+                <Icon name="group" size={16} className="text-green-500 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-green-500">
+                  <strong>Família ativa:</strong> As transações importadas serão partilhadas com os membros da tua família.
                 </p>
               </div>
             </div>
