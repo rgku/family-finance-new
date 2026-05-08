@@ -22,11 +22,11 @@ export const bankPresets: Record<string, CSVMapping> = {
     amountColumn: "amount",
   },
   famflow: {
-    dateColumn: "Data",
-    descriptionColumn: "Descrição",
-    amountColumn: "Valor",
-    categoryColumn: "Categoria",
-    typeColumn: "Tipo",
+    dateColumn: "data",
+    descriptionColumn: "descricao",
+    amountColumn: "valor",
+    categoryColumn: "categoria",
+    typeColumn: "tipo",
   },
   revolut: {
     dateColumn: "data",
@@ -70,13 +70,13 @@ export async function parseCSV(file: File, mapping: CSVMapping): Promise<ParsedT
       throw new Error("CSV vazio ou inválido - precisa de pelo menos 1 linha de dados");
     }
 
-    // Detect FamFlow History CSV format - find the TRANSAÇÕES header line
+    // Detect FamFlow History CSV format - find the TRANSACTIONS header line
     let headerLineIdx = 0;
     let isFamFlowFormat = false;
     
     for (let i = 0; i < lines.length; i++) {
-      if (lines[i].includes("=== TRANSAÇÕES ===")) {
-        headerLineIdx = i + 1; // Next line is the header
+      if (lines[i].includes("=== TRANSACTIONS ===")) {
+        headerLineIdx = i + 1;
         isFamFlowFormat = true;
         break;
       }

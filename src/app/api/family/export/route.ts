@@ -114,8 +114,8 @@ export async function POST(request: NextRequest) {
     csvRows.push("");
 
     // Transactions
-    csvRows.push("=== TRANSAÇÕES ===");
-    csvRows.push("ID,user_id,family_id,Data,Descrição,Categoria,Tipo,Valor,Criado Em");
+    csvRows.push("=== TRANSACTIONS ===");
+    csvRows.push("id,user_id,family_id,data,descricao,categoria,tipo,valor,criado_em");
     
     if (transactions && transactions.length > 0) {
       for (const t of transactions) {
@@ -138,8 +138,8 @@ export async function POST(request: NextRequest) {
 
     // Goals
     if (includeGoals && goalsData.length > 0) {
-      csvRows.push("=== METAS ===");
-      csvRows.push("ID,user_id,family_id,Nome,Meta Atual,Meta Alvo,Prazo,Tipo,Ícone,Criado Em");
+      csvRows.push("=== GOALS ===");
+      csvRows.push("id,user_id,family_id,nome,current_amount,target_amount,deadline,goal_type,icon,criado_em");
       
       for (const g of goalsData) {
         csvRows.push(
@@ -162,8 +162,8 @@ export async function POST(request: NextRequest) {
 
     // Budgets
     if (includeBudgets && budgetsData.length > 0) {
-      csvRows.push("=== ORÇAMENTOS ===");
-      csvRows.push("ID,user_id,family_id,Categoria,Limite,Mês,Criado Em");
+      csvRows.push("=== BUDGETS ===");
+      csvRows.push("id,user_id,family_id,categoria,limit_amount,month,criado_em");
       
       for (const b of budgetsData) {
         csvRows.push(
