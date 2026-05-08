@@ -35,12 +35,24 @@ export async function GET(request: NextRequest) {
       ? `${prevYear + 1}-01-01` 
       : `${prevYear}-${String(monthNum).padStart(2, "0")}-01`;
 
+    // Get family_id for OR filter
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("family_id")
+      .eq("id", user.id)
+      .single();
+
+    const familyId = profile?.family_id;
+    const txFilter = familyId
+      ? `user_id.eq.${user.id},family_id.eq.${familyId}`
+      : `user_id.eq.${user.id}`;
+
     // Run queries in parallel
     const [transactionsRes, budgetsRes, prevTransactionsRes] = await Promise.all([
       supabase
         .from("transactions_decrypted")
         .select("id, description, amount, type, category, date")
-        .eq("user_id", user.id)
+        .or(txFilter)
         .gte("date", startDate)
         .lt("date", endDate)
         .order("date", { ascending: false }),
@@ -51,7 +63,7 @@ export async function GET(request: NextRequest) {
       supabase
         .from("transactions_decrypted")
         .select("amount, type")
-        .eq("user_id", user.id)
+        .or(txFilter)
         .gte("date", prevStartDate)
         .lt("date", prevEndDate),
     ]);

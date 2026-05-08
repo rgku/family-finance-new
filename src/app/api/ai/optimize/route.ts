@@ -47,11 +47,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const [profileResult, budgetsResult, goalsResult, transResult] = await Promise.all([
-      supabase.from("profiles").select("family_id").eq("id", user.id).single(),
+    const profileResult = await supabase.from("profiles").select("family_id").eq("id", user.id).single();
+    const familyId = profileResult.data?.family_id;
+    const txFilter = familyId
+      ? `user_id.eq.${user.id},family_id.eq.${familyId}`
+      : `user_id.eq.${user.id}`;
+
+    const [budgetsResult, goalsResult, transResult] = await Promise.all([
       supabase.from("budgets").select("category, limit_amount").eq("user_id", user.id),
-      supabase.from("goals_decrypted").select("name, target_amount, current_amount, deadline").eq("user_id", user.id),
-      supabase.from("transactions_decrypted").select("amount, type, category, date").eq("user_id", user.id).order("date", { ascending: false }).limit(500),
+      supabase.from("goals_decrypted").select("name, target_amount, current_amount, deadline").or(txFilter),
+      supabase.from("transactions_decrypted").select("amount, type, category, date").or(txFilter).order("date", { ascending: false }).limit(500),
     ]);
 
     if (profileResult.error) {
@@ -101,7 +106,7 @@ export async function POST(request: NextRequest) {
     const incomeResult = await supabase
       .from("transactions_decrypted")
       .select("amount")
-      .eq("user_id", user.id)
+      .or(txFilter)
       .eq("type", "income")
       .gte("date", `${currentMonth}-01`)
       .lt("date", `${currentMonth}-32`);
