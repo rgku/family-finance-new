@@ -74,7 +74,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     
     try {
+      console.log('[DataProvider] ========== FETCH START ==========');
       console.log('[DataProvider] Fetching data for user:', user.id);
+      console.log('[DataProvider] lastFetchUserId:', lastFetchUserId.current);
+      console.log('[DataProvider] lastFetchFamilyId:', lastFetchFamilyId.current);
       
       // Fetch user's family_id
       const { data: profile, error: profileError } = await supabase
@@ -89,6 +92,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       
       const familyId = profile?.family_id;
       console.log('[DataProvider] Profile family_id:', familyId);
+      console.log('[DataProvider] Has family?:', !!familyId);
       
       // Fetch: user's own data + family data (if has family)
       // User NEVER loses their data - always see their own + family's
@@ -102,6 +106,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       
       if (familyId) {
         transactionQuery = transactionQuery.or(`family_id.eq.${familyId}`);
+        console.log('[DataProvider] Query filter: user_id=', user.id, 'OR family_id=', familyId);
+      } else {
+        console.log('[DataProvider] Query filter: user_id=', user.id, '(no family)');
       }
       
       let goalsQuery = supabase
@@ -122,6 +129,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
           .eq('user_id', user.id)
           .order('month', { ascending: false }),
       ]);
+      
+      console.log('[DataProvider] transactionsData error:', transactionsData.error);
+      console.log('[DataProvider] transactionsData count:', transactionsData.data?.length);
+      if (transactionsData.data && transactionsData.data.length > 0) {
+        console.log('[DataProvider] First transaction:', JSON.stringify(transactionsData.data[0]));
+      }
       
       if (transactionsData.error) {
         console.error('[DataProvider] Error fetching transactions:', transactionsData.error);
@@ -144,7 +157,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
             date: t.date,
           };
         });
+        console.log('[DataProvider] Mapped', mapped.length, 'transactions');
+        console.log('[DataProvider] Setting transactions state...');
         setTransactions(mapped);
+      } else {
+        console.log('[DataProvider] No transactions data, setting empty array');
+        setTransactions([]);
       }
       
       if (goalsData.data) {
@@ -165,8 +183,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       }
       
       // Update last fetch refs
+      console.log('[DataProvider] Updating refs - userId:', user.id, 'familyId:', familyId);
       lastFetchUserId.current = user.id;
       lastFetchFamilyId.current = familyId;
+      console.log('[DataProvider] ========== FETCH END ==========');
     } catch (error) {
       console.error('[DataProvider] Error fetching data:', error);
     } finally {
@@ -175,8 +195,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
+    console.log('[DataProvider useEffect] ========== EFFECT TRIGGERED ==========');
     console.log('[DataProvider useEffect] user:', user?.id);
     console.log('[DataProvider useEffect] isOnline:', isOnline);
+    console.log('[DataProvider useEffect] lastFetchUserId:', lastFetchUserId.current);
+    console.log('[DataProvider useEffect] lastFetchFamilyId:', lastFetchFamilyId.current);
     
     if (!user) {
       console.log('[DataProvider] No user, clearing data');
@@ -191,7 +214,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     // Check if we need to refetch (user changed OR family changed)
     const needsRefetch = async () => {
-      if (lastFetchUserId.current !== user.id) return true;
+      if (lastFetchUserId.current !== user.id) {
+        console.log('[DataProvider needsRefetch] YES - user changed');
+        return true;
+      }
       
       // Check if family_id changed
       const { data: profile } = await supabase
@@ -201,8 +227,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
         .single();
       
       const currentFamilyId = profile?.family_id || null;
-      if (lastFetchFamilyId.current !== currentFamilyId) return true;
+      console.log('[DataProvider needsRefetch] lastFetchFamilyId:', lastFetchFamilyId.current, 'currentFamilyId:', currentFamilyId);
       
+      if (lastFetchFamilyId.current !== currentFamilyId) {
+        console.log('[DataProvider needsRefetch] YES - family changed');
+        return true;
+      }
+      
+      console.log('[DataProvider needsRefetch] NO - same user+family');
       return false;
     };
     
