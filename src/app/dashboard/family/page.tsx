@@ -38,6 +38,7 @@ export default function FamilyPage() {
   const [exporting, setExporting] = useState(false);
   const [exportFullHistory, setExportFullHistory] = useState(false);
   const [pendingAction, setPendingAction] = useState<"leave" | "delete" | null>(null);
+  const [showRemoveModal, setShowRemoveModal] = useState<{ memberId: string; memberName: string; memberEmail: string } | null>(null);
 
   const handleCreateFamily = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,14 +118,20 @@ export default function FamilyPage() {
     }
   };
 
-  const handleRemove = async (memberId: string, memberName: string) => {
-    if (confirm(`Remover ${memberName} da família?`)) {
-      try {
-        await removeMember(memberId);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
-        setMessage(errorMessage);
-      }
+  const handleRemove = async (memberId: string, memberName: string, memberEmail: string) => {
+    setShowRemoveModal({ memberId, memberName, memberEmail });
+  };
+
+  const handleConfirmRemove = async () => {
+    if (!showRemoveModal) return;
+    
+    try {
+      await removeMember(showRemoveModal.memberId);
+      setMessage(`${showRemoveModal.memberName} foi removido da família.`);
+      setShowRemoveModal(null);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+      setMessage(errorMessage);
     }
   };
 
@@ -590,7 +597,7 @@ export default function FamilyPage() {
 
                     {userRole === "owner" && member.role !== "owner" && (
                       <button
-                        onClick={() => handleRemove(member.id, member.name)}
+                        onClick={() => handleRemove(member.id, member.name, member.email)}
                         className="p-2 text-error hover:bg-error/20 rounded-lg"
                         aria-label="Remover membro"
                       >
@@ -824,6 +831,51 @@ export default function FamilyPage() {
                 className="flex-1 py-3 bg-error text-on-error rounded-full font-medium hover:brightness-110 transition-all"
               >
                 Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Remover Membro */}
+      {showRemoveModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface-container rounded-2xl p-6 max-w-md w-full space-y-4">
+            <div className="flex items-start gap-3">
+              <Icon name="warning" size={24} className="text-warning flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="text-xl font-bold text-on-surface">Remover membro</h3>
+                <p className="text-sm text-on-surface-variant mt-1">
+                  {showRemoveModal.memberName} ({showRemoveModal.memberEmail})
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-warning/10 border border-warning/20 rounded-lg p-4 space-y-2">
+              <p className="text-sm text-on-surface">
+                <strong>Atenção:</strong> Este membro perderá acesso aos dados partilhados da família.
+              </p>
+              <ul className="text-xs text-on-surface-variant space-y-1">
+                <li>• O histórico pessoal do membro será mantido</li>
+                <li>• Transações criadas por outros membros deixarão de ser visíveis</li>
+                <li>• O membro pode exportar os seus dados em Definições</li>
+              </ul>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowRemoveModal(null)}
+                className="flex-1 py-3 bg-surface-container text-on-surface rounded-full font-medium hover:bg-surface-container-high transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmRemove}
+                className="flex-1 py-3 bg-error text-on-error rounded-full font-medium hover:brightness-110 transition-all"
+              >
+                Remover
               </button>
             </div>
           </div>
