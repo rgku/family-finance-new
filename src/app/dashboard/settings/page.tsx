@@ -12,51 +12,41 @@ export default function ExportPage() {
   const { profile, updateProfile } = useAuth();
   const [exporting, setExporting] = useState(false);
   const [savingCycle, setSavingCycle] = useState(false);
+  const [exportFullHistory, setExportFullHistory] = useState(false);
 
   const handleExport = async (type: 'all' | 'transactions' | 'goals' | 'budgets') => {
     setExporting(true);
     
     try {
-      let csvContent = "";
-      let filename = "";
-
-      if (type === 'all' || type === 'transactions') {
-        const transHeaders = "ID,Data,Descrição,Categoria,Tipo,Valor\n";
-        const transData = transactions.map(t => 
-          `${t.id},${t.date},"${t.description}","${t.category}",${t.type},${t.amount}`
-        ).join("\n");
-        csvContent += "=== TRANSAÇÕES ===\n" + transHeaders + transData + "\n\n";
+      const months = exportFullHistory ? 60 : 12;
+      
+      const res = await fetch("/api/family/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          months, 
+          includeGoals: type === 'all' || type === 'goals',
+          includeBudgets: type === 'all' || type === 'budgets',
+        }),
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Erro ao exportar dados");
       }
-
-      if (type === 'all' || type === 'goals') {
-        const goalsHeaders = "ID,Nome,Meta,Atual,Prazo,Ícone\n";
-        const goalsData = goals.map(g => 
-          `${g.id},"${g.name}",${g.target_amount},${g.current_amount},${g.deadline || ''},${g.icon}`
-        ).join("\n");
-        csvContent += "=== METAS ===\n" + goalsHeaders + goalsData + "\n\n";
-      }
-
-      if (type === 'all' || type === 'budgets') {
-        const budgetsHeaders = "ID,Categoria,Limite,Gasto\n";
-        const budgetsData = budgets.map(b => 
-          `${b.id},"${b.category}",${b.limit},${b.spent}`
-        ).join("\n");
-        csvContent += "=== ORÇAMENTOS ===\n" + budgetsHeaders + budgetsData;
-      }
-
-      filename = `fiscal-sanctuary-${type}-${new Date().toISOString().split('T')[0]}.csv`;
-
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      const blob = new Blob([data.csv], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      link.setAttribute('download', filename);
+      link.setAttribute('download', data.filename);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
-      alert("Dados exportados com sucesso!");
+      alert(`Dados exportados com sucesso!\n${data.stats.transactions} transações\n${data.stats.goals} metas\n${data.stats.budgets} orçamentos`);
     } catch (error) {
       console.error("Export error:", error);
       alert("Erro ao exportar dados");
@@ -171,6 +161,23 @@ export default function ExportPage() {
       {/* Export Options */}
       <div className="bg-surface-container rounded-lg p-6 space-y-4">
         <h2 className="font-bold text-lg">Exportar em CSV</h2>
+        <p className="text-sm text-on-surface-variant">
+          Exporta os teus dados num formato compatível para importar noutra família.
+        </p>
+        
+        <label className="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg cursor-pointer hover:bg-surface-container-high transition-colors">
+          <input
+            type="checkbox"
+            checked={exportFullHistory}
+            onChange={(e) => setExportFullHistory(e.target.checked)}
+            className="w-4 h-4 rounded border-surface-container-high"
+          />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-on-surface">Exportar histórico completo (5 anos)</p>
+            <p className="text-xs text-on-surface-variant">Predefinição: últimos 12 meses</p>
+          </div>
+        </label>
+        
         <div className="grid grid-cols-2 gap-4">
           <button
             onClick={() => handleExport('transactions')}

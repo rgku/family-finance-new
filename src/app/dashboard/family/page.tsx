@@ -30,6 +30,14 @@ export default function FamilyPage() {
   const [joinCode, setJoinCode] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
+  
+  // Export modal states
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showFallbackModal, setShowFallbackModal] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [exportFullHistory, setExportFullHistory] = useState(false);
+  const [pendingAction, setPendingAction] = useState<"leave" | "delete" | null>(null);
 
   const handleCreateFamily = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,26 +136,7 @@ export default function FamilyPage() {
       return;
     }
     
-    if (confirm(`Sair da família "${family.name}"? Vais perder acesso aos dados partilhados.`)) {
-      try {
-        const res = await fetch("/api/family", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "leave" }),
-        });
-        const data = await res.json();
-        
-        if (!res.ok) {
-          throw new Error(data.error || "Erro ao sair da família");
-        }
-        
-        setMessage("Saíste da família com sucesso!");
-        router.refresh();
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
-        setMessage(errorMessage);
-      }
-    }
+    setShowLeaveModal(true);
   };
 
   const handleDeleteFamily = async () => {
@@ -158,25 +147,166 @@ export default function FamilyPage() {
       return;
     }
     
-    if (confirm(`Eliminar família "${family.name}" permanentemente? Esta ação não pode ser desfeita.`)) {
-      try {
-        const res = await fetch("/api/family", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "delete" }),
-        });
-        const data = await res.json();
-        
-        if (!res.ok) {
-          throw new Error(data.error || "Erro ao eliminar família");
-        }
-        
-        setMessage("Família eliminada com sucesso!");
-        router.refresh();
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
-        setMessage(errorMessage);
+    setShowDeleteModal(true);
+  };
+
+  const handleExportAndLeave = async () => {
+    if (!family) return;
+    
+    setExporting(true);
+    
+    try {
+      const months = exportFullHistory ? 60 : 12;
+      
+      const res = await fetch("/api/family/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ months, includeGoals: true, includeBudgets: true }),
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Erro ao exportar dados");
       }
+      
+      const blob = new Blob([data.csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = data.filename;
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const leaveRes = await fetch("/api/family", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "leave" }),
+      });
+      
+      const leaveData = await leaveRes.json();
+      
+      if (!leaveRes.ok) {
+        throw new Error(leaveData.error || "Erro ao sair da família");
+      }
+      
+      setMessage("Saíste da família com sucesso!");
+      setShowLeaveModal(false);
+      router.refresh();
+    } catch (error) {
+      console.error("Export/leave error:", error);
+      setExporting(false);
+      setShowFallbackModal(true);
+      setPendingAction("leave");
+    }
+  };
+
+  const handleExportAndDelete = async () => {
+    if (!family) return;
+    
+    setExporting(true);
+    
+    try {
+      const months = exportFullHistory ? 60 : 12;
+      
+      const res = await fetch("/api/family/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ months, includeGoals: true, includeBudgets: true }),
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Erro ao exportar dados");
+      }
+      
+      const blob = new Blob([data.csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = data.filename;
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const deleteRes = await fetch("/api/family", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete" }),
+      });
+      
+      const deleteData = await deleteRes.json();
+      
+      if (!deleteRes.ok) {
+        throw new Error(deleteData.error || "Erro ao eliminar família");
+      }
+      
+      setMessage("Família eliminada com sucesso!");
+      setShowDeleteModal(false);
+      router.refresh();
+    } catch (error) {
+      console.error("Export/delete error:", error);
+      setExporting(false);
+      setShowFallbackModal(true);
+      setPendingAction("delete");
+    }
+  };
+
+  const handleFallbackLeave = async () => {
+    try {
+      const res = await fetch("/api/family", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "leave" }),
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Erro ao sair da família");
+      }
+      
+      setMessage("Saíste da família com sucesso!");
+      setShowFallbackModal(false);
+      router.refresh();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      setMessage(errorMessage);
+      setShowFallbackModal(false);
+    }
+  };
+
+  const handleFallbackDelete = async () => {
+    try {
+      const res = await fetch("/api/family", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete" }),
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || "Erro ao eliminar família");
+      }
+      
+      setMessage("Família eliminada com sucesso!");
+      setShowFallbackModal(false);
+      router.refresh();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+      setMessage(errorMessage);
+      setShowFallbackModal(false);
     }
   };
 
@@ -472,6 +602,231 @@ export default function FamilyPage() {
           )}
         </div>
       </div>
+
+      {/* Modal: Sair da Família */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface-container rounded-2xl p-6 max-w-md w-full space-y-4">
+            <div className="flex items-start gap-3">
+              <Icon name="warning" size={24} className="text-warning flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="text-xl font-bold text-on-surface">Antes de sair da família</h3>
+                <p className="text-sm text-on-surface-variant mt-1">
+                  Informação importante sobre os teus dados
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-surface-container-low rounded-lg p-4 space-y-3">
+              <div className="flex items-start gap-2">
+                <Icon name="check_circle" size={18} className="text-success flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-on-surface">
+                  <strong>O teu histórico PESSOAL será mantido</strong>
+                </p>
+              </div>
+              <div className="flex items-start gap-2">
+                <Icon name="error" size={18} className="text-error flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-on-surface">
+                  <strong>Perdes acesso ao histórico da FAMÍLIA</strong> (inclui transações que criaste aqui)
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Icon name="download" size={18} className="text-primary" />
+                <p className="text-sm text-on-surface">
+                  <strong>Vamos exportar tudo em CSV para:</strong>
+                </p>
+              </div>
+              <p className="text-xs text-on-surface-variant font-mono bg-surface-container px-3 py-2 rounded">
+                famflow-historico-{new Date().toISOString().split('T')[0]}.csv
+              </p>
+
+              <label className="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg cursor-pointer hover:bg-surface-container-high transition-colors">
+                <input
+                  type="checkbox"
+                  checked={exportFullHistory}
+                  onChange={(e) => setExportFullHistory(e.target.checked)}
+                  className="w-4 h-4 rounded border-surface-container-high"
+                />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-on-surface">Exportar histórico completo (5 anos)</p>
+                  <p className="text-xs text-on-surface-variant">Predefinição: últimos 12 meses</p>
+                </div>
+              </label>
+
+              <p className="text-xs text-on-surface-variant">
+                Podes importar noutra família depois.
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowLeaveModal(false)}
+                disabled={exporting}
+                className="flex-1 py-3 bg-surface-container text-on-surface rounded-full font-medium hover:bg-surface-container-high transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleExportAndLeave}
+                disabled={exporting}
+                className="flex-1 py-3 bg-primary text-on-primary rounded-full font-medium hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {exporting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
+                    A exportar...
+                  </>
+                ) : (
+                  'Sair e Exportar'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Eliminar Família */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface-container rounded-2xl p-6 max-w-md w-full space-y-4">
+            <div className="flex items-start gap-3">
+              <Icon name="warning" size={24} className="text-error flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="text-xl font-bold text-on-surface">Antes de eliminar a família</h3>
+                <p className="text-sm text-on-surface-variant mt-1">
+                  Esta ação é permanente e irreversível
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-error/10 border border-error/20 rounded-lg p-4 space-y-2">
+              <p className="text-sm text-on-surface">
+                <strong>A família "{family?.name}" será eliminada permanentemente.</strong>
+              </p>
+              <p className="text-xs text-on-surface-variant">
+                Todos os membros perderão acesso aos dados partilhados.
+              </p>
+            </div>
+
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Icon name="download" size={18} className="text-primary" />
+                <p className="text-sm text-on-surface">
+                  <strong>Vamos exportar tudo em CSV para:</strong>
+                </p>
+              </div>
+              <p className="text-xs text-on-surface-variant font-mono bg-surface-container px-3 py-2 rounded">
+                famflow-historico-{new Date().toISOString().split('T')[0]}.csv
+              </p>
+
+              <label className="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg cursor-pointer hover:bg-surface-container-high transition-colors">
+                <input
+                  type="checkbox"
+                  checked={exportFullHistory}
+                  onChange={(e) => setExportFullHistory(e.target.checked)}
+                  className="w-4 h-4 rounded border-surface-container-high"
+                />
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-on-surface">Exportar histórico completo (5 anos)</p>
+                  <p className="text-xs text-on-surface-variant">Predefinição: últimos 12 meses</p>
+                </div>
+              </label>
+
+              <p className="text-xs text-on-surface-variant">
+                Podes importar noutra família depois.
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={exporting}
+                className="flex-1 py-3 bg-surface-container text-on-surface rounded-full font-medium hover:bg-surface-container-high transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleExportAndDelete}
+                disabled={exporting}
+                className="flex-1 py-3 bg-error text-on-error rounded-full font-medium hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {exporting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-on-error border-t-transparent rounded-full animate-spin" />
+                    A exportar...
+                  </>
+                ) : (
+                  'Eliminar e Exportar'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Fallback (exportação falhou) */}
+      {showFallbackModal && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface-container rounded-2xl p-6 max-w-md w-full space-y-4">
+            <div className="flex items-start gap-3">
+              <Icon name="error" size={24} className="text-error flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="text-xl font-bold text-on-surface">Exportação indisponível</h3>
+                <p className="text-sm text-on-surface-variant mt-1">
+                  Não foi possível gerar o CSV agora
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-surface-container-low rounded-lg p-4 space-y-3">
+              <p className="text-sm text-on-surface">
+                Ocorreu um erro ao tentar exportar os teus dados.
+              </p>
+              <ul className="text-sm text-on-surface-variant space-y-2">
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-bold">•</span>
+                  Podes tentar exportar depois em <strong>Definições &gt; Exportar Dados</strong>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-bold">•</span>
+                  Ou podes sair/eliminar agora (vais perder acesso ao histórico da família)
+                </li>
+              </ul>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowFallbackModal(false)}
+                className="flex-1 py-3 bg-surface-container text-on-surface rounded-full font-medium hover:bg-surface-container-high transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleFallbackLeave}
+                className="flex-1 py-3 bg-primary text-on-primary rounded-full font-medium hover:brightness-110 transition-all"
+              >
+                Sair
+              </button>
+              <button
+                type="button"
+                onClick={handleFallbackDelete}
+                className="flex-1 py-3 bg-error text-on-error rounded-full font-medium hover:brightness-110 transition-all"
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
