@@ -32,33 +32,33 @@
 
 ---
 
-## ⏸️ Notificações Suspensas (Aguardam Implementação)
+## ✅ Notificações Automatizadas (Vercel Cron)
 
-Estas notificações **não estão disponíveis** na UI porque requerem infraestrutura adicional.
+Implementadas com Vercel Cron (grátis, 100 execuções/dia).
 
 ### **1. Lembrete de Recorrentes**
-- **Trigger:** Diário (09:00 UTC)
+- **Trigger:** Diário (09:00 UTC / 10:00 PT)
 - **URL:** `/dashboard/transaction/new`
-- **Método Necessário:** Cron job + Edge Function ou Vercel
-- **Status:** ⏸️ Suspenso
-- **Preferência:** `recurring_reminder` (removida da UI)
-- **Implementação Futura:** Vercel Cron ou Supabase Pro
+- **Método:** Vercel Cron + API Route
+- **Status:** ✅ Implementado
+- **Preferência:** `recurring_reminder`
+- **Ficheiro:** `src/app/api/process-recurring/route.ts`
 
 ### **2. Resumo Semanal**
-- **Trigger:** Domingo (18:00 UTC)
+- **Trigger:** Domingo (18:00 UTC / 19:00 PT)
 - **URL:** `/dashboard/analytics`
-- **Método Necessário:** Cron job + Edge Function ou Vercel
-- **Status:** ⏸️ Suspenso
-- **Preferência:** `weekly_summary` (removida da UI)
-- **Implementação Futura:** Vercel Cron ou Supabase Pro
+- **Método:** Vercel Cron + API Route
+- **Status:** ✅ Implementado
+- **Preferência:** `weekly_summary`
+- **Ficheiro:** `src/app/api/weekly-summary/route.ts`
 
 ### **3. Lembrete de Inatividade**
-- **Trigger:** 3 dias sem transações (10:00 UTC)
+- **Trigger:** Diário (10:00 UTC / 11:00 PT)
 - **URL:** `/dashboard/transactions`
-- **Método Necessário:** Cron job + Edge Function ou Vercel
-- **Status:** ⏸️ Suspenso
-- **Preferência:** `inactivity_reminder` (removida da UI)
-- **Implementação Futura:** Vercel Cron ou Supabase Pro
+- **Método:** Vercel Cron + API Route
+- **Status:** ✅ Implementado
+- **Preferência:** `inactivity_reminder`
+- **Ficheiro:** `src/app/api/inactivity-reminder/route.ts`
 
 ---
 
@@ -69,57 +69,28 @@ Estas notificações **não estão disponíveis** na UI porque requerem infraest
 | **Budget Alerts** | ✅ 2 | - |
 | **Goal Alerts** | ✅ 1 | - |
 | **Push Notifications** | ✅ 1 | - |
-| **Automated (Cron)** | - | ⏸️ 3 |
-| **TOTAL** | **✅ 4** | **⏸️ 3** |
+| **Automated (Cron)** | ✅ 3 | - |
+| **TOTAL** | **✅ 7** | **-** |
 
 ---
 
-## 🚀 Como Reativar Notificações Suspensas
+## 🚀 Setup (Já Implementado)
 
-### **Opção 1: Vercel Cron (Recomendado - $0)**
+Vercel Cron configurado em `vercel.json`.
 
-**Requisitos:**
-- Conta Vercel
-- Variáveis de ambiente configuradas
+**Ficheiros:**
+- `vercel.json` - Configuração dos cron jobs
+- `src/app/api/process-recurring/route.ts` - Processa transações recorrentes
+- `src/app/api/weekly-summary/route.ts` - Envia resumo semanal
+- `src/app/api/inactivity-reminder/route.ts` - Envia lembrete de inatividade
+- `VERCEL_CRON_SETUP.md` - Guia de setup
 
-**Implementação:**
-1. Criar API routes `/api/process-recurring`, `/api/weekly-summary`, `/api/inactivity-reminder`
-2. Configurar `vercel.json` com crons
-3. Re-adicionar secções na página `/dashboard/alerts`
-
-**Custo:** Gratis (100 execuções/dia, suficiente para ~2/dia)
-
----
-
-### **Opção 2: Supabase Pro ($25/mês)**
-
-**Requisitos:**
-- Upgrade para Pro Plan
-- Edge Functions deploy
-
-**Implementação:**
-1. Fazer upgrade no Supabase Dashboard
-2. Deploy das Edge Functions (`process-recurring`, `weekly-summary`, `inactivity-reminder`)
-3. Cron jobs já estão criados no pg_cron
-4. Re-adicionar secções na página `/dashboard/alerts`
-
-**Custo:** $25/mês
-
----
-
-### **Opção 3: GitHub Actions (Grátis)**
-
-**Requisitos:**
-- Repositório GitHub separado
-- Scripts Node.js
-
-**Implementação:**
-1. Criar repositório `famflow-notifications`
-2. Criar workflows com cron triggers
-3. Scripts Node.js que conectam ao Supabase
-4. Re-adicionar secções na página `/dashboard/alerts`
-
-**Custo:** Gratis (2000 minutos/mês)
+**Próximos Passos:**
+1. Commit e push
+2. Deploy na Vercel
+3. Configurar variáveis de ambiente no Vercel Dashboard
+4. Testar manualmente com `curl`
+5. Re-adicionar toggles na UI (`/dashboard/alerts`)
 
 ---
 
@@ -132,36 +103,50 @@ Estas notificações **não estão disponíveis** na UI porque requerem infraest
 - `src/components/NotificationBell.tsx` - Bell com navegação
 - `supabase/migrations/20270425000000_inapp_notifications.sql` - Database triggers
 
-### **Suspensos (para futuro):**
-- `supabase/functions/process-recurring/index.ts` - Edge Function (não deployável)
-- `supabase/functions/weekly-summary/index.ts` - Edge Function (não deployável)
-- `supabase/functions/inactivity-reminder/index.ts` - Edge Function (não deployável)
-- `supabase/migrations/20270503000000_notification_cron_jobs.sql` - Cron jobs (inativos)
+### **Legado (Edge Functions - não usar):**
+- `supabase/functions/process-recurring/index.ts` - Edge Function (obsoleta)
+- `supabase/functions/weekly-summary/index.ts` - Edge Function (obsoleta)
+- `supabase/functions/inactivity-reminder/index.ts` - Edge Function (obsoleta)
+- `supabase/migrations/20270503000000_notification_cron_jobs.sql` - pg_cron jobs (obsoletos)
 
 ---
 
-## 🎯 Próximos Passos (Quando Implementar)
+## 🎯 Próximos Passos
 
-1. **Escolher plataforma:** Vercel vs Supabase Pro vs GitHub Actions
-2. **Implementar scripts/funções**
-3. **Configurar schedules**
+1. **Commit e push**
+   ```bash
+   git add vercel.json src/app/api/process-recurring/route.ts src/app/api/weekly-summary/route.ts src/app/api/inactivity-reminder/route.ts VERCEL_CRON_SETUP.md
+   git commit -m "feat: Vercel Cron jobs for automated notifications"
+   git push
+   ```
+
+2. **Deploy na Vercel**
+   ```bash
+   vercel --prod
+   ```
+
+3. **Configurar variáveis de ambiente** (Vercel Dashboard)
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+
 4. **Testar manualmente**
+   ```bash
+   curl -X POST https://famflow.app/api/process-recurring
+   ```
+
 5. **Re-adicionar na UI** (remover comentários no `alerts/page.tsx`)
-6. **Deploy e monitorização**
 
 ---
 
 ## ⚠️ Notas Importantes
 
-1. **Preferências no Database:** As colunas `recurring_reminder`, `weekly_summary`, `inactivity_reminder` ainda existem na tabela `notification_preferences`, mas não são usadas na UI.
+1. **Preferências no Database:** As colunas `recurring_reminder`, `weekly_summary`, `inactivity_reminder` existem na tabela `notification_preferences` e podem ser re-utilizadas na UI.
 
-2. **Cron Jobs:** Os cron jobs foram criados no pg_cron mas não funcionam porque as Edge Functions não podem ser deployadas no plano free.
+2. **Vercel Cron Limits:** 100 execuções/dia (suficiente para ~2 execuções/dia = 62/mês).
 
-3. **Código Mantido:** Todo o código das notificações suspensas foi mantido para facilitar implementação futura.
-
-4. **UI Limpa:** A página de alerts mostra apenas funcionalidades que funcionam 100%.
+3. **Edge Functions Legado:** O código das Edge Functions foi mantido mas não será usado (Vercel Cron é grátis vs Supabase Pro $25/mês).
 
 ---
 
-**Última atualização:** 2026-04-23
-**Status:** ✅ 4 notificações funcionais, ⏸️ 3 suspensas
+**Última atualização:** 2026-05-07  
+**Status:** ✅ 7 notificações funcionais (Vercel Cron implementado)
