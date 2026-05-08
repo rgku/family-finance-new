@@ -89,24 +89,32 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const familyId = profile?.family_id;
       console.log('[DataProvider] Profile family_id:', familyId);
       
-      // Fetch data filtered by family_id (or user_id if no family)
-      const filterId = familyId || user.id;
-      const filterType = familyId ? 'family_id' : 'user_id';
-      console.log('[DataProvider] Fetching with filter:', filterType, '=', filterId);
+      // Fetch: user's own data + family data (if has family)
+      // User NEVER loses their data - always see their own + family's
+      console.log('[DataProvider] Fetching user transactions + family transactions');
+      
+      // Build filter: user_id = current user OR family_id = current family
+      let transactionQuery = supabase
+        .from('transactions_decrypted')
+        .select('*')
+        .filter('user_id', 'eq', user.id);
+      
+      if (familyId) {
+        transactionQuery = transactionQuery.or(`family_id.eq.${familyId}`);
+      }
+      
+      let goalsQuery = supabase
+        .from('goals_decrypted')
+        .select('*')
+        .filter('user_id', 'eq', user.id);
+      
+      if (familyId) {
+        goalsQuery = goalsQuery.or(`family_id.eq.${familyId}`);
+      }
       
       const [transactionsData, goalsData, budgetsData] = await Promise.all([
-        supabase
-          .from('transactions_decrypted')
-          .select('*')
-          .eq('family_id', filterId)
-          .order('date', { ascending: false }),
-        
-        supabase
-          .from('goals_decrypted')
-          .select('*')
-          .eq('family_id', filterId)
-          .order('created_at', { ascending: false }),
-        
+        transactionQuery.order('date', { ascending: false }),
+        goalsQuery.order('created_at', { ascending: false }),
         supabase
           .from('budgets')
           .select('*')
