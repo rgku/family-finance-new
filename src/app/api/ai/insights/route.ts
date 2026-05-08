@@ -114,6 +114,12 @@ export async function GET(request: NextRequest) {
     }
 
     const monthTransactions = transResult.data?.filter(t => isInMonth(t.date)) || [];
+
+    // No transactions = no insights
+    if (monthTransactions.length === 0) {
+      return NextResponse.json({ insights: [], summary: { month: monthParam, totalInsights: 0, narrative: "Adiciona transações para veres insights." }, cached: false });
+    }
+
     const income = monthTransactions.filter(t => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
 
     const investmentExpenses = monthTransactions

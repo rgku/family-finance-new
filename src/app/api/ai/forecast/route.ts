@@ -132,6 +132,11 @@ export async function GET(request: NextRequest) {
     const billingDay = profileResult.data.billing_cycle_day || 1;
     const transactions = transResult.data || [];
 
+    // No transactions = no forecast
+    if (transactions.length === 0) {
+      return NextResponse.json({ forecasts: [], summary: { totalPredicted: 0, confidenceLow: 0, confidenceHigh: 0, narrative: "Adiciona transações para veres previsões." }, cached: false });
+    }
+
     const [targetYear, targetMonth] = monthParam.split("-").map(Number);
     const sixMonthsAgo = new Date(targetYear, targetMonth - 1, 1);
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
