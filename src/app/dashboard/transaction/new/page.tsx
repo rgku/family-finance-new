@@ -115,7 +115,7 @@ export default function NewTransaction() {
   };
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
+    <div className="p-8 pb-32 max-w-2xl mx-auto">
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-on-surface">Nova Transação</h1>
         <p className="text-on-surface-variant">Adicione um novo gasto ou receita</p>
