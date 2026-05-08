@@ -120,6 +120,36 @@ export default function FamilyPage() {
     }
   };
 
+  const handleLeaveFamily = async () => {
+    if (!family) return;
+    
+    if (userRole === "owner") {
+      setMessage("⚠️ Proprietário não pode sair. Transfere a propriedade ou elimina a família.");
+      return;
+    }
+    
+    if (confirm(`Sair da família "${family.name}"? Vais perder acesso aos dados partilhados.`)) {
+      try {
+        const res = await fetch("/api/family", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "leave" }),
+        });
+        const data = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(data.error || "Erro ao sair da família");
+        }
+        
+        setMessage("Saíste da família com sucesso!");
+        router.refresh();
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+        setMessage(errorMessage);
+      }
+    }
+  };
+
   const roleLabels = {
     owner: "Proprietário",
     member: "Membro",
@@ -252,6 +282,17 @@ export default function FamilyPage() {
               {family.invite_code}
             </code>
           </div>
+          
+          {userRole !== "owner" && (
+            <div className="mt-4 pt-4 border-t border-on-surface/10">
+              <button
+                onClick={handleLeaveFamily}
+                className="text-sm text-error hover:underline"
+              >
+                Sair da Família
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="bg-yellow-500/20 text-yellow-400 p-4 rounded-lg mb-6">

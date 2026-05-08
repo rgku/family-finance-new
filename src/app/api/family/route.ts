@@ -9,7 +9,7 @@ function generateSecureInviteCode(): string {
 
 const familySchema = z.object({
   name: z.string().max(100).trim().optional(),
-  action: z.enum(["create", "join"]),
+  action: z.enum(["create", "join", "leave"]),
 });
 
 export async function POST(request: NextRequest) {
@@ -153,6 +153,40 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json({ family: targetFamily, message: "Entrou na família com sucesso!" });
+    } else if (action === "leave") {
+      // Get user's current family
+      const { data: profile } = await adminSupabase
+        .from("profiles")
+        .select("family_id, role")
+        .eq("id", user.id)
+        .single();
+
+      if (!profile?.family_id) {
+        return NextResponse.json({ error: "Não pertences a nenhuma família" }, { status: 400 });
+      }
+
+      if (profile.role === "owner") {
+        return NextResponse.json({ error: "Proprietário não pode sair. Transfere a propriedade ou elimina a família." }, { status: 403 });
+      }
+
+      // Remove from family_members
+      await adminSupabase
+        .from("family_members")
+        .delete()
+        .eq("family_id", profile.family_id)
+        .eq("user_id", user.id);
+
+      // Update profile to remove family association
+      const { error: profileError } = await adminSupabase
+        .from("profiles")
+        .update({ family_id: null, role: null })
+        .eq("id", user.id);
+
+      if (profileError) {
+        return NextResponse.json({ error: profileError.message }, { status: 400 });
+      }
+
+      return NextResponse.json({ message: "Saíste da família com sucesso!" });
     }
 
     return NextResponse.json({ error: "Ação inválida" }, { status: 400 });
