@@ -411,8 +411,8 @@ export default function FamilyPage() {
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                   className="w-full bg-surface-container-low border-none rounded-xl px-4 py-3 text-on-surface font-mono"
-                  placeholder="ABC123"
-                  maxLength={6}
+                  placeholder="2E47C676AB8133A8"
+                  maxLength={16}
                 />
               </div>
               <button

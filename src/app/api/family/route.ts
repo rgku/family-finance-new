@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const inviteCode = typeof name === 'string' ? name.toUpperCase().slice(0, 6) : "";
+      const inviteCode = typeof name === 'string' ? name.toUpperCase() : "";
       
       // First, try to find by invite_code (family table)
       const { data: family, error: familyError } = await adminSupabase
