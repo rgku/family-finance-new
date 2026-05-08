@@ -67,9 +67,19 @@ export const MonthlyTrendChart = memo(function MonthlyTrendChart({ data }: Month
             border: "none",
             borderRadius: "12px",
             boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+            padding: "12px",
           }}
-          labelStyle={{ color: "#f8fafc", fontWeight: 600 }}
-          formatter={(value) => `${Number(value).toFixed(2)} €`}
+          labelStyle={{ color: "#f8fafc", fontWeight: 600, marginBottom: "8px" }}
+          formatter={(value, name, item) => {
+            const numValue = Number(value);
+            const label = name === "income" ? "Receitas" : name === "expense" ? "Despesas" : "Poupança";
+            return [`${numValue.toFixed(2)} €`, label];
+          }}
+          labelFormatter={(label) => {
+            const [year, month] = label.split("-");
+            const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            return `${monthNames[parseInt(month) - 1]} ${year}`;
+          }}
         />
         <Area 
           type="monotone" 

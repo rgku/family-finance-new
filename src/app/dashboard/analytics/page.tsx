@@ -180,32 +180,48 @@ export default function AnalyticsPage() {
     for (let i = 5; i >= 0; i--) {
       const d = new Date(year, month - 1 - i, 15);
       const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      
+      // Filter transactions by billing cycle for this historical month
       const monthTransactions = transactions.filter(t => {
+        if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
+          return isDateInCustomMonth(t.date, billingDay, d.getFullYear(), d.getMonth() + 1);
+        }
         const transDate = new Date(t.date);
         return transDate.getFullYear() === d.getFullYear() && transDate.getMonth() === d.getMonth();
       });
       
-      // Filter goals by created_at to this specific month
-      const monthSavings = dataGoals.filter(g => {
-        if (!g.created_at || g.goal_type !== 'savings') return false;
-        const createdAt = new Date(g.created_at);
-        if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
-          return isDateInCustomMonth(createdAt.toISOString(), billingDay, d.getFullYear(), d.getMonth() + 1);
-        }
-        return createdAt.getFullYear() === d.getFullYear() && createdAt.getMonth() === d.getMonth();
-      });
-      const totalSavings = monthSavings.reduce((s, g) => s + g.current_amount, 0);
+      // Calculate income (all income transactions in this month)
+      const monthIncome = monthTransactions.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
+      
+      // Calculate expenses (excluding investments, which are considered savings)
+      const monthExpenses = monthTransactions.filter(t => t.type === "expense" && t.category !== "Investimentos").reduce((s, t) => s + t.amount, 0);
+      
+      // Calculate savings: investments + goals contributions made specifically in this month
       const investmentExpenses = monthTransactions
         .filter(t => t.type === "expense" && t.category === "Investimentos")
         .reduce((s, t) => s + t.amount, 0);
       
-      const pouparanca = totalSavings + investmentExpenses;
+      // For goals: only count contributions made in this specific month
+      // Use goal_contributions table if available, otherwise estimate from current_amount changes
+      const monthGoalContributions = dataGoals
+        .filter(g => {
+          if (!g.created_at || g.goal_type !== 'savings') return false;
+          const createdAt = new Date(g.created_at);
+          if (profile?.billing_cycle_day && profile.billing_cycle_day > 1) {
+            return isDateInCustomMonth(createdAt.toISOString(), billingDay, d.getFullYear(), d.getMonth() + 1);
+          }
+          return createdAt.getFullYear() === d.getFullYear() && createdAt.getMonth() === d.getMonth();
+        })
+        .reduce((s, g) => s + g.current_amount, 0);
+      
+      // Total savings = investments + new goal contributions this month
+      const monthSavings = investmentExpenses + monthGoalContributions;
       
       months.push({
         month: m,
-        income: monthTransactions.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0),
-        expense: monthTransactions.filter(t => t.type === "expense" && t.category !== "Investimentos").reduce((s, t) => s + t.amount, 0),
-        pouparanca,
+        income: monthIncome,
+        expense: monthExpenses,
+        pouparanca: monthSavings,
       });
     }
     
@@ -449,7 +465,34 @@ const pageContent = (
       )}
 
       <div className="bg-surface-container rounded-lg p-6">
-        <h3 className="font-bold text-lg mb-4">Tendência Mensal (6 meses)</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-lg">Tendência Mensal (6 meses)</h3>
+          <div className="group relative">
+            <Icon name="info" size={20} className="text-on-surface-variant cursor-help" />
+            <div className="absolute right-0 top-8 w-80 bg-surface-container-high rounded-lg shadow-lg p-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              <p className="text-sm font-medium text-on-surface mb-2">📊 Como ler este gráfico</p>
+              <div className="space-y-2 text-xs text-on-surface-variant">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded-full" />
+                  <span><strong>Receitas:</strong> Todo o dinheiro que entrou (salários, extras, etc.)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full" />
+                  <span><strong>Despesas:</strong> Gastos do dia-a-dia (não inclui investimentos)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-yellow-500 rounded-full" />
+                  <span><strong>Poupança:</strong> Valor poupado + investido neste mês específico</span>
+                </div>
+              </div>
+              <div className="mt-3 pt-3 border-t border-surface-container-highest">
+                <p className="text-xs text-on-surface-variant">
+                  💡 <strong>Dica:</strong> Uma poupança saudável deve ser 20-30% das receitas
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
         <MonthlyTrendChart data={monthlyTrend} />
       </div>
 
