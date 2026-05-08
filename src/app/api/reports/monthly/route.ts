@@ -22,27 +22,62 @@ export async function GET(request: NextRequest) {
     }
 
     const [year, monthNum] = month.split("-").map(Number);
-    const startDate = `${year}-${String(monthNum).padStart(2, "0")}-01`;
-    const endDate = monthNum === 12 
-      ? `${year + 1}-01-01` 
-      : `${year}-${String(monthNum + 1).padStart(2, "0")}-01`;
 
-    // Previous month calculation
-    const prevMonthNum = monthNum === 1 ? 12 : monthNum - 1;
-    const prevYear = monthNum === 1 ? year - 1 : year;
-    const prevStartDate = `${prevYear}-${String(prevMonthNum).padStart(2, "0")}-01`;
-    const prevEndDate = monthNum === 1 
-      ? `${prevYear + 1}-01-01` 
-      : `${prevYear}-${String(monthNum).padStart(2, "0")}-01`;
-
-    // Get family_id for OR filter
+    // Get family_id and billing_cycle_day
     const { data: profile } = await supabase
       .from("profiles")
-      .select("family_id")
+      .select("family_id, billing_cycle_day")
       .eq("id", user.id)
       .single();
 
     const familyId = profile?.family_id;
+    const billingDay = profile?.billing_cycle_day || 1;
+
+    // Calculate date range based on billing cycle
+    // Example: monthParam=2026-05, billingDay=29 → 2026-04-29 to 2026-05-28
+    let startDate: string;
+    let endDate: string;
+    
+    if (billingDay === 1) {
+      startDate = `${year}-${String(monthNum).padStart(2, "0")}-01`;
+      endDate = monthNum === 12 
+        ? `${year + 1}-01-01` 
+        : `${year}-${String(monthNum + 1).padStart(2, "0")}-01`;
+    } else {
+      // Billing cycle starts on billingDay of previous month
+      const startMonth = monthNum === 1 ? 12 : monthNum - 1;
+      const startYear = monthNum === 1 ? year - 1 : year;
+      startDate = `${startYear}-${String(startMonth).padStart(2, "0")}-${String(billingDay).padStart(2, "0")}`;
+      
+      // Billing cycle ends on billingDay-1 of current month
+      const endDay = billingDay - 1;
+      if (endDay === 0) {
+        // If billingDay is 1, end is last day of previous month
+        const prevMonth = monthNum === 1 ? 12 : monthNum - 1;
+        const prevYear = monthNum === 1 ? year - 1 : year;
+        const lastDay = new Date(prevYear, prevMonth, 0).getDate();
+        endDate = `${year}-${String(monthNum).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+        // Add 1 day to make it exclusive
+        const endD = new Date(endDate);
+        endD.setDate(endD.getDate() + 1);
+        endDate = endD.toISOString().split("T")[0];
+      } else {
+        endDate = `${year}-${String(monthNum).padStart(2, "0")}-${String(endDay).padStart(2, "0")}`;
+        // Add 1 day to make it exclusive
+        const endD = new Date(endDate);
+        endD.setDate(endD.getDate() + 1);
+        endDate = endD.toISOString().split("T")[0];
+      }
+    }
+
+    // Previous month calculation
+    const prevStartD = new Date(startDate);
+    prevStartD.setMonth(prevStartD.getMonth() - 1);
+    const prevEndD = new Date(endDate);
+    prevEndD.setMonth(prevEndD.getMonth() - 1);
+    const prevStartDate = prevStartD.toISOString().split("T")[0];
+    const prevEndDate = prevEndD.toISOString().split("T")[0];
+
     const txFilter = familyId
       ? `user_id.eq.${user.id},family_id.eq.${familyId}`
       : `user_id.eq.${user.id}`;
