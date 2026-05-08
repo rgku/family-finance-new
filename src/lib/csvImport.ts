@@ -22,11 +22,11 @@ export const bankPresets: Record<string, CSVMapping> = {
     amountColumn: "amount",
   },
   famflow: {
-    dateColumn: "Data",
-    descriptionColumn: "Descrição",
-    amountColumn: "Valor",
-    categoryColumn: "Categoria",
-    typeColumn: "Tipo",
+    dateColumn: "data",
+    descriptionColumn: "descricao",
+    amountColumn: "valor",
+    categoryColumn: "categoria",
+    typeColumn: "tipo",
   },
   revolut: {
     dateColumn: "data",
@@ -70,16 +70,13 @@ export async function parseCSV(file: File, mapping: CSVMapping): Promise<ParsedT
       throw new Error("CSV vazio ou inválido - precisa de pelo menos 1 linha de dados");
     }
 
-    // Detect FamFlow History CSV format - find the TRANSAÇÕES header line
+    // Detect FamFlow History CSV format - first line is the header
     let headerLineIdx = 0;
     let isFamFlowFormat = false;
     
-    for (let i = 0; i < lines.length; i++) {
-      if (lines[i].includes("=== TRANSAÇÕES ===")) {
-        headerLineIdx = i + 1; // Next line is the header
-        isFamFlowFormat = true;
-        break;
-      }
+    if (lines[0].includes("id,user_id,family_id,data,descricao")) {
+      headerLineIdx = 0;
+      isFamFlowFormat = true;
     }
     
     const headers = lines[headerLineIdx].split(",").map(h => h.trim().toLowerCase().replace(/"/g, ""));
@@ -102,8 +99,8 @@ export async function parseCSV(file: File, mapping: CSVMapping): Promise<ParsedT
     const startIdx = headerLineIdx + 1; // Data starts after header
 
     for (let i = startIdx; i < lines.length; i++) {
-      // Stop at next section or total line
-      if (lines[i].startsWith("===") || lines[i].startsWith("Total:")) {
+      // Stop at empty line
+      if (lines[i].trim() === "") {
         break;
       }
       
@@ -124,8 +121,8 @@ export async function parseCSV(file: File, mapping: CSVMapping): Promise<ParsedT
           date,
           description: row[descIdx]?.replace(/"/g, "") || "Importado",
           amount: Math.abs(amount),
-          type: amount < 0 || (typeIdx !== -1 && row[typeIdx]?.toLowerCase().includes("débito")) 
-            ? "expense" 
+          type: amount < 0 || (typeIdx !== -1 && row[typeIdx]?.toLowerCase().includes("expense"))
+            ? "expense"
             : "income",
           category: categoryIdx !== -1 ? row[categoryIdx]?.replace(/"/g, "") : undefined,
         });
@@ -193,35 +190,45 @@ function parseDate(dateStr: string): string | null {
   
   const date = dateStr.trim();
   
+  // Handle ISO datetime: extract date part before 'T'
+  if (date.includes("T")) {
+    const isoMatch = date.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+    if (isoMatch) {
+      const parsed = new Date(parseInt(isoMatch[1]), parseInt(isoMatch[2]) - 1, parseInt(isoMatch[3]));
+      if (!isNaN(parsed.getTime())) {
+        return parsed.toISOString().split("T")[0];
+      }
+    }
+  }
+  
   // Try different date formats
   const formats = [
     // YYYY-MM-DD
-    /(\d{4})-(\d{1,2})-(\d{1,2})/,
+    { regex: /(\d{4})-(\d{1,2})-(\d{1,2})/, type: "ymd" },
     // DD/MM/YYYY
-    /(\d{1,2})\/(\d{1,2})\/(\d{4})/,
+    { regex: /(\d{1,2})\/(\d{1,2})\/(\d{4})/, type: "dmy" },
     // DD-MM-YYYY
-    /(\d{1,2})-(\d{1,2})-(\d{4})/,
+    { regex: /(\d{1,2})-(\d{1,2})-(\d{4})/, type: "dmy" },
     // DD.MM.YYYY
-    /(\d{1,2})\.(\d{1,2})\.(\d{4})/,
+    { regex: /(\d{1,2})\.(\d{1,2})\.(\d{4})/, type: "dmy" },
     // MM/DD/YYYY (US format)
-    /(\d{1,2})\/(\d{1,2})\/(\d{4})/,
+    { regex: /(\d{1,2})\/(\d{1,2})\/(\d{4})/, type: "mdy" },
   ];
 
-  for (const format of formats) {
-    const match = date.match(format);
+  for (const fmt of formats) {
+    const match = date.match(fmt.regex);
     if (match) {
       let year: number, month: number, day: number;
       
-      if (format.source.includes("YYYY-MM-DD")) {
+      if (fmt.type === "ymd") {
         year = parseInt(match[1]);
         month = parseInt(match[2]) - 1;
         day = parseInt(match[3]);
-      } else if (format.source.includes("DD/MM") || format.source.includes("DD-MM") || format.source.includes("DD.MM")) {
+      } else if (fmt.type === "dmy") {
         day = parseInt(match[1]);
         month = parseInt(match[2]) - 1;
         year = parseInt(match[3]);
       } else {
-        // Assume MM/DD/YYYY
         month = parseInt(match[1]) - 1;
         day = parseInt(match[2]);
         year = parseInt(match[3]);

@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { months = 12, includeGoals = true, includeBudgets = true, memberId } = body;
+    const { months = 12, memberId } = body;
 
     // Get user's family_id
     const { data: profile } = await supabase
@@ -56,69 +56,13 @@ export async function POST(request: NextRequest) {
       console.error("Error fetching transactions:", transError);
     }
 
-    // Fetch goals
-    let goalsData = [];
-    if (includeGoals) {
-      let goalsQuery = supabase
-        .from("goals_decrypted")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (memberId && familyId) {
-        goalsQuery = goalsQuery.eq("family_id", familyId);
-      } else if (familyId) {
-        goalsQuery = goalsQuery.or(`user_id.eq.${user.id},family_id.eq.${familyId}`);
-      } else {
-        goalsQuery = goalsQuery.eq("user_id", user.id);
-      }
-
-      const { data: goals } = await goalsQuery;
-      goalsData = goals || [];
-    }
-
-    // Fetch budgets
-    let budgetsData = [];
-    if (includeBudgets) {
-      let budgetsQuery = supabase
-        .from("budgets")
-        .select("*")
-        .gte("month", startDateStr)
-        .lte("month", endDateStr)
-        .order("month", { ascending: false });
-
-      if (memberId && familyId) {
-        budgetsQuery = budgetsQuery.eq("family_id", familyId);
-      } else {
-        budgetsQuery = budgetsQuery.eq("user_id", user.id);
-      }
-
-      const { data: budgets } = await budgetsQuery;
-      budgetsData = budgets || [];
-    }
-
-    // Generate CSV
+    // Generate CSV - transactions only, headers + data rows
     const csvRows: string[] = [];
-
-    // Header
-    csvRows.push("=== FAMFLOW HISTORY EXPORT ===");
-    csvRows.push(`Export Date: ${now.toISOString()}`);
-    csvRows.push(`Exported By: ${user.id}`);
-    if (memberId) {
-      csvRows.push(`Type: Family Export (member removal)`);
-      csvRows.push(`Family ID: ${familyId || "N/A"}`);
-    } else {
-      csvRows.push(`User ID: ${user.id}`);
-      csvRows.push(`Family ID: ${familyId || "N/A"}`);
-    }
-    csvRows.push(`Period: ${startDateStr} to ${endDateStr} (${months} months)`);
-    csvRows.push("");
-
-    // Transactions
-    csvRows.push("=== TRANSAÇÕES ===");
-    csvRows.push("ID,user_id,family_id,Data,Descrição,Categoria,Tipo,Valor,Criado Em");
+    csvRows.push("id,user_id,family_id,data,descricao,categoria,tipo,valor,criado_em");
     
     if (transactions && transactions.length > 0) {
       for (const t of transactions) {
+        const signedAmount = t.type === "expense" ? -Math.abs(t.amount) : Math.abs(t.amount);
         csvRows.push(
           `"${t.id}",` +
           `"${t.user_id}",` +
@@ -127,60 +71,12 @@ export async function POST(request: NextRequest) {
           `"${(t.description || "").replace(/"/g, '""')}",` +
           `"${(t.category || "Outros").replace(/"/g, '""')}",` +
           `"${t.type}",` +
-          `"${t.amount}",` +
+          `"${signedAmount}",` +
           `"${t.created_at || ""}"`
         );
       }
     }
-    
-    csvRows.push(`Total: ${transactions?.length || 0} transações`);
-    csvRows.push("");
 
-    // Goals
-    if (includeGoals && goalsData.length > 0) {
-      csvRows.push("=== METAS ===");
-      csvRows.push("ID,user_id,family_id,Nome,Meta Atual,Meta Alvo,Prazo,Tipo,Ícone,Criado Em");
-      
-      for (const g of goalsData) {
-        csvRows.push(
-          `"${g.id}",` +
-          `"${g.user_id}",` +
-          `"${g.family_id || ""}",` +
-          `"${(g.name || "").replace(/"/g, '""')}",` +
-          `"${g.current_amount}",` +
-          `"${g.target_amount}",` +
-          `"${g.deadline || ""}",` +
-          `"${g.goal_type || "savings"}",` +
-          `"${g.icon || ""}",` +
-          `"${g.created_at || ""}"`
-        );
-      }
-      
-      csvRows.push(`Total: ${goalsData.length} metas`);
-      csvRows.push("");
-    }
-
-    // Budgets
-    if (includeBudgets && budgetsData.length > 0) {
-      csvRows.push("=== ORÇAMENTOS ===");
-      csvRows.push("ID,user_id,family_id,Categoria,Limite,Mês,Criado Em");
-      
-      for (const b of budgetsData) {
-        csvRows.push(
-          `"${b.id}",` +
-          `"${b.user_id}",` +
-          `"${b.family_id || ""}",` +
-          `"${(b.category || "").replace(/"/g, '""')}",` +
-          `"${b.limit_amount}",` +
-          `"${b.month}",` +
-          `"${b.created_at || ""}"`
-        );
-      }
-      
-      csvRows.push(`Total: ${budgetsData.length} orçamentos`);
-    }
-
-    // Create CSV blob
     const csvContent = csvRows.join("\n");
     const userIdPart = memberId ? `familia-${familyId?.slice(0, 8) || "no-family"}` : user.id.slice(0, 8);
     const filename = `famflow-historico-${userIdPart}-${endDateStr}.csv`;
@@ -191,9 +87,6 @@ export async function POST(request: NextRequest) {
       filename,
       stats: {
         transactions: transactions?.length || 0,
-        goals: goalsData.length,
-        budgets: budgetsData.length,
-        period: `${startDateStr} a ${endDateStr}`,
       },
     });
   } catch (error) {
