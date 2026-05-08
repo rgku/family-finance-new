@@ -101,23 +101,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
       // Build filter: user_id = current user OR family_id = current family
       let transactionQuery = supabase
         .from('transactions_decrypted')
-        .select('*')
-        .filter('user_id', 'eq', user.id);
+        .select('*');
       
       if (familyId) {
-        transactionQuery = transactionQuery.or(`family_id.eq.${familyId}`);
+        transactionQuery = transactionQuery.or(`user_id.eq.${user.id},family_id.eq.${familyId}`);
         console.log('[DataProvider] Query filter: user_id=', user.id, 'OR family_id=', familyId);
       } else {
+        transactionQuery = transactionQuery.eq('user_id', user.id);
         console.log('[DataProvider] Query filter: user_id=', user.id, '(no family)');
       }
       
       let goalsQuery = supabase
         .from('goals_decrypted')
-        .select('*')
-        .filter('user_id', 'eq', user.id);
+        .select('*');
       
       if (familyId) {
-        goalsQuery = goalsQuery.or(`family_id.eq.${familyId}`);
+        goalsQuery = goalsQuery.or(`user_id.eq.${user.id},family_id.eq.${familyId}`);
+      } else {
+        goalsQuery = goalsQuery.eq('user_id', user.id);
       }
       
       const [transactionsData, goalsData, budgetsData] = await Promise.all([
