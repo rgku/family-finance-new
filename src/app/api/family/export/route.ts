@@ -11,7 +11,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { months = 12, includeGoals = true, includeBudgets = true } = body;
+    const { months = 12, includeGoals = true, includeBudgets = true, memberId } = body;
+
+    // If memberId is provided, export data for that specific member (owner action)
+    const targetUserId = memberId || user.id;
 
     // Get user's family_id
     const { data: profile } = await supabase
@@ -30,11 +33,11 @@ export async function POST(request: NextRequest) {
     const startDateStr = startDate.toISOString().split("T")[0];
     const endDateStr = now.toISOString().split("T")[0];
 
-    // Fetch transactions (user's own + family)
+    // Fetch transactions (target user's own + family)
     let transactionQuery = supabase
       .from("transactions_decrypted")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", targetUserId)
       .gte("date", startDateStr)
       .lte("date", endDateStr)
       .order("date", { ascending: false });
@@ -55,7 +58,7 @@ export async function POST(request: NextRequest) {
       let goalsQuery = supabase
         .from("goals_decrypted")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", targetUserId)
         .order("created_at", { ascending: false });
 
       if (familyId) {
@@ -72,7 +75,7 @@ export async function POST(request: NextRequest) {
       const { data: budgets } = await supabase
         .from("budgets")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", targetUserId)
         .gte("month", startDateStr)
         .lte("month", endDateStr)
         .order("month", { ascending: false });
@@ -160,7 +163,8 @@ export async function POST(request: NextRequest) {
 
     // Create CSV blob
     const csvContent = csvRows.join("\n");
-    const filename = `famflow-historico-${user.id.slice(0, 8)}-${endDateStr}.csv`;
+    const userIdPart = memberId ? `member-${memberId.slice(0, 8)}` : user.id.slice(0, 8);
+    const filename = `famflow-historico-${userIdPart}-${endDateStr}.csv`;
 
     return NextResponse.json({
       success: true,

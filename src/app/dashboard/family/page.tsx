@@ -39,6 +39,7 @@ export default function FamilyPage() {
   const [exportFullHistory, setExportFullHistory] = useState(false);
   const [pendingAction, setPendingAction] = useState<"leave" | "delete" | null>(null);
   const [showRemoveModal, setShowRemoveModal] = useState<{ memberId: string; memberName: string; memberEmail: string } | null>(null);
+  const [removing, setRemoving] = useState(false);
 
   const handleCreateFamily = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,13 +126,41 @@ export default function FamilyPage() {
   const handleConfirmRemove = async () => {
     if (!showRemoveModal) return;
     
+    setRemoving(true);
+    
     try {
+      // Export member's data before removing
+      const res = await fetch("/api/family/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ months: 60, includeGoals: true, includeBudgets: true, memberId: showRemoveModal.memberId }),
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok && data.success) {
+        const blob = new Blob([data.csv], { type: "text/csv;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = data.filename;
+        link.style.visibility = "hidden";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+      
       await removeMember(showRemoveModal.memberId);
-      setMessage(`${showRemoveModal.memberName} foi removido da família.`);
+      setMessage(`${showRemoveModal.memberName} foi removido da família. CSV exportado.`);
       setShowRemoveModal(null);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
       setMessage(errorMessage);
+    } finally {
+      setRemoving(false);
     }
   };
 
@@ -858,8 +887,19 @@ export default function FamilyPage() {
               <ul className="text-xs text-on-surface-variant space-y-1">
                 <li>• O histórico pessoal do membro será mantido</li>
                 <li>• Transações criadas por outros membros deixarão de ser visíveis</li>
-                <li>• O membro pode exportar os seus dados em Definições</li>
               </ul>
+            </div>
+
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Icon name="download" size={16} className="text-primary" />
+                <p className="text-sm text-on-surface">
+                  <strong>CSV será exportado automaticamente</strong>
+                </p>
+              </div>
+              <p className="text-xs text-on-surface-variant">
+                O ficheiro contém todo o histórico do membro (5 anos). Podes enviar-lhe o ficheiro para que possa recuperar os dados.
+              </p>
             </div>
 
             <div className="flex gap-3 pt-2">
@@ -873,9 +913,17 @@ export default function FamilyPage() {
               <button
                 type="button"
                 onClick={handleConfirmRemove}
-                className="flex-1 py-3 bg-error text-on-error rounded-full font-medium hover:brightness-110 transition-all"
+                disabled={removing}
+                className="flex-1 py-3 bg-error text-on-error rounded-full font-medium hover:brightness-110 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                Remover
+                {removing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-on-error border-t-transparent rounded-full animate-spin" />
+                    A exportar...
+                  </>
+                ) : (
+                  'Remover'
+                )}
               </button>
             </div>
           </div>
