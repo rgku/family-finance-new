@@ -9,7 +9,7 @@ function generateSecureInviteCode(): string {
 
 const familySchema = z.object({
   name: z.string().max(100).trim().optional(),
-  action: z.enum(["create", "join", "leave"]),
+  action: z.enum(["create", "join", "leave", "delete"]),
 });
 
 export async function POST(request: NextRequest) {
@@ -187,6 +187,64 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json({ message: "Saíste da família com sucesso!" });
+    } else if (action === "delete") {
+      // Get user's current family
+      const { data: profile } = await adminSupabase
+        .from("profiles")
+        .select("family_id, role")
+        .eq("id", user.id)
+        .single();
+
+      if (!profile?.family_id) {
+        return NextResponse.json({ error: "Não pertences a nenhuma família" }, { status: 400 });
+      }
+
+      if (profile.role !== "owner") {
+        return NextResponse.json({ error: "Apenas o proprietário pode eliminar a família." }, { status: 403 });
+      }
+
+      // Check if there are other members
+      const { data: members } = await adminSupabase
+        .from("family_members")
+        .select("id")
+        .eq("family_id", profile.family_id)
+        .eq("user_id", user.id)
+        .neq("status", "inactive");
+
+      if (members && members.length > 0) {
+        // Count total active members
+        const { count } = await adminSupabase
+          .from("family_members")
+          .select("*", { count: "exact", head: true })
+          .eq("family_id", profile.family_id)
+          .eq("status", "active");
+
+        if (count && count > 1) {
+          return NextResponse.json({ error: "Não podes eliminar a família com outros membros. Remove todos os membros primeiro." }, { status: 400 });
+        }
+      }
+
+      // Delete family (cascades to family_members and profiles via foreign key)
+      const { error: familyError } = await adminSupabase
+        .from("families")
+        .delete()
+        .eq("id", profile.family_id);
+
+      if (familyError) {
+        return NextResponse.json({ error: familyError.message }, { status: 400 });
+      }
+
+      // Update profile to remove family association
+      const { error: profileError } = await adminSupabase
+        .from("profiles")
+        .update({ family_id: null, role: null })
+        .eq("id", user.id);
+
+      if (profileError) {
+        return NextResponse.json({ error: profileError.message }, { status: 400 });
+      }
+
+      return NextResponse.json({ message: "Família eliminada com sucesso!" });
     }
 
     return NextResponse.json({ error: "Ação inválida" }, { status: 400 });

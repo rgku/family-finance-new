@@ -150,6 +150,36 @@ export default function FamilyPage() {
     }
   };
 
+  const handleDeleteFamily = async () => {
+    if (!family) return;
+    
+    if (currentCount > 1) {
+      setMessage("⚠️ Não podes eliminar a família com outros membros. Remove todos os membros primeiro.");
+      return;
+    }
+    
+    if (confirm(`Eliminar família "${family.name}" permanentemente? Esta ação não pode ser desfeita.`)) {
+      try {
+        const res = await fetch("/api/family", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "delete" }),
+        });
+        const data = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(data.error || "Erro ao eliminar família");
+        }
+        
+        setMessage("Família eliminada com sucesso!");
+        router.refresh();
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : "Erro desconhecido";
+        setMessage(errorMessage);
+      }
+    }
+  };
+
   const roleLabels = {
     owner: "Proprietário",
     member: "Membro",
@@ -283,7 +313,16 @@ export default function FamilyPage() {
             </code>
           </div>
           
-          {userRole !== "owner" && (
+          {userRole === "owner" && currentCount === 1 ? (
+            <div className="mt-4 pt-4 border-t border-on-surface/10">
+              <button
+                onClick={() => handleDeleteFamily()}
+                className="text-sm text-error hover:underline"
+              >
+                Eliminar Família
+              </button>
+            </div>
+          ) : userRole !== "owner" && (
             <div className="mt-4 pt-4 border-t border-on-surface/10">
               <button
                 onClick={handleLeaveFamily}
