@@ -142,13 +142,23 @@ export default function ImportPage() {
               : `Formato otimizado para ${selectedBank === "millennium" ? "Millennium bcp" : selectedBank}`}
           </p>
           {selectedBank === "famflow" && (
-            <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-              <div className="flex items-start gap-2">
-                <Icon name="info" size={16} className="text-amber-500 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-500">
-                  <strong>Nota:</strong> Todas as transações importadas ficarão associadas apenas à tua conta. 
-                  Outros membros da família <strong>não</strong> terão acesso a estas transações.
-                </p>
+            <div className="mt-3 space-y-2">
+              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <Icon name="info" size={16} className="text-amber-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-500">
+                    <strong>Nota:</strong> Todas as transações importadas ficarão associadas apenas à tua conta. 
+                    Outros membros da família <strong>não</strong> terão acesso a estas transações.
+                  </p>
+                </div>
+              </div>
+              <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <Icon name="warning" size={16} className="text-red-500 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-red-500">
+                    <strong>Atenção:</strong> O CSV exportado inclui transações de <strong>todos</strong> os membros da família. Antes de importar, <strong>remove do ficheiro as linhas onde o user_id é o teu</strong> (coluna B no Excel) para evitares criar transações duplicadas.
+                  </p>
+                </div>
               </div>
             </div>
           )}
