@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
       console.error("Error fetching transactions:", transError);
     }
 
-    // Generate CSV - transactions only, headers + data rows
+    // Generate CSV - only transactions, headers + data rows
     const csvRows: string[] = [];
     csvRows.push("id,user_id,family_id,data,descricao,categoria,tipo,valor,criado_em");
     
