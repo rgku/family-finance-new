@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
+import { getCustomMonthForSelection, formatCustomMonth } from "@/lib/dateUtils";
 import Link from "next/link";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
 import { Icon } from "@/components/Icon";
@@ -71,18 +72,24 @@ interface ReportData {
 }
 
 export default function ReportsPage() {
-  const { signOut } = useAuth();
+  const { profile, signOut } = useAuth();
+  const billingDay = profile?.billing_cycle_day || 1;
   const isMobile = useDeviceType();
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
+    if (billingDay > 1) {
+      return getCustomMonthForSelection(billingDay, now);
+    }
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
 
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const [year, month] = selectedMonth.split("-").map(Number);
-  const monthName = monthNames[month - 1];
+  const monthName = billingDay > 1
+    ? formatCustomMonth(billingDay, new Date(year, month - 1, 25))
+    : monthNames[month - 1];
 
   useEffect(() => {
     let cancelled = false;

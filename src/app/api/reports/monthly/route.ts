@@ -44,30 +44,20 @@ export async function GET(request: NextRequest) {
         ? `${year + 1}-01-01` 
         : `${year}-${String(monthNum + 1).padStart(2, "0")}-01`;
     } else {
-      // Billing cycle starts on billingDay of previous month
-      const startMonth = monthNum === 1 ? 12 : monthNum - 1;
-      const startYear = monthNum === 1 ? year - 1 : year;
+      // Billing cycle starts on billingDay of month-2
+      // Example: month=06 (June), billingDay=24 → starts Apr 24
+      const startMonth = monthNum <= 2 ? monthNum + 10 : monthNum - 2;
+      const startYear = monthNum <= 2 ? year - 1 : year;
       startDate = `${startYear}-${String(startMonth).padStart(2, "0")}-${String(billingDay).padStart(2, "0")}`;
       
-      // Billing cycle ends on billingDay-1 of current month
-      const endDay = billingDay - 1;
-      if (endDay === 0) {
-        // If billingDay is 1, end is last day of previous month
-        const prevMonth = monthNum === 1 ? 12 : monthNum - 1;
-        const prevYear = monthNum === 1 ? year - 1 : year;
-        const lastDay = new Date(prevYear, prevMonth, 0).getDate();
-        endDate = `${year}-${String(monthNum).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
-        // Add 1 day to make it exclusive
-        const endD = new Date(endDate);
-        endD.setDate(endD.getDate() + 1);
-        endDate = endD.toISOString().split("T")[0];
-      } else {
-        endDate = `${year}-${String(monthNum).padStart(2, "0")}-${String(endDay).padStart(2, "0")}`;
-        // Add 1 day to make it exclusive
-        const endD = new Date(endDate);
-        endD.setDate(endD.getDate() + 1);
-        endDate = endD.toISOString().split("T")[0];
-      }
+      // Billing cycle ends on billingDay+1 of month-1 (exclusive)
+      // Example: month=06 (June), billingDay=24 → ends May 25 (exclusive = May 24 inclusive)
+      const endMonth = monthNum === 1 ? 12 : monthNum - 1;
+      const endYear = monthNum === 1 ? year - 1 : year;
+      endDate = `${endYear}-${String(endMonth).padStart(2, "0")}-${String(billingDay).padStart(2, "0")}`;
+      const endD = new Date(endDate);
+      endD.setDate(endD.getDate() + 1);
+      endDate = endD.toISOString().split("T")[0];
     }
 
     // Previous month calculation
