@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
-import { getCustomMonthForSelection, formatCustomMonth } from "@/lib/dateUtils";
+import { getCustomMonthForSelection } from "@/lib/dateUtils";
 import Link from "next/link";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
 import { Icon } from "@/components/Icon";
@@ -87,9 +87,7 @@ export default function ReportsPage() {
 
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const [year, month] = selectedMonth.split("-").map(Number);
-  const monthName = billingDay > 1
-    ? formatCustomMonth(billingDay, new Date(year, month - 1, 25))
-    : monthNames[month - 1];
+  const monthName = monthNames[month - 1];
 
   useEffect(() => {
     let cancelled = false;
