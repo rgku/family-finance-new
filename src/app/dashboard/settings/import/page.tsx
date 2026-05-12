@@ -194,7 +194,7 @@ export default function ImportPage() {
                       <td className="p-3 text-on-surface-variant">{t.date}</td>
                       <td className="p-3 text-on-surface">{t.description}</td>
                       <td className={`p-3 text-right font-bold ${t.type === "income" ? "text-primary" : "text-tertiary"}`}>
-                        {t.type === "income" ? "+" : "-"}{t.amount.toFixed(2)}€
+                        {t.type === "income" ? "+" : "-"}{Number(t.amount || 0).toFixed(2)}€
                       </td>
                     </tr>
                   ))}

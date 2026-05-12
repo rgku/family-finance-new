@@ -28,20 +28,37 @@ export async function POST(req: Request) {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    // Get all active users
-    const { data: users } = await supabase
-      .from('users')
-      .select('id, email, full_name, billing_cycle_day');
+    // Get all active profiles
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, billing_cycle_day');
 
-    if (!users) {
+    if (!profiles) {
       return NextResponse.json({ success: false, error: 'No users found' });
     }
+
+    // Get emails from auth.users (accessible via service_role key)
+    const { data: authData } = await supabase.auth.admin.listUsers();
+    const emailMap = new Map<string, string>();
+    for (const u of authData?.users || []) {
+      emailMap.set(u.id, u.email || '');
+    }
+
+    // Merge profile data with email
+    const users = profiles.map(p => ({
+      ...p,
+      email: emailMap.get(p.id) || '',
+    }));
 
     let emailsSent = 0;
     let errors = 0;
 
     for (const user of users) {
       try {
+        if (!user.email) {
+          console.warn(`⏭️ Skipping user ${user.id} - no email found`);
+          continue;
+        }
         const billingDay = user.billing_cycle_day || 1;
         const today = new Date();
         const currentDay = today.getDate();

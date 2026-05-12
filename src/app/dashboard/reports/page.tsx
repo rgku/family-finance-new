@@ -129,7 +129,7 @@ export default function ReportsPage() {
     
     const csvRows = [
       ["Data", "Descrição", "Categoria", "Tipo", "Valor"],
-      ...reportData.transactions.map(t => [
+      ...(reportData.transactions || []).map(t => [
         t.date,
         escapeCSV(t.description),
         escapeCSV(t.category),

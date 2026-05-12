@@ -188,7 +188,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const monthTransactions = transactions.filter(t => 
         t.category === b.category && 
         t.type === 'expense' && 
-        t.date.startsWith(currentMonth)
+        t.date?.startsWith(currentMonth)
       );
       
       const spent = monthTransactions.reduce((sum, t) => sum + t.amount, 0);
