@@ -155,7 +155,7 @@ export default function RecurringPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-surface-container-highest">
+                    <div className="flex items-center justify-between pt-4 border-t border-surface-container-highest flex-wrap gap-2">
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2 text-sm text-on-surface-variant">
                           <Icon name="calendar_today" size={16} />
@@ -246,7 +246,7 @@ export default function RecurringPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between pt-4 border-t border-surface-container-highest">
+                    <div className="flex items-center justify-between pt-4 border-t border-surface-container-highest flex-wrap gap-2">
                       <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2 text-sm text-on-surface-variant">
                           <Icon name="calendar_today" size={16} />
