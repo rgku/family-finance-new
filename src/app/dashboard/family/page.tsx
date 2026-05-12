@@ -273,8 +273,6 @@ export default function FamilyPage() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       const deleteRes = await fetch("/api/family", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -203,25 +203,15 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Apenas o proprietário pode eliminar a família." }, { status: 403 });
       }
 
-      // Check if there are other members
-      const { data: members } = await adminSupabase
+      // Check if there are other active members besides the owner
+      const { count } = await adminSupabase
         .from("family_members")
-        .select("id")
+        .select("*", { count: "exact", head: true })
         .eq("family_id", profile.family_id)
-        .eq("user_id", user.id)
-        .neq("status", "inactive");
+        .eq("status", "active");
 
-      if (members && members.length > 0) {
-        // Count total active members
-        const { count } = await adminSupabase
-          .from("family_members")
-          .select("*", { count: "exact", head: true })
-          .eq("family_id", profile.family_id)
-          .eq("status", "active");
-
-        if (count && count > 1) {
-          return NextResponse.json({ error: "Não podes eliminar a família com outros membros. Remove todos os membros primeiro." }, { status: 400 });
-        }
+      if (count && count > 1) {
+        return NextResponse.json({ error: "Não podes eliminar a família com outros membros. Remove todos os membros primeiro." }, { status: 400 });
       }
 
       // Delete family (cascades to family_members and profiles via foreign key)

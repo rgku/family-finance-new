@@ -64,34 +64,14 @@ export default function ImportPage() {
       const mapping = bankPresets[selectedBank];
       const transactions = await parseCSV(file, mapping);
 
-      if (userFamilyId && selectedBank !== "famflow") {
-        // User has family: insert directly with family_id for sharing
-        for (const trans of transactions) {
-          const { error } = await supabase!
-            .from("transactions")
-            .insert({
-              user_id: user!.id,
-              family_id: userFamilyId,
-              description: trans.description,
-              amount: trans.amount,
-              type: trans.type,
-              category: trans.category || "Outros",
-              date: trans.date,
-            });
-
-          if (error) throw error;
-        }
-      } else {
-        // No family or FamFlow import: use addTransaction (user_id only)
-        for (const trans of transactions) {
-          await addTransaction({
-            description: trans.description,
-            amount: trans.amount,
-            type: trans.type,
-            category: trans.category || "Outros",
-            date: trans.date,
-          });
-        }
+      for (const trans of transactions) {
+        await addTransaction({
+          description: trans.description,
+          amount: trans.amount,
+          type: trans.type,
+          category: trans.category || "Outros",
+          date: trans.date,
+        });
       }
 
       setImported(true);

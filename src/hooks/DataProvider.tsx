@@ -178,27 +178,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Check if we need to refetch (user changed OR family changed)
-    const needsRefetch = async () => {
-      if (lastFetchUserId.current !== user.id) return true;
-      
-      // Check if family_id changed
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('family_id')
-        .eq('id', user.id)
-        .single();
-      
-      const currentFamilyId = profile?.family_id || null;
-      if (lastFetchFamilyId.current !== currentFamilyId) return true;
-      
-      return false;
-    };
-    
-    needsRefetch().then(shouldFetch => {
-      if (!shouldFetch) return;
-      fetchData();
-    });
+    fetchData();
   }, [user, isOnline]);
 
   const budgets = useMemo(() => {
@@ -248,7 +228,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      console.log('[addTransaction] Calling RPC with:', { p_user_id: user.id, p_amount: t.amount, p_description: t.description });
+      console.debug('[addTransaction] Calling RPC with:', { p_user_id: user.id, p_amount: t.amount, p_description: t.description });
       
       const { error: insertError, data: newId } = await supabase
         .rpc('insert_transaction', {
@@ -265,44 +245,32 @@ export function DataProvider({ children }: { children: ReactNode }) {
         throw insertError;
       }
       
-      console.log('[addTransaction] RPC success, newId:', newId);
-      
-      // Small delay to ensure DB is updated
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      // Fetch recently inserted transactions and find ours
-      const { data: recentTransactions, error: fetchError } = await supabase
-        .from('transactions_decrypted')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
+      const insertedId = newId && typeof newId === 'object' 
+        ? (Array.isArray(newId) ? newId[0] : newId)
+        : newId;
 
-      if (fetchError) {
-        console.error('Failed to fetch transactions:', fetchError);
-        // Keep optimistic update
-      } else if (recentTransactions && recentTransactions.length > 0) {
-        const insertedData = recentTransactions.find(trans => 
-          trans.id === newId ||
-          (trans.type === t.type &&
-          trans.category === t.category &&
-          trans.date === t.date &&
-          Math.abs((parseFloat(trans.amount) || 0) - t.amount) < 0.01)
-        ) || recentTransactions[0];
-        
-        setTransactions(prev => {
-          return prev.map(trans => 
-            trans.id === tempId ? {
-              id: insertedData.id,
-              description: insertedData.description || t.description,
-              amount: parseFloat(insertedData.amount) || t.amount,
-              type: insertedData.type,
-              category: insertedData.category,
-              date: insertedData.date,
-            } : trans
+      if (insertedId) {
+        const { data: insertedData } = await supabase
+          .from('transactions_decrypted')
+          .select('*')
+          .eq('id', insertedId)
+          .single();
+
+        if (insertedData) {
+          setTransactions(prev => 
+            prev.map(trans => 
+              trans.id === tempId ? {
+                id: insertedData.id,
+                description: insertedData.description || t.description,
+                amount: parseFloat(insertedData.amount) || t.amount,
+                type: insertedData.type,
+                category: insertedData.category,
+                date: insertedData.date,
+              } : trans
+            )
           );
-        });
-        
-        // Check budget alerts for expense transactions
+        }
+
         if (t.type === 'expense') {
           await checkBudgetAlerts(t.category, t.amount);
         }
@@ -330,7 +298,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       if (notifError) {
         console.error('[BudgetAlerts] Error creating in-app notification:', notifError);
       } else {
-        console.log('✅ [BudgetAlerts] In-app notification created successfully');
+        console.debug('✅ [BudgetAlerts] In-app notification created successfully');
       }
     } catch (rpcError: any) {
       console.error('[BudgetAlerts] RPC error creating notification:', rpcError.message);
@@ -356,69 +324,122 @@ export function DataProvider({ children }: { children: ReactNode }) {
       });
 
       if (pushError) {
-        console.log('⚠️ [BudgetAlerts] Push notification skipped:', pushError.message);
+        console.warn('⚠️ [BudgetAlerts] Push notification skipped:', pushError.message);
       } else {
-        console.log('✅ [BudgetAlerts] Push notification sent successfully');
+        console.debug('✅ [BudgetAlerts] Push notification sent successfully');
       }
     } catch (pushError: any) {
-      console.log('⚠️ [BudgetAlerts] Push notification skipped:', pushError.message);
+      console.warn('⚠️ [BudgetAlerts] Push notification skipped:', pushError.message);
     }
   };
 
-  // Check if budget threshold is reached and send notification
+  const processBudgetThreshold = async (
+    threshold: { value: number; title: string; type: string },
+    percentage: number,
+    category: string,
+    totalSpent: number,
+    budgetLimit: number,
+    monthStart: string,
+    monthEnd: string
+  ) => {
+    if (percentage < threshold.value) {
+      const resetThreshold = threshold.value - 10;
+      if (percentage < resetThreshold) {
+        await supabase.from('budget_alerts')
+          .update({ last_sent: null })
+          .eq('user_id', user!.id)
+          .eq('category', category)
+          .eq('threshold_percent', threshold.value);
+      }
+      return;
+    }
+
+    const { data: existingAlerts } = await supabase
+      .from('budget_alerts')
+      .select('id, last_sent, threshold_percent')
+      .eq('user_id', user!.id)
+      .eq('category', category)
+      .eq('threshold_percent', threshold.value)
+      .gte('last_sent', monthStart)
+      .lte('last_sent', monthEnd)
+      .order('last_sent', { ascending: false })
+      .limit(1);
+
+    const existingAlert = existingAlerts?.[0] || null;
+
+    if (!existingAlert) {
+      sendInAppNotification(
+        threshold.title,
+        `Atingiste ${Math.round(percentage)}% do orçamento de ${category} (${totalSpent.toFixed(0)}€/${budgetLimit.toFixed(0)}€)`,
+        '/dashboard/budgets',
+        threshold.type
+      );
+      sendPushNotification(
+        threshold.title,
+        `Atingiste ${Math.round(percentage)}% do orçamento de ${category}`,
+        threshold.type
+      );
+      await supabase.from('budget_alerts').upsert({
+        user_id: user!.id,
+        category,
+        threshold_percent: threshold.value,
+        enabled: true,
+        last_sent: new Date().toISOString(),
+      });
+      return;
+    }
+
+    const reNotifyThreshold = threshold.value + 5;
+    if (percentage >= reNotifyThreshold) {
+      sendInAppNotification(
+        threshold.title + ' (Atualização)',
+        `Agora em ${Math.round(percentage)}% do orçamento de ${category} (${totalSpent.toFixed(0)}€/${budgetLimit.toFixed(0)}€)`,
+        '/dashboard/budgets',
+        threshold.type
+      );
+      sendPushNotification(
+        threshold.title + ' (Atualização)',
+        `Agora em ${Math.round(percentage)}% do orçamento de ${category}`,
+        threshold.type
+      );
+      await supabase.from('budget_alerts').upsert({
+        user_id: user!.id,
+        category,
+        threshold_percent: threshold.value,
+        enabled: true,
+        last_sent: new Date().toISOString(),
+      });
+    }
+  };
+
   const checkBudgetAlerts = async (category: string, amount: number) => {
     if (!supabase || !user) return;
     
     try {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = today.getMonth() + 1;
-      const monthStart = new Date(year, month - 1, 1);
-      const nextMonth = new Date(year, month, 1);
-      
-      // Get budget for this category
-      console.log('[BudgetAlerts] Fetching budget for category:', category, 'month:', monthStart.toISOString().split('T')[0]);
+      const now = new Date();
+      const curYear = now.getFullYear();
+      const curMonth = now.getMonth() + 1;
+      const monthStart = new Date(curYear, curMonth - 1, 1);
+      const nextMonth = new Date(curYear, curMonth, 1);
+      const startDateStr = monthStart.toISOString().split('T')[0];
+      const endDateStr = new Date(curYear, curMonth, 0).toISOString().split('T')[0];
       
       const { data: budget, error: budgetError } = await supabase
         .from('budgets')
         .select('*')
         .eq('user_id', user.id)
         .eq('category', category)
-        .gte('month', monthStart.toISOString().split('T')[0])
+        .gte('month', startDateStr)
         .lt('month', nextMonth.toISOString().split('T')[0])
         .maybeSingle();
 
       if (budgetError) {
         console.error('[BudgetAlerts] Error fetching budget:', budgetError);
-        console.error('[BudgetAlerts] Error details:', JSON.stringify(budgetError, null, 2));
-        console.error('[BudgetAlerts] Error status:', (budgetError as any).status);
-        console.error('[BudgetAlerts] Error code:', (budgetError as any).code);
-        console.error('[BudgetAlerts] Error message:', (budgetError as any).message);
-        console.error('[BudgetAlerts] Error hint:', (budgetError as any).hint);
-        console.error('[BudgetAlerts] Error details:', (budgetError as any).details);
-        
-        // If 404, table might not exist or RLS policy blocking
-        if ((budgetError as any).status === 404) {
-          console.error('[BudgetAlerts] Budgets table not found or RLS blocking access');
-          console.error('[BudgetAlerts] Check if table exists and RLS policies are correct');
-        }
         return;
       }
 
-      if (!budget) {
-        console.log('[BudgetAlerts] No budget found for category:', category);
-        return;
-      }
+      if (!budget) return;
 
-      // Calculate total spent in this category - use proper date range
-      const now = new Date();
-      const curYear = now.getFullYear();
-      const curMonth = now.getMonth() + 1;
-      const mStart = new Date(curYear, curMonth - 1, 1);
-      const mEnd = new Date(curYear, curMonth, 0);
-      const startDateStr = mStart.toISOString().split('T')[0];
-      const endDateStr = mEnd.toISOString().split('T')[0];
-      
       const { data: spentTransactions, error: spentError } = await supabase
         .from('transactions_decrypted')
         .select('amount')
@@ -435,129 +456,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const totalSpent = spentTransactions?.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0) || 0;
       const budgetLimit = parseFloat(budget.limit_amount) || 0;
       
-      if (budgetLimit <= 0) {
-        console.log('[BudgetAlerts] Budget limit is 0, skipping');
-        return;
-      }
+      if (budgetLimit <= 0) return;
 
       const percentage = (totalSpent / budgetLimit) * 100;
-      console.log('[BudgetAlerts] Category:', category, '| Spent:', totalSpent, '| Limit:', budgetLimit, '| Percentage:', percentage.toFixed(1) + '%');
 
-      // Check thresholds: 80% and 100%
       const thresholds = [
         { value: 100, title: 'Orçamento Esgotado!', type: 'budget_100_percent' },
         { value: 80, title: 'Orçamento 80%', type: 'budget_80_percent' }
       ];
 
       for (const threshold of thresholds) {
-        // Check if we crossed this threshold
-        if (percentage >= threshold.value) {
-          console.log('[BudgetAlerts] Threshold reached:', threshold.value + '%');
-          
-          // Check if alert already sent for this threshold this month
-          const { data: existingAlerts, error: alertError } = await supabase
-            .from('budget_alerts')
-            .select('id, last_sent, threshold_percent')
-            .eq('user_id', user.id)
-            .eq('category', category)
-            .eq('threshold_percent', threshold.value)
-            .gte('last_sent', startDateStr)
-            .lte('last_sent', endDateStr)
-            .order('last_sent', { ascending: false })
-            .limit(1);
-
-          if (alertError) {
-            console.error('[BudgetAlerts] Error checking existing alert:', alertError);
-          }
-
-          const existingAlert = existingAlerts && existingAlerts.length > 0 ? existingAlerts[0] : null;
-
-          if (!existingAlert) {
-            // No alert sent yet - send notification
-            console.log('[BudgetAlerts] Sending notification for', threshold.value + '% threshold');
-            
-            // Send in-app notification
-            sendInAppNotification(
-              threshold.title,
-              `Atingiste ${Math.round(percentage)}% do orçamento de ${category} (${totalSpent.toFixed(0)}€/${budgetLimit.toFixed(0)}€)`,
-              '/dashboard/budgets',
-              threshold.type
-            );
-            
-            // Send push notification via OneSignal
-            sendPushNotification(
-              threshold.title,
-              `Atingiste ${Math.round(percentage)}% do orçamento de ${category}`,
-              threshold.type
-            );
-
-            // Mark alert as sent
-            await supabase.from('budget_alerts').upsert({
-              user_id: user.id,
-              category,
-              threshold_percent: threshold.value,
-              enabled: true,
-              last_sent: new Date().toISOString(),
-            });
-            
-            console.log('[BudgetAlerts] Alert marked as sent');
-          } else {
-            // Alert was already sent - check if we need to re-send
-            console.log('[BudgetAlerts] Alert already sent at:', existingAlert.last_sent);
-            
-            // Re-notify if percentage increased significantly (+5% from threshold)
-            // Example: 80% threshold -> notify at 85%, 90%, 95%...
-            const reNotifyThreshold = threshold.value + 5;
-            const shouldReNotify = percentage >= reNotifyThreshold;
-            
-            if (shouldReNotify) {
-              console.log('[BudgetAlerts] Percentage increased to', percentage.toFixed(1) + '%, re-sending notification');
-              
-              // Send in-app notification
-              sendInAppNotification(
-                threshold.title + ' (Atualização)',
-                `Agora em ${Math.round(percentage)}% do orçamento de ${category} (${totalSpent.toFixed(0)}€/${budgetLimit.toFixed(0)}€)`,
-                '/dashboard/budgets',
-                threshold.type
-              );
-              
-              // Send push notification via OneSignal
-              sendPushNotification(
-                threshold.title + ' (Atualização)',
-                `Agora em ${Math.round(percentage)}% do orçamento de ${category}`,
-                threshold.type
-              );
-              
-              // Update alert timestamp
-              await supabase.from('budget_alerts').upsert({
-                user_id: user.id,
-                category,
-                threshold_percent: threshold.value,
-                enabled: true,
-                last_sent: new Date().toISOString(),
-              });
-            } else {
-              console.log('[BudgetAlerts] No re-notification (need', reNotifyThreshold + '%, currently at', percentage.toFixed(1) + '%)');
-            }
-          }
-        } else {
-          // Below threshold - check if we should reset the alert
-          // If percentage dropped significantly below threshold, allow re-notification next time
-          const resetThreshold = threshold.value - 10; // Reset if drops 10% below
-          
-          if (percentage < resetThreshold) {
-            console.log('[BudgetAlerts] Percentage dropped below', resetThreshold + '%, resetting alert');
-            
-            // Reset the alert so it can be re-sent when threshold is crossed again
-            await supabase.from('budget_alerts')
-              .update({ last_sent: null })
-              .eq('user_id', user.id)
-              .eq('category', category)
-              .eq('threshold_percent', threshold.value);
-            
-            console.log('[BudgetAlerts] Alert reset - will notify again when threshold crossed');
-          }
-        }
+        await processBudgetThreshold(threshold, percentage, category, totalSpent, budgetLimit, startDateStr, endDateStr);
       }
     } catch (error) {
       console.error('[BudgetAlerts] Error checking budget alerts:', error);
