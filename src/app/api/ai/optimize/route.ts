@@ -42,7 +42,8 @@ export async function POST(request: NextRequest) {
       if (cached.data && cached.data.suggested_at) {
         const cacheAge = Date.now() - new Date(cached.data.suggested_at).getTime();
         if (cacheAge < CACHE_TTL_DAYS * 24 * 60 * 60 * 1000) {
-          return NextResponse.json({ suggestions: cached.data.suggestions, summary: cached.data.summary, cached: true, generated_at: cached.data.suggested_at });
+          const suggestions = (cached.data.suggestions || []).filter((s: AIBudgetSuggestion) => s.category && s.category.trim());
+          return NextResponse.json({ suggestions, summary: cached.data.summary, cached: true, generated_at: cached.data.suggested_at });
         }
       }
     }
@@ -128,6 +129,9 @@ export async function POST(request: NextRequest) {
       console.warn("AI optimize generation failed, using fallback:", aiError);
       result = generateFallbackOptimize(currentBudgets, goals);
     }
+
+    const validSuggestions = result.suggestions.filter(s => s.category && s.category.trim());
+    result.suggestions = validSuggestions;
 
     await admin.from("budget_suggestions").insert({
       user_id: user.id,
