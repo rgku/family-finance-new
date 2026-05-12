@@ -280,6 +280,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
             }
             return prev;
           });
+        } else if (insertedId) {
+          setTransactions(prev => {
+            const idx = prev.findIndex(t => t.id === tempId);
+            if (idx >= 0) {
+              const updated = [...prev];
+              updated[idx] = { ...updated[idx], id: insertedId as string };
+              return updated;
+            }
+            return prev;
+          });
         }
 
         if (t.type === 'expense') {
@@ -381,30 +391,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const existingAlert = existingAlerts?.[0] || null;
 
-      if (!existingAlert) {
-        sendInAppNotification(
-          threshold.title,
-          `Atingiste ${Math.round(percentage)}% do orçamento de ${category} (${totalSpent.toFixed(0)}€/${budgetLimit.toFixed(0)}€)`,
-          '/dashboard/budgets',
-          threshold.type
-        );
-        sendPushNotification(
-          threshold.title,
-          `Atingiste ${Math.round(percentage)}% do orçamento de ${category}`,
-          threshold.type
-        );
-        const { error: upsertError } = await supabase.from('budget_alerts').upsert({
-          user_id: user!.id,
-          category,
-          threshold_percent: threshold.value,
-          enabled: true,
-          last_sent: new Date().toISOString(),
-        });
-        if (upsertError) {
-          console.error('[BudgetAlerts] Error upserting alert:', upsertError);
-        }
-        return;
+    if (!existingAlert) {
+      sendInAppNotification(
+        threshold.title,
+        `Atingiste ${Math.round(percentage)}% do orçamento de ${category} (${totalSpent.toFixed(0)}€/${budgetLimit.toFixed(0)}€)`,
+        '/dashboard/budgets',
+        threshold.type
+      );
+      sendPushNotification(
+        threshold.title,
+        `Atingiste ${Math.round(percentage)}% do orçamento de ${category}`,
+        threshold.type
+      );
+      const { error: upsertError } = await supabase.from('budget_alerts').upsert({
+        user_id: user!.id,
+        category,
+        threshold_percent: threshold.value,
+        enabled: true,
+        last_sent: new Date().toISOString(),
+      });
+      if (upsertError) {
+        console.error('[BudgetAlerts] Error upserting alert:', upsertError);
       }
+      return;
+    }
 
     const reNotifyThreshold = threshold.value + 5;
     if (percentage >= reNotifyThreshold) {
@@ -619,6 +629,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
             icon: goalData.icon || 'savings',
             goal_type: goalData.goal_type || 'savings',
           } : goal
+        ));
+      } else if (newId) {
+        setGoals(prev => prev.map(goal =>
+          goal.id === tempId ? { ...goal, id: newId as string } : goal
         ));
       }
     } catch (error) {
