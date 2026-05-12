@@ -30,6 +30,7 @@ export function maskPhone(phone: string | null): string {
 }
 
 export function maskAmount(amount: number, showDecimals = false): string {
+  if (amount == null || !Number.isFinite(amount)) return "0,00";
   if (showDecimals) {
     return amount.toLocaleString('pt-PT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
