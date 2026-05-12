@@ -19,6 +19,7 @@ export async function POST(request: NextRequest) {
 
     if (rateLimitError) {
       console.error('Rate limit check error:', rateLimitError);
+      return NextResponse.json({ error: "Erro interno. Tenta novamente." }, { status: 500 });
     } else if (rateLimitData && rateLimitData.length > 0 && !rateLimitData[0].allowed) {
       return NextResponse.json(
         { error: "Too many attempts. Please try again later." },

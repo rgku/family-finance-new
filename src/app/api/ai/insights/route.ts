@@ -47,6 +47,10 @@ export async function GET(request: NextRequest) {
         .eq("type", "anomalies")
         .single();
 
+      if (cached.error) {
+        console.error("Cache query error for insights:", cached.error);
+      }
+
       if (cached.data && cached.data.generated_at) {
         const cacheAge = Date.now() - new Date(cached.data.generated_at).getTime();
         if (cacheAge < CACHE_TTL_HOURS * 60 * 60 * 1000) {

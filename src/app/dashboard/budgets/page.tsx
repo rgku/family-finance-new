@@ -125,6 +125,11 @@ export default function BudgetsPage() {
   };
 
   const handleApplySuggestion = (suggestion: AIBudgetSuggestion) => {
+    if (!suggestion.category) {
+      showToast("Sugestão inválida - categoria em falta", "error");
+      setAiSuggestions(prev => prev.filter(s => s !== suggestion));
+      return;
+    }
     const existingBudget = budgets.find(b => b.category === suggestion.category);
     if (existingBudget) {
       updateBudget(existingBudget.id, { limit: suggestion.suggestedLimit });

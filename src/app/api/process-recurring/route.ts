@@ -102,6 +102,7 @@ export async function POST(req: Request) {
 
       if (updateError) {
         console.error('Error updating next_run:', updateError);
+        errors++;
       } else {
         console.log(`Next run updated to: ${nextRun}`);
       }

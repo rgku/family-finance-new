@@ -47,11 +47,15 @@ export async function GET(request: NextRequest) {
     }
 
     // Get family info
-    const { data: family } = await supabase
+    const { data: family, error: familyError } = await supabase
       .from("families")
       .select("*")
       .eq("id", profile.family_id)
       .single();
+
+    if (familyError) {
+      console.error("Error fetching family:", familyError);
+    }
 
 // Get all family members (from family_members table)
     const { data: members, error: membersError } = await supabase
@@ -242,12 +246,16 @@ export async function PATCH(request: NextRequest) {
       const adminSupabase = await createAdminSupabase();
 
       // Try to find in family_members first
-      const { data: memberData } = await supabase
+      const { data: memberData, error: memberLookupError } = await supabase
         .from("family_members")
         .select("id, user_id")
         .eq("id", memberId)
         .eq("family_id", profile.family_id)
         .single();
+
+      if (memberLookupError && memberLookupError.code !== 'PGRST116') {
+        console.error("Error looking up member:", memberLookupError);
+      }
 
       if (memberData) {
         // Delete from family_members
@@ -273,12 +281,16 @@ export async function PATCH(request: NextRequest) {
       } else {
         // Member might be in profiles table only (joined via invite link)
         // Check if memberId is a user_id in profiles
-        const { data: profileMember } = await adminSupabase
+        const { data: profileMember, error: profileLookupError } = await adminSupabase
           .from("profiles")
           .select("id")
           .eq("id", memberId)
           .eq("family_id", profile.family_id)
           .single();
+
+        if (profileLookupError && profileLookupError.code !== 'PGRST116') {
+          console.error("Error looking up profile member:", profileLookupError);
+        }
 
         if (profileMember) {
           // Update profile to remove family association

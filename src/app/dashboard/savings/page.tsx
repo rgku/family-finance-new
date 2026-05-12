@@ -101,12 +101,12 @@ export default function SavingsPage() {
                   <div
                     className="bg-primary h-3 rounded-full transition-all"
                     style={{
-                      width: `${Math.min((selectedGoal.current_amount / selectedGoal.target_amount) * 100, 100)}%`
+                      width: `${selectedGoal.target_amount > 0 ? Math.min((selectedGoal.current_amount / selectedGoal.target_amount) * 100, 100) : 0}%`
                     }}
                   />
                 </div>
                 <p className="text-sm text-on-surface-variant">
-                  {((selectedGoal.current_amount / selectedGoal.target_amount) * 100).toFixed(1)}% concluído
+                  {selectedGoal.target_amount > 0 ? ((selectedGoal.current_amount / selectedGoal.target_amount) * 100).toFixed(1) : "0.0"}% concluído
                 </p>
               </div>
             )}

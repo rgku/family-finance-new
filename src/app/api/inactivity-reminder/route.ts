@@ -26,8 +26,8 @@ export async function POST(req: Request) {
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
     const { data: users } = await supabase
-      .from('users')
-      .select('id, email, full_name');
+      .from('profiles')
+      .select('id');
 
     if (!users) {
       return NextResponse.json({ success: false, error: 'No users found' });
@@ -37,12 +37,12 @@ export async function POST(req: Request) {
 
     for (const user of users) {
       const { data: lastTransaction } = await supabase
-        .from('transactions')
+        .from('transactions_decrypted')
         .select('date')
         .eq('user_id', user.id)
         .order('date', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (!lastTransaction) continue;
 

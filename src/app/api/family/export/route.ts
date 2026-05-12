@@ -14,11 +14,15 @@ export async function POST(request: NextRequest) {
     const { months = 12, memberId } = body;
 
     // Get user's family_id
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("family_id")
       .eq("id", user.id)
       .single();
+
+    if (profileError) {
+      console.error("Error fetching profile for export:", profileError);
+    }
 
     const familyId = profile?.family_id;
 

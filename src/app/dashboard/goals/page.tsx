@@ -292,7 +292,7 @@ export default function GoalsPage() {
               </div>
               
               <div className="flex items-center justify-between">
-                {goal.deadline && (
+                {goal.deadline && !isNaN(new Date(goal.deadline).getTime()) && (
                   <div className="text-xs text-on-surface-variant flex items-center gap-1">
                     <Icon name="event" size={12} />
                     <span>{new Date(goal.deadline).toLocaleDateString('pt-PT')}</span>

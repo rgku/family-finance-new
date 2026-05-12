@@ -46,7 +46,7 @@ export default function AnalyticsPage() {
   const { forecasts: aiForecasts, loading: forecastLoading, summary: forecastSummary } = useAIForecast(nextMonthParam);
   
   const monthName = profile?.billing_cycle_day && profile.billing_cycle_day > 1
-    ? formatCustomMonth(billingDay, new Date(year, month - 1, 25))
+    ? formatCustomMonth(billingDay, new Date(year, month - 1, billingDay - 1))
     : monthNames[month - 1];
 
   const filteredTransactions = useMemo(() => {

@@ -13,7 +13,7 @@ async function generateOptimize(data: AIBudgetOptimizePayload) {
   return await groqChatJSON<{ suggestions: AIBudgetSuggestion[]; summary: string }>({
     messages: [{ role: "user", content: prompt }],
     temperature: 0.3,
-    maxTokens: 1024,
+    maxTokens: 2048,
   });
 }
 
@@ -39,10 +39,24 @@ export async function POST(request: NextRequest) {
         .limit(1)
         .single();
 
+      if (cached.error) {
+        console.error("Cache query error for optimize:", cached.error);
+      }
+
       if (cached.data && cached.data.suggested_at) {
         const cacheAge = Date.now() - new Date(cached.data.suggested_at).getTime();
         if (cacheAge < CACHE_TTL_DAYS * 24 * 60 * 60 * 1000) {
-          return NextResponse.json({ suggestions: cached.data.suggestions, summary: cached.data.summary, cached: true, generated_at: cached.data.suggested_at });
+          const rawSuggestions: any[] = cached.data.suggestions || [];
+          const suggestions = rawSuggestions
+            .map((s: any) => ({
+              category: (s.category || s.categoria || s.name || "") as string,
+              currentLimit: s.currentLimit ?? s.current_limit ?? 0,
+              suggestedLimit: s.suggestedLimit ?? s.suggested_limit ?? 0,
+              reason: (s.reason || "") as string,
+              impactOnGoals: (s.impactOnGoals || s.impact_on_goals || "") as string,
+            }))
+            .filter(s => s.category.trim());
+          return NextResponse.json({ suggestions, summary: cached.data.summary, cached: true, generated_at: cached.data.suggested_at });
         }
       }
     }
@@ -111,7 +125,7 @@ export async function POST(request: NextRequest) {
       .gte("date", `${currentMonth}-01`)
       .lt("date", `${currentMonth}-32`);
 
-    const totalIncome = (incomeResult.data || []).reduce((s, t) => s + Number(t.amount), 0) || 1500;
+    const totalIncome = (incomeResult.data || []).reduce((s, t) => s + Number(t.amount), 0);
 
     const payload: AIBudgetOptimizePayload = {
       familyId: profileResult.data.family_id,
@@ -129,11 +143,29 @@ export async function POST(request: NextRequest) {
       result = generateFallbackOptimize(currentBudgets, goals);
     }
 
-    await admin.from("budget_suggestions").insert({
-      user_id: user.id,
-      suggestions: result.suggestions,
-      summary: result.summary,
-    });
+    const rawSuggestions: any[] = result.suggestions || [];
+    const validSuggestions: AIBudgetSuggestion[] = rawSuggestions
+      .map((s: any) => ({
+        category: (s.category || s.categoria || s.name || "") as string,
+        currentLimit: (s.currentLimit ?? s.current_limit ?? 0) as number,
+        suggestedLimit: (s.suggestedLimit ?? s.suggested_limit ?? 0) as number,
+        reason: (s.reason || "") as string,
+        impactOnGoals: (s.impactOnGoals || s.impact_on_goals || "") as string,
+      }))
+      .filter(s => s.category.trim());
+    result.suggestions = validSuggestions;
+
+    if (result.suggestions.length > 0) {
+      try {
+        await admin.from("budget_suggestions").insert({
+          user_id: user.id,
+          suggestions: result.suggestions,
+          summary: result.summary,
+        });
+      } catch (insertErr) {
+        console.warn("Failed to cache budget suggestions:", insertErr);
+      }
+    }
 
     return NextResponse.json({ suggestions: result.suggestions, summary: result.summary, cached: false, generated_at: new Date().toISOString() });
   } catch (error) {
@@ -148,30 +180,39 @@ function generateFallbackOptimize(budgets: { category: string; limit: number; sp
   budgets.forEach(b => {
     if (b.limit > 0) {
       const ratio = b.spent / b.limit;
+      const pct = Math.round(ratio * 100);
       if (ratio > 1.1) {
         suggestions.push({
           category: b.category,
           currentLimit: b.limit,
           suggestedLimit: Math.round(b.spent * 1.1),
-          reason: `Gastas habitualmente mais do que o budget (${Math.round(ratio * 100)}%).`,
-          impactOnGoals: "Ajustar evita estouro de orçamento.",
+          reason: `Gastas habitualmente ${pct}% do budget. Aumentar o limite evita estouros recorrentes.`,
+          impactOnGoals: "Evita notificações de alerta e mantém o controlo.",
         });
       } else if (ratio < 0.6 && b.limit > 50) {
         suggestions.push({
           category: b.category,
           currentLimit: b.limit,
           suggestedLimit: Math.round(b.limit * 0.85),
-          reason: `Estás a usar menos de ${Math.round(ratio * 100)}% do budget. Podes reduzir.`,
-          impactOnGoals: "Reduzir permite realocar para metas de poupança.",
+          reason: `Usas apenas ${pct}% do budget. Podes reduzir e realocar para poupança.`,
+          impactOnGoals: "O valor libertado pode acelerar as tuas metas de poupança.",
+        });
+      } else {
+        suggestions.push({
+          category: b.category,
+          currentLimit: b.limit,
+          suggestedLimit: b.limit,
+          reason: ratio >= 0.9 ? `Estás a usar ${pct}% — o limite está bem ajustado.` : `Uso de ${pct}% — mantém o limite atual.`,
+          impactOnGoals: "Orçamento equilibrado. Continua assim.",
         });
       }
     }
   });
 
   return {
-    suggestions: suggestions.slice(0, 5),
+    suggestions: suggestions.slice(0, 8),
     summary: suggestions.length > 0
-      ? `Encontradas ${suggestions.length} oportunidade(s) de otimização nos teus orçamentos.`
+      ? `Análise concluída para ${suggestions.length} categoria(s).`
       : "Os teus orçamentos parecem equilibrados.",
   };
 }

@@ -28,7 +28,7 @@ export default function ImportPage() {
       .eq("id", user.id)
       .single()
       .then(({ data }) => setUserFamilyId(data?.family_id || null));
-  }, [user, supabase]);
+  }, [user]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFile = e.target.files?.[0];
@@ -64,34 +64,14 @@ export default function ImportPage() {
       const mapping = bankPresets[selectedBank];
       const transactions = await parseCSV(file, mapping);
 
-      if (userFamilyId && selectedBank !== "famflow") {
-        // User has family: insert directly with family_id for sharing
-        for (const trans of transactions) {
-          const { error } = await supabase!
-            .from("transactions")
-            .insert({
-              user_id: user!.id,
-              family_id: userFamilyId,
-              description: trans.description,
-              amount: trans.amount,
-              type: trans.type,
-              category: trans.category || "Outros",
-              date: trans.date,
-            });
-
-          if (error) throw error;
-        }
-      } else {
-        // No family or FamFlow import: use addTransaction (user_id only)
-        for (const trans of transactions) {
-          await addTransaction({
-            description: trans.description,
-            amount: trans.amount,
-            type: trans.type,
-            category: trans.category || "Outros",
-            date: trans.date,
-          });
-        }
+      for (const trans of transactions) {
+        await addTransaction({
+          description: trans.description,
+          amount: trans.amount,
+          type: trans.type,
+          category: trans.category || "Outros",
+          date: trans.date,
+        });
       }
 
       setImported(true);
@@ -214,7 +194,7 @@ export default function ImportPage() {
                       <td className="p-3 text-on-surface-variant">{t.date}</td>
                       <td className="p-3 text-on-surface">{t.description}</td>
                       <td className={`p-3 text-right font-bold ${t.type === "income" ? "text-primary" : "text-tertiary"}`}>
-                        {t.type === "income" ? "+" : "-"}{t.amount.toFixed(2)}€
+                        {t.type === "income" ? "+" : "-"}{Number(t.amount || 0).toFixed(2)}€
                       </td>
                     </tr>
                   ))}

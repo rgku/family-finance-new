@@ -26,8 +26,8 @@ export async function POST(req: Request) {
     lastWeek.setDate(lastWeek.getDate() - 7);
 
     const { data: users } = await supabase
-      .from('users')
-      .select('id, email, full_name');
+      .from('profiles')
+      .select('id, full_name');
 
     if (!users) {
       return NextResponse.json({ success: false, error: 'No users found' });
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 
     for (const user of users) {
       const { data: transactions } = await supabase
-        .from('transactions')
+        .from('transactions_decrypted')
         .select('*')
         .eq('user_id', user.id)
         .gte('date', lastWeek.toISOString().split('T')[0])
@@ -47,11 +47,11 @@ export async function POST(req: Request) {
 
       const totalIncome = transactions
         .filter(t => t.type === 'income')
-        .reduce((sum, t) => sum + t.amount, 0);
+        .reduce((sum, t) => sum + Number(t.amount), 0);
 
       const totalExpenses = transactions
         .filter(t => t.type === 'expense')
-        .reduce((sum, t) => sum + t.amount, 0);
+        .reduce((sum, t) => sum + Number(t.amount), 0);
 
       const balance = totalIncome - totalExpenses;
 

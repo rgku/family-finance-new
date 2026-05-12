@@ -80,14 +80,16 @@ export function useOfflineSync() {
               response = await supabase
                 .from(item.table)
                 .update(item.data)
-                .eq('id', item.id_to_update);
+                .eq('id', item.id_to_update)
+                .eq('user_id', user.id);
               break;
 
             case 'delete':
               response = await supabase
                 .from(item.table)
                 .delete()
-                .eq('id', item.id_to_update);
+                .eq('id', item.id_to_update)
+                .eq('user_id', user.id);
               break;
           }
 
@@ -163,6 +165,23 @@ export function useOfflineSync() {
         await offlineDB.deleteGoal(id_to_update!);
       } else if (table === 'budgets') {
         await offlineDB.deleteBudget(id_to_update!);
+      }
+    } else if (operation === 'update') {
+      if (table === 'transactions') {
+        const existing = await offlineDB.getTransaction(id_to_update!);
+        if (existing) {
+          await offlineDB.saveTransaction({ ...existing, ...data });
+        }
+      } else if (table === 'goals') {
+        const existing = await offlineDB.getGoal(id_to_update!);
+        if (existing) {
+          await offlineDB.saveGoal({ ...existing, ...data });
+        }
+      } else if (table === 'budgets') {
+        const existing = await offlineDB.getBudget(id_to_update!);
+        if (existing) {
+          await offlineDB.saveBudget({ ...existing, ...data });
+        }
       }
     }
 

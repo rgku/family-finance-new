@@ -24,11 +24,15 @@ export async function GET(request: NextRequest) {
     const [year, monthNum] = month.split("-").map(Number);
 
     // Get family_id and billing_cycle_day
-    const { data: profile } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("family_id, billing_cycle_day")
       .eq("id", user.id)
       .single();
+
+    if (profileError) {
+      console.error("Error fetching profile for reports:", profileError);
+    }
 
     const familyId = profile?.family_id;
     const billingDay = profile?.billing_cycle_day || 1;

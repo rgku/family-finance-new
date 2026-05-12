@@ -273,8 +273,6 @@ export default function FamilyPage() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       const deleteRes = await fetch("/api/family", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -380,7 +378,7 @@ export default function FamilyPage() {
         </h1>
         <p className="text-on-surface-variant">
           {family 
-            ? `${currentCount} membro${currentCount !== 1 ? 's' : ''} • Código: ${family.invite_code}`
+            ? `${currentCount} membro${currentCount !== 1 ? 's' : ''} • Código: ${family.invite_code || "---"}`
             : "Gerir membros da família"}
         </p>
       </header>
@@ -475,7 +473,7 @@ export default function FamilyPage() {
           <div className="flex items-center gap-3">
             <span className="text-sm text-on-surface-variant">Código convite:</span>
             <code className="bg-surface-container-high px-3 py-1 rounded font-mono text-primary">
-              {family.invite_code}
+              {family.invite_code || "---"}
             </code>
           </div>
           

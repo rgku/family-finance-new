@@ -6,6 +6,7 @@ export const CURRENCY = {
 };
 
 export function formatCurrency(amount: number): string {
+  if (amount == null || !Number.isFinite(amount)) return "0,00";
   return amount.toLocaleString(CURRENCY.locale, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -28,7 +29,7 @@ export function calculatePercentage(current: number, target: number, maxValue: n
 }
 
 export function calculateMonthChange(income: number, expenses: number): string {
-  if (!income || income <= 0 || !Number.isFinite(income)) {
+  if (income == null || !Number.isFinite(income) || income <= 0) {
     return "0";
   }
   return ((income - expenses) / income * 100).toFixed(0);

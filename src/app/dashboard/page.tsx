@@ -38,7 +38,7 @@ export default function Dashboard() {
   const [year, month] = selectedMonth.split("-").map(Number);
   
   const monthName = profile?.billing_cycle_day && profile.billing_cycle_day > 1
-    ? formatCustomMonth(billingDay, new Date(year, month - 1, 25))
+    ? formatCustomMonth(billingDay, new Date(year, month - 1, billingDay - 1))
     : monthNames[month - 1];
 
   const prevMonth = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 };
@@ -58,7 +58,14 @@ export default function Dashboard() {
       });
     }
     // Sort by date descending (most recent first)
-    return filtered.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return filtered.sort((a, b) => {
+      const dateA = new Date(a.date).getTime();
+      const dateB = new Date(b.date).getTime();
+      if (isNaN(dateA) && isNaN(dateB)) return 0;
+      if (isNaN(dateA)) return 1;
+      if (isNaN(dateB)) return -1;
+      return dateB - dateA;
+    });
   }, [transactions, year, month, profile?.billing_cycle_day, billingDay]);
 
   const { totalIncome, totalExpenses, totalPoupanca, balance, savingsGoals, expenseGoals, expenseByCategory } = useMemo(() => {

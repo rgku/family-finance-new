@@ -105,6 +105,10 @@ export async function GET(request: NextRequest) {
       .eq("target_month", monthParam)
       .single();
 
+    if (cached.error) {
+      console.error("Cache query error for forecast:", cached.error);
+    }
+
     if (cached.data && cached.data.generated_at) {
       const cacheAge = Date.now() - new Date(cached.data.generated_at).getTime();
       if (cacheAge < CACHE_TTL_DAYS * 24 * 60 * 60 * 1000) {
@@ -113,23 +117,37 @@ export async function GET(request: NextRequest) {
           .select("*")
           .eq("user_id", user.id)
           .eq("target_month", monthParam);
-        return NextResponse.json({ forecasts: forecasts.data || [], cached: true });
+        return NextResponse.json({
+          forecasts: (forecasts.data || []).map((f: Record<string, unknown>) => ({
+            category: f.category,
+            predictedAmount: f.predicted_amount,
+            confidenceLow: f.confidence_low,
+            confidenceHigh: f.confidence_high,
+            reasoning: f.reasoning,
+            trend: f.trend,
+            changePercent: f.change_percent,
+          })),
+          cached: true,
+        });
       }
     }
 
-    const profileResult = await supabase.from("profiles").select("family_id, billing_cycle_day").eq("id", user.id).single();
-    const familyId = profileResult.data?.family_id;
+    const { data: profileData, error: profileError } = await supabase.from("profiles").select("family_id, billing_cycle_day").eq("id", user.id).single();
+    if (profileError) {
+      console.error("Profile query error for forecast:", profileError);
+    }
+    const familyId = profileData?.family_id;
     const txFilter = familyId
       ? `user_id.eq.${user.id},family_id.eq.${familyId}`
       : `user_id.eq.${user.id}`;
 
     const transResult = await supabase.from("transactions_decrypted").select("description, amount, type, category, date").or(txFilter).order("date", { ascending: false });
 
-    if (!profileResult.data) {
+    if (!profileData) {
       return NextResponse.json({ error: "Perfil não encontrado" }, { status: 404 });
     }
 
-    const billingDay = profileResult.data.billing_cycle_day || 1;
+    const billingDay = profileData.billing_cycle_day || 1;
     const transactions = transResult.data || [];
 
     // No transactions = no forecast
@@ -161,7 +179,7 @@ export async function GET(request: NextRequest) {
     const recurring = detectRecurring(transactions);
 
     const payload: AIForecastPayload = {
-      familyId: profileResult.data.family_id,
+      familyId: profileData.family_id,
       targetMonth: monthParam,
       historyByCategory,
       recurringPatterns: recurring,
@@ -197,30 +215,27 @@ export async function GET(request: NextRequest) {
       };
     }
 
+    const predictions = forecastResult.forecasts.map(f => ({
+      user_id: user.id,
+      target_month: monthParam,
+      category: f.category,
+      predicted_amount: f.predictedAmount,
+      confidence_low: f.confidenceLow,
+      confidence_high: f.confidenceHigh,
+      reasoning: f.reasoning,
+      trend: f.trend,
+      change_percent: f.changePercent,
+    }));
+
     await admin.from("expense_predictions").delete()
       .eq("user_id", user.id)
       .eq("target_month", monthParam);
 
-    try {
-      for (const f of forecastResult.forecasts) {
-        const { error: insertError } = await admin.from("expense_predictions").insert({
-          user_id: user.id,
-          target_month: monthParam,
-          category: f.category,
-          predicted_amount: f.predictedAmount,
-          confidence_low: f.confidenceLow,
-          confidence_high: f.confidenceHigh,
-          reasoning: f.reasoning,
-          trend: f.trend,
-          change_percent: f.changePercent,
-        });
-        
-        if (insertError) {
-          console.error("Failed to insert prediction for category", f.category, insertError);
-        }
+    if (predictions.length > 0) {
+      const { error: insertError } = await admin.from("expense_predictions").insert(predictions);
+      if (insertError) {
+        console.error("Failed to insert predictions batch:", insertError);
       }
-    } catch (insertErr) {
-      console.error("Error inserting predictions:", insertErr);
     }
 
     return NextResponse.json({ forecasts: forecastResult.forecasts, summary: forecastResult.summary, cached: false });

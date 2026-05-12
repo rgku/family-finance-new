@@ -86,6 +86,11 @@ export async function initDB() {
   });
 }
 
+export async function getTransaction(id: string): Promise<OfflineTransaction | undefined> {
+  const db = await initDB();
+  return db.get('transactions', id);
+}
+
 export async function saveTransaction(tx: OfflineTransaction) {
   const db = await initDB();
   await db.put('transactions', tx);
@@ -103,6 +108,11 @@ export async function deleteTransaction(id: string) {
   await db.delete('transactions', id);
 }
 
+export async function getGoal(id: string): Promise<OfflineGoal | undefined> {
+  const db = await initDB();
+  return db.get('goals', id);
+}
+
 export async function saveGoal(goal: OfflineGoal) {
   const db = await initDB();
   await db.put('goals', goal);
@@ -118,6 +128,11 @@ export async function getGoals(userId: string): Promise<OfflineGoal[]> {
 export async function deleteGoal(id: string) {
   const db = await initDB();
   await db.delete('goals', id);
+}
+
+export async function getBudget(id: string): Promise<OfflineBudget | undefined> {
+  const db = await initDB();
+  return db.get('budgets', id);
 }
 
 export async function saveBudget(budget: OfflineBudget) {
