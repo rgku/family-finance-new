@@ -2,6 +2,8 @@
 
 import { useMemo } from "react";
 import { useData } from "./DataProvider";
+import { useAuth } from "@/components/AuthProvider";
+import { isDateInCustomMonth } from "@/lib/dateUtils";
 
 interface SpendingPower {
   available: number;
@@ -18,19 +20,34 @@ interface SpendingPower {
 
 export function useSpendingPower(): SpendingPower {
   const { transactions, goals, budgets } = useData();
+  const { profile } = useAuth();
 
   return useMemo(() => {
     const now = new Date();
+    const billingDay = profile?.billing_cycle_day || 1;
+
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     const currentDay = now.getDate();
-    const remainingDays = daysInMonth - currentDay;
 
-    const monthlyTransactions = transactions.filter((t) => {
-      const date = new Date(t.date);
-      return date.getFullYear() === currentYear && date.getMonth() === currentMonth;
-    });
+    let monthlyTransactions;
+    if (billingDay > 1) {
+      let cycleMonth = currentDay >= billingDay ? currentMonth + 2 : currentMonth + 1;
+      let cycleYear = currentYear;
+      if (cycleMonth > 12) { cycleYear++; cycleMonth -= 12; }
+      if (cycleMonth < 1) { cycleYear--; cycleMonth += 12; }
+      monthlyTransactions = transactions.filter((t) =>
+        isDateInCustomMonth(t.date, billingDay, cycleYear, cycleMonth)
+      );
+    } else {
+      monthlyTransactions = transactions.filter((t) => {
+        const [y, m] = t.date.split('-').map(Number);
+        return y === currentYear && m === currentMonth + 1;
+      });
+    }
+
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const remainingDays = daysInMonth - currentDay;
 
     const income = monthlyTransactions
       .filter((t) => t.type === "income")
@@ -83,5 +100,5 @@ export function useSpendingPower(): SpendingPower {
       status,
       message,
     };
-  }, [transactions, goals, budgets]);
+  }, [transactions, goals, budgets, profile?.billing_cycle_day]);
 }
