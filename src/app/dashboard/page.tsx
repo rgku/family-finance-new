@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
+import { useState, useMemo, Suspense, useEffect } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useData, type Transaction } from "@/hooks/DataProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
@@ -33,6 +33,12 @@ export default function Dashboard() {
     }
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
+
+  useEffect(() => {
+    if (billingDay <= 1) return;
+    const correct = getCustomMonthForSelection(billingDay, new Date());
+    setSelectedMonth(prev => prev !== correct ? correct : prev);
+  }, [billingDay]);
 
   const monthNames = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const [year, month] = selectedMonth.split("-").map(Number);
