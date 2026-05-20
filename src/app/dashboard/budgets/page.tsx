@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useData, type Budget } from "@/hooks/DataProvider";
 import { useAuth } from "@/components/AuthProvider";
 import { useDeviceType } from "@/hooks/useDeviceType";
 import { formatCurrencyWithSymbol } from "@/lib/currency";
-import { formatCustomMonth } from "@/lib/dateUtils";
+import { getCustomMonthForSelection, formatCustomMonth } from "@/lib/dateUtils";
 import { EXPENSE_CATEGORIES } from "@/lib/constants";
 import { Icon } from "@/components/Icon";
 import { MobileHeader, MobileNav } from "@/components/Sidebar";
@@ -26,12 +26,22 @@ export default function BudgetsPage() {
   const [selectedCategory, setSelectedCategory] = useState("");
   const [limitAmount, setLimitAmount] = useState("");
   
+  const billingDay = profile?.billing_cycle_day || 1;
+  
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
+    if (billingDay > 1) {
+      return getCustomMonthForSelection(billingDay, now);
+    }
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
 
-  const billingDay = profile?.billing_cycle_day || 1;
+  useEffect(() => {
+    if (billingDay <= 1) return;
+    const correct = getCustomMonthForSelection(billingDay, new Date());
+    setSelectedMonth(prev => prev !== correct ? correct : prev);
+  }, [billingDay]);
+
   const displayMonth = profile?.billing_cycle_day && profile.billing_cycle_day > 1
     ? formatCustomMonth(billingDay, new Date(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]) - 1))
     : (() => {
